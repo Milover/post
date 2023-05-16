@@ -1,7 +1,6 @@
 package dat
 
 import (
-	"fmt"
 	"strings"
 	"testing"
 )
@@ -63,21 +62,21 @@ var readTests = []readTest{
 }
 
 func TestReader(t *testing.T) {
-
 	for _, tt := range readTests {
 		t.Run(tt.Name, func(t *testing.T) {
 			r := NewReader(strings.NewReader(tt.Input))
-			records, err := r.ReadAll()
+			_, err := r.ReadAll()
 			if err != tt.Error {
 				t.Fatal(err)
 			}
-
+			/* TODO: write some actual tests
 			for _, record := range records {
 				for _, r := range record {
 					fmt.Printf("%q", r)
 				}
 				fmt.Println()
 			}
+			*/
 		})
 	}
 }

@@ -9,7 +9,7 @@ import (
 	"unicode/utf8"
 )
 
-var errInvalidDelim = errors.New("dat: invalid field or comment delimiter")
+var errInvalidDelim = errors.New("dat: invalid comment delimiter")
 
 func validDelim(r rune) bool {
 	return r != 0 && r != '"' && r != '\r' && r != '\n' && utf8.ValidRune(r) && r != utf8.RuneError
@@ -17,7 +17,13 @@ func validDelim(r rune) bool {
 
 // A Reader reads records from an OpenFOAM DAT file.
 //
-// As returned by NewReader, a Reader expects input conforming to RFC 4180.
+// As returned by NewReader, a Reader expects input conforming to the usual,
+// albeit variable, OpenFOAM DAT file format: fields delimited by whitespace,
+// with or without leading whitespace, which is always ignored, and
+// with lines beggining with '#' denoting comments.
+// All parentheses are automatically removed while reading, hence tensors
+// (of any order) will yield their component values as individual fields.
+//
 // The exported fields can be changed to customize the details before the
 // first call to Read or ReadAll.
 //
@@ -25,19 +31,12 @@ func validDelim(r rune) bool {
 // including in multiline field values, so that the returned data does
 // not depend on which line-ending convention an input file uses.
 type Reader struct {
-	// Comma is the field delimiter.
-	// It is set to comma (',') by NewReader.
-	// Comma must be a valid rune and must not be \r, \n,
-	// or the Unicode replacement character (0xFFFD).
-	Comma rune
-
-	// Comment, if not 0, is the comment character. Lines beginning with the
-	// Comment character without preceding whitespace are ignored.
-	// With leading whitespace the Comment character becomes part of the
-	// field, even if TrimLeadingSpace is true.
+	// Comment, if not 0, is the comment character.
+	// It is set to pound ('#') by NewReader.
+	// Lines beginning with the Comment character without preceding
+	// whitespace are ignored.
 	// Comment must be a valid rune and must not be \r, \n,
 	// or the Unicode replacement character (0xFFFD).
-	// It must also not be equal to Comma.
 	Comment rune
 
 	r *bufio.Reader
@@ -49,17 +48,23 @@ type Reader struct {
 // NewReader returns a new Reader that reads from r.
 func NewReader(r io.Reader) *Reader {
 	return &Reader{
-		Comma:   '\t',
 		Comment: '#',
 		r:       bufio.NewReader(r),
 	}
 }
 
+// Read reads one record (a slice of fields) from r.
+// Read always returns either a non-nil record or a non-nil error, but not both.
+// If there is no data left to be read, Read returns nil, io.EOF.
+func (r *Reader) Read() ([]string, error) {
+	return r.readRecord()
+}
+
 // ReadAll reads all the remaining records from r.
 // Each record is a slice of fields.
-// A successful call returns err == nil, not err == io.EOF. Because ReadAll is
-// defined to read until EOF, it does not treat end of file as an error to be
-// reported.
+// A successful call returns err == nil, not err == io.EOF.
+// Because ReadAll is defined to read until EOF, it does not treat end of file
+// as an error to be reported.
 func (r *Reader) ReadAll() (records [][]string, err error) {
 	for {
 		record, err := r.readRecord()
@@ -118,7 +123,7 @@ func nextRune(b []byte) rune {
 }
 
 func (r *Reader) readRecord() ([]string, error) {
-	if r.Comma == r.Comment || !validDelim(r.Comma) || (r.Comment != 0 && !validDelim(r.Comment)) {
+	if r.Comment != 0 && !validDelim(r.Comment) {
 		return nil, errInvalidDelim
 	}
 
