@@ -1,0 +1,90 @@
+\documentclass{standalone}
+\usepackage[utf8]{inputenc}
+%\usepackage[croatian]{babel}
+\usepackage[english]{babel}
+\usepackage{csquotes}
+\fontfamily{cmr}\selectfont
+\usepackage{setspace}
+% margins
+%\usepackage[margin=2.5cm]{geometry}
+% color
+\usepackage[monochrome]{xcolor}
+% figures
+\usepackage{graphicx}
+\usepackage{graphics}
+\usepackage{subcaption}
+\pdfminorversion=6
+% landscape mode
+%\usepackage{lscape}
+% plotting
+\usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{width=0.8\textwidth,compat=1.16}
+% math
+\usepackage{amsmath}
+\usepackage{amssymb}
+% SI units
+\usepackage{siunitx}
+
+% siunitx setup
+\sisetup{output-exponent-marker=\ensuremath{\mathrm{e}},
+		 group-separator={}}
+
+% pgfplots setup
+\pgfkeys{/pgf/number format/.cd,1000 sep={}}
+\pgfplotscreateplotcyclelist{plain_list}{%
+{solid, thick, mark=none},
+{dotted, thick, mark=none},
+{dashdotted, thick, mark=none},
+{dashdotdotted, thick, mark=none},
+{dashed, thick, mark=none},
+{densely dotted, thick, mark=none},
+{densely dashed, thick, mark=none},
+{densely dashdotted, thick, mark=none},
+%{densely dashdashdotted, thick, mark=none},
+{loosely dotted, thick, mark=none},
+{loosely dashed, thick, mark=none},
+{loosely dashdotted, thick, mark=none},
+{loosely dashdashdotted, thick, mark=none},
+}
+\pgfplotscreateplotcyclelist{marked_list}{%
+{solid, every mark/.append style={solid, fill=gray}, mark=*},
+{dotted, every mark/.append style={solid, fill=gray}, mark=square*},
+{densely dotted, every mark/.append style={solid, fill=gray}, mark=otimes*},
+{loosely dotted, every mark/.append style={solid, fill=gray}, mark=triangle*},
+{dashed, every mark/.append style={solid, fill=gray},mark=diamond*},
+{loosely dashed, every mark/.append style={solid, fill=gray},mark=*},
+{densely dashed, every mark/.append style={solid, fill=gray},mark=square*},
+{dashdotted, every mark/.append style={solid, fill=gray},mark=otimes*},
+{dashdotdotted, every mark/.append style={solid},mark=star},
+{densely dashdotted,every mark/.append style={solid, fill=gray},mark=diamond*},
+}
+
+% definitions
+\newcommand{\code}[1]{{\bfseries{\texttt{#1}}}}
+
+\newcommand{\vect}[1]{\boldsymbol{#1}}
+
+\newcommand{\slfrac}[2]{{}^#1{\mskip -5mu/\mskip -3mu}_#2}
+
+\def\unaryplus{{+}}%
+
+\def\unaryminus{{-}}%
+
+\DeclareMathOperator{\sign}{sign}
+\DeclareMathOperator{\const}{const.}
+
+\begin{document}
+
+\centering
+
+\begin{tikzpicture}
+%
+__{range .Axes -}__
+__{template "axis.tmpl" . -}__
+__{- end -}__
+%
+\end{tikzpicture}
+
+\end{document}
+\endinput

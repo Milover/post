@@ -1,0 +1,9 @@
+%
+\addplot table [%
+	x=__{.XField}__,
+	y=__{.YField}__,
+	col sep=comma] {__{.TableFile}__};
+__{if .LegendEntry -}__
+__{template "legend.tmpl" .}__
+__{- end -}__
+%

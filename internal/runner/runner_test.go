@@ -1,7 +1,9 @@
 package runner
 
 import (
+	"fmt"
 	"io"
+	"os"
 	"reflect"
 	"strings"
 	"testing"
@@ -26,7 +28,25 @@ input:
   path: null
   fields: [time, u_max, u_x, u_y, u_z]
   format: dat
-output: null
+output:
+  graphs:
+    - name: "graph0"
+      axes:
+        - x:
+            min: 1.0
+            max: 3.0
+            label: "$x$-axis"
+          y:
+            min: 1.0
+            max: 6.0
+            label: "$y$-axis"
+          tables:
+            - x_field: time
+              y_field: u_max
+              legend_entry: "$u_\text{max}$"
+            - x_field: time
+              y_field: u_x
+              legend_entry: "$u_x$"
 `,
 		Input: `
 # time	u_max	u
@@ -36,6 +56,12 @@ output: null
 `,
 		Output: nil,
 	},
+}
+
+func handleClose(c io.Closer, t *testing.T) {
+	if err := c.Close(); err != nil {
+		t.Fatalf("unexpected Run() error: %v", err)
+	}
 }
 
 func TestRun(t *testing.T) {
@@ -53,7 +79,33 @@ func TestRun(t *testing.T) {
 				t.Fatalf("unexpected Run() error: %v", err)
 			}
 
-			err = Run(strings.NewReader(tt.Input), config)
+			csvFile, err := os.Create("test.csv")
+			config.Output.Writer = csvFile
+			if err != nil {
+				t.Fatalf("unexpected Run() error: %v", err)
+			}
+
+			graphFiles := make([]*os.File, len(config.Output.Graphs))
+			for gID := range config.Output.Graphs {
+				g := &config.Output.Graphs[gID]
+				graphFiles[gID], err = os.Create(fmt.Sprintf("%v.tex", g.Name))
+				if err != nil {
+					t.Fatalf("unexpected Run() error: %v", err)
+				}
+				g.Writer = graphFiles[gID]
+
+				for aID := range g.Axes {
+					a := &g.Axes[aID]
+					for tID := range a.Tables {
+						a.Tables[tID].TableFile = csvFile.Name()
+					}
+				}
+			}
+			err = Run(strings.NewReader(tt.Input), &config)
+
+			for _, gf := range graphFiles {
+				handleClose(gf, t)
+			}
 
 			if err != nil {
 				if err != tt.Error {

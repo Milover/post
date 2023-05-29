@@ -1,0 +1,45 @@
+\begin{axis}[
+	width=0.8\textwidth,
+	height=0.65\textwidth,
+	xmin=__{.X.Min}__, xmax=__{.X.Max}__,
+	ymin=__{.Y.Min}__, ymax=__{.Y.Max}__,
+	axis x line*=bottom,
+	axis y line*=left,
+	xlabel={__{.X.Label}__},
+	ylabel={__{.Y.Label}__},
+	x tick label style={
+		yshift=-0.5ex,
+		xshift=-0.5ex,
+%		/pgf/number format/.cd,
+%		fixed,
+%		fixed zerofill,
+%		precision=1,
+%		/tikz/.cd
+	},
+	y tick label style={
+		xshift=-0.5ex,
+%		/pgf/number format/.cd,
+%		fixed,
+%		fixed zerofill,
+%		precision=1,
+%		/tikz/.cd
+	},
+	scaled x ticks=false,
+	scaled y ticks=false,
+	xmajorgrids=true,
+	ymajorgrids=true,
+	major grid style={solid, line width=0.5pt, draw=gray!50},
+	legend cell align=left,
+	legend style={at={(0.975, 0.975)},
+				  anchor=north east,
+				  cells={align=left},
+				  legend columns=2,
+				  font=\footnotesize
+				  },
+	cycle list name=plain_list,
+	smooth
+]
+__{range .Tables -}__
+__{template "table.tmpl" . -}__
+__{- end -}__
+\end{axis}
