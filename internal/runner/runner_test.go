@@ -58,8 +58,8 @@ output:
 	},
 }
 
-func handleClose(c io.Closer, t *testing.T) {
-	if err := c.Close(); err != nil {
+func handleError(err error, t *testing.T) {
+	if err != nil {
 		t.Fatalf("unexpected Run() error: %v", err)
 	}
 }
@@ -67,31 +67,26 @@ func handleClose(c io.Closer, t *testing.T) {
 func TestRun(t *testing.T) {
 	for _, tt := range runTests {
 		t.Run(tt.Name, func(t *testing.T) {
-
 			var out [][]string
 
+			// build the config
 			var config Config
 			raw, err := io.ReadAll(strings.NewReader(tt.Config))
-			if err != nil {
-				t.Fatalf("unexpected Run() error: %v", err)
-			}
-			if err := yaml.Unmarshal(raw, &config); err != nil {
-				t.Fatalf("unexpected Run() error: %v", err)
-			}
+			handleError(err, t)
+			handleError(yaml.Unmarshal(raw, &config), t)
 
+			// create and set the data file
 			csvFile, err := os.Create("test.csv")
+			handleError(err, t)
+			defer handleError(csvFile.Close(), t)
 			config.Output.Writer = csvFile
-			if err != nil {
-				t.Fatalf("unexpected Run() error: %v", err)
-			}
 
+			// create and set the graph files
 			graphFiles := make([]*os.File, len(config.Output.Graphs))
 			for gID := range config.Output.Graphs {
 				g := &config.Output.Graphs[gID]
 				graphFiles[gID], err = os.Create(fmt.Sprintf("%v.tex", g.Name))
-				if err != nil {
-					t.Fatalf("unexpected Run() error: %v", err)
-				}
+				handleError(err, t)
 				g.Writer = graphFiles[gID]
 
 				for aID := range g.Axes {
@@ -101,12 +96,13 @@ func TestRun(t *testing.T) {
 					}
 				}
 			}
+			// do the test
 			err = Run(strings.NewReader(tt.Input), &config)
 
+			// cleanup and check the errors
 			for _, gf := range graphFiles {
-				handleClose(gf, t)
+				handleError(gf.Close(), t)
 			}
-
 			if err != nil {
 				if err != tt.Error {
 					t.Fatalf("Run() error mismatch:\ngot  %v (%#v)\nwant %v (%#v)", err, err, tt.Error, tt.Error)
