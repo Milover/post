@@ -43,7 +43,7 @@ output:
           tables:
             - x_field: time
               y_field: u_max
-              legend_entry: "$u_\text{max}$"
+              legend_entry: "$u_\\text{max}$"
             - x_field: time
               y_field: u_x
               legend_entry: "$u_x$"
