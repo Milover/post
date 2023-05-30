@@ -15,6 +15,7 @@ const (
 )
 
 func fromCSV(in io.Reader) *dataframe.DataFrame {
+	// FIXME: should set options from the config
 	df := dataframe.ReadCSV(in, dataframe.HasHeader(true))
 	return &df
 }
