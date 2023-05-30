@@ -2,9 +2,7 @@ package runner
 
 import (
 	"errors"
-	"fmt"
 	"io"
-	"os/exec"
 
 	"github.com/go-gota/gota/dataframe"
 	_ "gopkg.in/yaml.v3"
@@ -22,39 +20,35 @@ type InputConfig struct {
 }
 
 type OutputConfig struct {
+	// TODO: This should be a *yaml.Node because we might not be using TeX,
+	// and even if we are, the input needs to be validated.
 	Graphs []TeXGraph `yaml:"graphs,omitempty"`
 
+	// FIXME: This is confusing, and probably shouldn't be here.
 	Writer io.Writer `yaml:"-"`
 }
 
+// TODO: Should just take a raw config (io.Reader or file name) and do
+// everything else.
 func Run(in io.Reader, config *Config) error {
 	df := CreateDataFrame(in, &config.Input)
-	// Process data
+	// TODO: Process data
 
-	// Output csv
 	// FIXME: LaTeX has an upper size limit for CSV files that it can handle
 	// so the output should be decimated down to this size if it's too large.
 	err := df.WriteCSV(config.Output.Writer, dataframe.WriteHeader(true))
 	if err != nil {
 		return err
 	}
-
-	// Output LaTeX graphs
 	for i := range config.Output.Graphs {
-		g := &config.Output.Graphs[i]
-		if e := CreateTeXGraph(g); e != nil {
+		if e := WriteTeXGraph(&config.Output.Graphs[i]); e != nil {
 			err = errors.Join(err, e)
 			continue
 		}
 		// FIXME: This doesn't make sense if the graph isn't written to a file.
 		// FIXME: Also this should probably be a separate step, since we may
-		// want to only re-run the compilation without re-generating the graphs.
-		cmd := exec.Command("pdflatex",
-			"-halt-on-error",
-			"-interaction=nonstopmode",
-			fmt.Sprint(g.Name, ".tex"),
-		)
-		if e := cmd.Run(); e != nil {
+		// only want to recompile without rewriting the graphs.
+		if e := CompileTeXGraph(&config.Output.Graphs[i]); e != nil {
 			err = errors.Join(err, e)
 		}
 	}

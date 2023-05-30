@@ -2,9 +2,9 @@ package runner
 
 import (
 	"embed"
-	"errors"
 	"fmt"
 	"io"
+	"os/exec"
 	"text/template"
 
 	_ "gopkg.in/yaml.v3"
@@ -13,14 +13,11 @@ import (
 //go:embed tmpl
 var templates embed.FS
 
-var (
-	ErrCreateTeXGraph = errors.New("could not create TeX graph")
-)
-
 type TeXGraph struct {
 	Name string    `yaml:"name,omitempty"`
 	Axes []TexAxis `yaml:"axes,omitempty"`
 
+	// TODO: This probably shouldn't be here.
 	Writer io.Writer `yaml:"-"`
 }
 
@@ -43,14 +40,19 @@ type TeXTable struct {
 	TableFile   string `yaml:"-,omitempty"`
 }
 
-func CreateTeXGraph(g *TeXGraph) error {
-	tmpl := template.Must(template.
+func CompileTeXGraph(g *TeXGraph) error {
+	return exec.Command("pdflatex",
+		"-halt-on-error",
+		"-interaction=nonstopmode",
+		fmt.Sprint(g.Name, ".tex"),
+	).Run()
+}
+
+// TODO: Should probably also take an io.Writer.
+func WriteTeXGraph(g *TeXGraph) error {
+	return template.Must(template.
 		New("master.tmpl").
 		Delims("__{", "}__").
-		ParseFS(templates, "tmpl/*.tmpl"),
-	)
-	if err := tmpl.Execute(g.Writer, g); err != nil {
-		return fmt.Errorf("%v: %q: %v", ErrCreateTeXGraph, g.Name, err)
-	}
-	return nil
+		ParseFS(templates, "tmpl/*.tmpl")).
+		Execute(g.Writer, g)
 }
