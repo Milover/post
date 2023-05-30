@@ -1,24 +1,13 @@
 package runner
 
 import (
-	"embed"
+	"errors"
 	"fmt"
 	"io"
-	"log"
-	"strings"
-	"text/template"
+	"os/exec"
 
-	"github.com/Milover/foam-postprocess/internal/encoding/dat"
 	"github.com/go-gota/gota/dataframe"
-	"gopkg.in/yaml.v3"
-)
-
-//go:embed tmpl
-var templates embed.FS
-
-const (
-	CSV string = "csv"
-	DAT string = "dat"
+	_ "gopkg.in/yaml.v3"
 )
 
 type Config struct {
@@ -38,88 +27,36 @@ type OutputConfig struct {
 	Writer io.Writer `yaml:"-"`
 }
 
-type TeXGraph struct {
-	Name string    `yaml:"name,omitempty"`
-	Axes []TexAxis `yaml:"axes,omitempty"`
-
-	Writer io.Writer `yaml:"-"`
-}
-
-type TexAxis struct {
-	X      AxisLine   `yaml:"x,omitempty"`
-	Y      AxisLine   `yaml:"y,omitempty"`
-	Tables []TeXTable `yaml:"tables,omitempty"`
-}
-
-type AxisLine struct {
-	Min   float64 `yaml:"min,omitempty"`
-	Max   float64 `yaml:"max,omitempty"`
-	Label string  `yaml:"label,omitempty"`
-}
-
-type TeXTable struct {
-	XField      string `yaml:"x_field,omitempty"`
-	YField      string `yaml:"y_field,omitempty"`
-	LegendEntry string `yaml:"legend_entry,omitempty"`
-	TableFile   string `yaml:"-,omitempty"`
-}
-
-func CreateDataFrame(in io.Reader, config *InputConfig) (*dataframe.DataFrame, error) {
-	var df dataframe.DataFrame
-	switch strings.ToLower(config.Format) {
-	case CSV:
-		df = dataframe.ReadCSV(in, dataframe.HasHeader(true))
-	case DAT:
-		r := dat.NewReader(in)
-		records, err := r.ReadAll()
-		if err != nil {
-			return &df, err
-		}
-		df = dataframe.LoadRecords(records, dataframe.HasHeader(false))
-	}
-	// WARNING: not sure what this actually catches?
-	if df.Error() != nil {
-		return &df, df.Error()
-	}
-	if len(config.Fields) > 0 {
-		err := df.SetNames(config.Fields...)
-		if err != nil {
-			return &df, err
-		}
-	}
-	return &df, nil
-}
-
 func Run(in io.Reader, config *Config) error {
-	df, err := CreateDataFrame(in, &config.Input)
-	if err != nil {
-		return err
-	}
+	df := CreateDataFrame(in, &config.Input)
 	// Process data
 
 	// Output csv
-	err = df.WriteCSV(config.Output.Writer, dataframe.WriteHeader(true))
+	// FIXME: LaTeX has an upper size limit for CSV files that it can handle
+	// so the output should be decimated down to this size if it's too large.
+	err := df.WriteCSV(config.Output.Writer, dataframe.WriteHeader(true))
 	if err != nil {
 		return err
 	}
 
 	// Output LaTeX graphs
-	tmpl := template.Must(template.New("master.tmpl").Delims("__{", "}__").ParseFS(templates, "tmpl/*.tmpl"))
 	for i := range config.Output.Graphs {
 		g := &config.Output.Graphs[i]
-		if err := tmpl.Execute(g.Writer, g); err != nil {
-			log.Fatalf("error: %v", err)
+		if e := CreateTeXGraph(g); e != nil {
+			err = errors.Join(err, e)
+			continue
+		}
+		// FIXME: This doesn't make sense if the graph isn't written to a file.
+		// FIXME: Also this should probably be a separate step, since we may
+		// want to only re-run the compilation without re-generating the graphs.
+		cmd := exec.Command("pdflatex",
+			"-halt-on-error",
+			"-interaction=nonstopmode",
+			fmt.Sprint(g.Name, ".tex"),
+		)
+		if e := cmd.Run(); e != nil {
+			err = errors.Join(err, e)
 		}
 	}
-
-	// Debug
-	confd, err := yaml.Marshal(config)
-	if err != nil {
-		log.Fatalf("error: %v", err)
-	}
-	//fmt.Printf("--- config:\n%v\n", config)
-	fmt.Printf("--- config:\n%v\n", string(confd))
-	fmt.Println(df)
-
-	return nil
+	return err
 }
