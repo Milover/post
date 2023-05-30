@@ -58,6 +58,12 @@ output:
 	},
 }
 
+func handleCloseError(c io.Closer, t *testing.T) {
+	if err := c.Close(); err != nil {
+		t.Fatalf("unexpected Run() error: %v", err)
+	}
+}
+
 func handleError(err error, t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected Run() error: %v", err)
@@ -78,7 +84,7 @@ func TestRun(t *testing.T) {
 			// create and set the data file
 			csvFile, err := os.Create("test.csv")
 			handleError(err, t)
-			defer handleError(csvFile.Close(), t)
+			defer handleCloseError(csvFile, t)
 			config.Output.Writer = csvFile
 
 			// create and set the graph files
@@ -101,7 +107,7 @@ func TestRun(t *testing.T) {
 
 			// cleanup and check the errors
 			for _, gf := range graphFiles {
-				handleError(gf.Close(), t)
+				handleCloseError(gf, t)
 			}
 			if err != nil {
 				if err != tt.Error {
