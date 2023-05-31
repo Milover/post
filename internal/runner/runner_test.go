@@ -21,16 +21,22 @@ type runTest struct {
 
 var runTests = []runTest{
 	{
-		Name:  "basic",
+		Name:  "basic-csv",
 		Error: nil,
 		Config: `
 input:
-  path: null
+  file: null
   fields: [time, u_max, u_x, u_y, u_z]
-  format: dat
+  format: csv
+  format_spec:
+    has_header: true
+    delimiter: "\t"
+    comment: "#"
 output:
+  directory: ""
+  write_file: true
   graphs:
-    - name: "graph0"
+    - name: "graph-csv0"
       axes:
         - x:
             min: 1.0
@@ -43,7 +49,45 @@ output:
           tables:
             - x_field: time
               y_field: u_max
-              legend_entry: "$u_\\text{max}$"
+              legend_entry: '$u_\text{max}$'
+            - x_field: time
+              y_field: u_x
+              legend_entry: "$u_x$"
+`,
+		Input: `
+time	u_max	u_x	u_y	u_z
+1	2.0	1.0	0.0	0.0
+2	4.0	2.0	0.0	0.0
+3	6.0	3.0	0.0	0.0
+`,
+		Output: nil,
+	},
+	{
+		Name:  "basic-dat",
+		Error: nil,
+		Config: `
+input:
+  file: null
+  fields: [time, u_max, u_x, u_y, u_z]
+  format: dat
+output:
+  directory: ""
+  write_file: true
+  graphs:
+    - name: "graph-dat0"
+      axes:
+        - x:
+            min: 1.0
+            max: 3.0
+            label: "$x$-axis"
+          y:
+            min: 1.0
+            max: 6.0
+            label: "$y$-axis"
+          tables:
+            - x_field: time
+              y_field: u_max
+              legend_entry: '$u_\text{max}$'
             - x_field: time
               y_field: u_x
               legend_entry: "$u_x$"
@@ -82,7 +126,7 @@ func TestRun(t *testing.T) {
 			handleError(yaml.Unmarshal(raw, &config), t)
 
 			// create and set the data file
-			csvFile, err := os.Create("test.csv")
+			csvFile, err := os.Create(fmt.Sprint(tt.Name, ".csv"))
 			handleError(err, t)
 			defer handleCloseError(csvFile, t)
 			config.Output.Writer = csvFile

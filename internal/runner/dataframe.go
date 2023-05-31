@@ -4,19 +4,51 @@ import (
 	"io"
 	"log"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/Milover/foam-postprocess/internal/encoding/dat"
 	"github.com/go-gota/gota/dataframe"
+	"github.com/go-gota/gota/series"
+	_ "gopkg.in/yaml.v3"
 )
 
 const (
 	CSV string = "csv"
 	DAT string = "dat"
+
+	DfltCSVDelimiter rune = ','
+	DfltCSVComment   rune = '#'
 )
 
-func fromCSV(in io.Reader) *dataframe.DataFrame {
-	// FIXME: should set options from the config
-	df := dataframe.ReadCSV(in, dataframe.HasHeader(true))
+type csvSpec struct {
+	HasHeader bool   `yaml:"has_header,omitempty"`
+	Delimiter string `yaml:"delimiter,omitempty"`
+	Comment   string `yaml:"comment,omitempty"`
+}
+
+func decodeRuneOrDefault(s string, dflt rune) rune {
+	r, n := utf8.DecodeRuneInString(s)
+	if r == utf8.RuneError && n == 0 {
+		return dflt
+	}
+	if r == utf8.RuneError && n == 1 {
+		log.Fatalf("could not decode rune from: %v", s)
+	}
+	return r
+}
+
+func fromCSV(in io.Reader, config *InputConfig) *dataframe.DataFrame {
+	var s csvSpec
+	if err := config.FormatSpec.Decode(&s); err != nil {
+		log.Fatalf("error: %v", err)
+	}
+	df := dataframe.ReadCSV(
+		in,
+		dataframe.HasHeader(s.HasHeader),
+		dataframe.WithDelimiter(decodeRuneOrDefault(s.Delimiter, DfltCSVDelimiter)),
+		dataframe.WithComments(decodeRuneOrDefault(s.Comment, DfltCSVComment)),
+		dataframe.DefaultType(series.Float),
+	)
 	return &df
 }
 
@@ -26,7 +58,11 @@ func fromDAT(in io.Reader) *dataframe.DataFrame {
 	if err != nil {
 		log.Fatalf("error: %v", err)
 	}
-	df := dataframe.LoadRecords(records, dataframe.HasHeader(false))
+	df := dataframe.LoadRecords(
+		records,
+		dataframe.HasHeader(false),
+		dataframe.DefaultType(series.Float),
+	)
 	return &df
 }
 
@@ -34,11 +70,10 @@ func CreateDataFrame(in io.Reader, config *InputConfig) *dataframe.DataFrame {
 	var df *dataframe.DataFrame
 	switch strings.ToLower(config.Format) {
 	case CSV:
-		df = fromCSV(in)
+		df = fromCSV(in, config)
 	case DAT:
 		df = fromDAT(in)
 	}
-	// WARNING: not sure what this actually catches?
 	if df.Error() != nil {
 		log.Fatalf("error: %v", df.Error())
 	}
