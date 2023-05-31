@@ -7,7 +7,6 @@ import (
 	"github.com/Milover/foam-postprocess/internal/input"
 	"github.com/Milover/foam-postprocess/internal/output"
 	"github.com/go-gota/gota/dataframe"
-	_ "gopkg.in/yaml.v3"
 )
 
 type Config struct {

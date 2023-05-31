@@ -6,8 +6,6 @@ import (
 	"io"
 	"os/exec"
 	"text/template"
-
-	_ "gopkg.in/yaml.v3"
 )
 
 //go:embed tmpl

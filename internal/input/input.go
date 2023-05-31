@@ -1,6 +1,8 @@
 package input
 
-import "gopkg.in/yaml.v3"
+import (
+	"gopkg.in/yaml.v3"
+)
 
 // Config is holds data needed for reading and creating a dataframe.DataFrame
 // from formatted input.

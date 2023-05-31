@@ -2,8 +2,6 @@ package output
 
 import (
 	"io"
-
-	_ "gopkg.in/yaml.v3"
 )
 
 type Config struct {
