@@ -92,6 +92,8 @@ func CreateDataFrame(in io.Reader, config *Config) *dataframe.DataFrame {
 		df = fromCSV(in, config)
 	case DAT:
 		df = fromDAT(in)
+	default:
+		log.Fatalf("error: unknown input format: %q", config.Format)
 	}
 	if df.Error() != nil {
 		log.Fatalf("error: %v", df.Error())
