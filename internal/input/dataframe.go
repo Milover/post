@@ -1,4 +1,4 @@
-package runner
+package input
 
 import (
 	"io"
@@ -9,7 +9,6 @@ import (
 	"github.com/Milover/foam-postprocess/internal/encoding/dat"
 	"github.com/go-gota/gota/dataframe"
 	"github.com/go-gota/gota/series"
-	_ "gopkg.in/yaml.v3"
 )
 
 const (
@@ -37,7 +36,7 @@ func decodeRuneOrDefault(s string, dflt rune) rune {
 	return r
 }
 
-func fromCSV(in io.Reader, config *InputConfig) *dataframe.DataFrame {
+func fromCSV(in io.Reader, config *Config) *dataframe.DataFrame {
 	var s csvSpec
 	if err := config.FormatSpec.Decode(&s); err != nil {
 		log.Fatalf("error: %v", err)
@@ -66,7 +65,7 @@ func fromDAT(in io.Reader) *dataframe.DataFrame {
 	return &df
 }
 
-func CreateDataFrame(in io.Reader, config *InputConfig) *dataframe.DataFrame {
+func CreateDataFrame(in io.Reader, config *Config) *dataframe.DataFrame {
 	var df *dataframe.DataFrame
 	switch strings.ToLower(config.Format) {
 	case CSV:
