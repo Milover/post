@@ -12,6 +12,7 @@ import (
 )
 
 const (
+	// Tags for supported input format types.
 	CSV string = "csv"
 	DAT string = "dat"
 
@@ -19,12 +20,16 @@ const (
 	DfltCSVComment   rune = '#'
 )
 
+// csvSpec contains data needed for parsing CSV formatted input.
 type csvSpec struct {
 	HasHeader bool   `yaml:"has_header,omitempty"`
 	Delimiter string `yaml:"delimiter,omitempty"`
 	Comment   string `yaml:"comment,omitempty"`
 }
 
+// decodeRuneOrDefault tries to decode a rune from a string and returns the
+// decoded rune on success, or the dflt if the string is empty.
+// It fails if the encoding is invalid.
 func decodeRuneOrDefault(s string, dflt rune) rune {
 	r, n := utf8.DecodeRuneInString(s)
 	if r == utf8.RuneError && n == 0 {
@@ -36,6 +41,8 @@ func decodeRuneOrDefault(s string, dflt rune) rune {
 	return r
 }
 
+// fromCSV reads and returns a dataframe.DataFrame from CSV formatted input,
+// applying options from the config.
 func fromCSV(in io.Reader, config *Config) *dataframe.DataFrame {
 	var s csvSpec
 	if err := config.FormatSpec.Decode(&s); err != nil {
@@ -51,6 +58,8 @@ func fromCSV(in io.Reader, config *Config) *dataframe.DataFrame {
 	return &df
 }
 
+// fromCSV reads and returns a dataframe.DataFrame from OpenFOAM DAT formatted
+// input.
 func fromDAT(in io.Reader) *dataframe.DataFrame {
 	r := dat.NewReader(in)
 	records, err := r.ReadAll()
@@ -65,6 +74,8 @@ func fromDAT(in io.Reader) *dataframe.DataFrame {
 	return &df
 }
 
+// CreateDataFrame reads and returns a dataframe.DataFrame from formatted input,
+// applying options from the config.
 func CreateDataFrame(in io.Reader, config *Config) *dataframe.DataFrame {
 	var df *dataframe.DataFrame
 	switch strings.ToLower(config.Format) {
