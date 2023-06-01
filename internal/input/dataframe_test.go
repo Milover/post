@@ -24,7 +24,6 @@ type decodeRuneTest struct {
 	Input   string
 	Default rune
 	Output  rune
-	Crash   bool
 }
 
 var decodeRuneTests = []decodeRuneTest{
@@ -33,37 +32,30 @@ var decodeRuneTests = []decodeRuneTest{
 		Input:   "x",
 		Default: '0',
 		Output:  'x',
-		Crash:   false,
 	},
 	{
 		Name:    "good-string-decode",
 		Input:   "xbla",
 		Default: '0',
 		Output:  'x',
-		Crash:   false,
 	},
 	{
 		Name:    "default-decode",
 		Input:   "",
-		Default: ',',
-		Output:  ',',
-		Crash:   false,
+		Default: 'x',
+		Output:  'x',
 	},
 	{
 		Name:    "TODO:bad-decode",
-		Input:   "-1",
-		Default: '0',
-		Output:  '0',
-		Crash:   true,
+		Input:   string(rune(-1)),
+		Default: 'x',
+		Output:  'x',
 	},
 }
 
 func TestDecodeRuneOrDefault(t *testing.T) {
 	for _, tt := range decodeRuneTests {
 		t.Run(tt.Name, func(t *testing.T) {
-			if tt.Crash {
-				t.Skip("skipping because the test requires a custom logger")
-			}
 			out := decodeRuneOrDefault(tt.Input, tt.Default)
 
 			if !reflect.DeepEqual(out, tt.Output) {

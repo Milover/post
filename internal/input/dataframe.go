@@ -37,15 +37,11 @@ func newCsvSpec() csvSpec {
 }
 
 // decodeRuneOrDefault tries to decode a rune from a string and returns the
-// decoded rune on success, or the dflt if the string is empty.
-// It fails if the encoding is invalid.
+// decoded rune on success or dflt if the decoding fails.
 func decodeRuneOrDefault(s string, dflt rune) rune {
-	r, n := utf8.DecodeRuneInString(s)
-	if r == utf8.RuneError && n == 0 {
+	r, _ := utf8.DecodeRuneInString(s)
+	if r == utf8.RuneError {
 		return dflt
-	}
-	if r == utf8.RuneError && n == 1 {
-		log.Fatalf("could not decode rune from: %v", s)
 	}
 	return r
 }
