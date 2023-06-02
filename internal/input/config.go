@@ -1,6 +1,7 @@
 package input
 
 import (
+	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 )
 
@@ -11,4 +12,6 @@ type Config struct {
 	Fields     []string  `yaml:"fields,omitempty"`
 	Format     string    `yaml:"format,omitempty"`
 	FormatSpec yaml.Node `yaml:"format_spec,omitempty"`
+
+	Log *logrus.Logger `yaml:"-"`
 }

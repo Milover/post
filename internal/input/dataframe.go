@@ -2,7 +2,6 @@ package input
 
 import (
 	"io"
-	"log"
 	"strings"
 	"unicode/utf8"
 
@@ -51,7 +50,7 @@ func decodeRuneOrDefault(s string, dflt rune) rune {
 func fromCSV(in io.Reader, config *Config) *dataframe.DataFrame {
 	s := newCsvSpec()
 	if err := config.FormatSpec.Decode(&s); err != nil {
-		log.Fatalf("error: %v", err)
+		config.Log.Fatalf("error: %v", err)
 	}
 	df := dataframe.ReadCSV(
 		in,
@@ -65,11 +64,11 @@ func fromCSV(in io.Reader, config *Config) *dataframe.DataFrame {
 
 // fromCSV reads and returns a dataframe.DataFrame from OpenFOAM DAT formatted
 // input.
-func fromDAT(in io.Reader) *dataframe.DataFrame {
+func fromDAT(in io.Reader, config *Config) *dataframe.DataFrame {
 	r := dat.NewReader(in)
 	records, err := r.ReadAll()
 	if err != nil {
-		log.Fatalf("error: %v", err)
+		config.Log.Fatalf("error: %v", err)
 	}
 	df := dataframe.LoadRecords(
 		records,
@@ -87,16 +86,16 @@ func CreateDataFrame(in io.Reader, config *Config) *dataframe.DataFrame {
 	case CSV:
 		df = fromCSV(in, config)
 	case DAT:
-		df = fromDAT(in)
+		df = fromDAT(in, config)
 	default:
-		log.Fatalf("error: unknown input format: %q", config.Format)
+		config.Log.Fatalf("error: unknown input format: %q", config.Format)
 	}
 	if df.Error() != nil {
-		log.Fatalf("error: %v", df.Error())
+		config.Log.Fatalf("error: %v", df.Error())
 	}
 	if len(config.Fields) > 0 {
 		if err := df.SetNames(config.Fields...); err != nil {
-			log.Fatalf("error: %v", err)
+			config.Log.Fatalf("error: %v", err)
 		}
 	}
 	return df

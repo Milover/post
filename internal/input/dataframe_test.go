@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-gota/gota/dataframe"
 	"github.com/go-gota/gota/series"
+	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 )
 
@@ -170,6 +171,7 @@ func TestFromCSV(t *testing.T) {
 			if tt.Crash {
 				t.Skip("skipping because the test requires a custom logger")
 			}
+			tt.Config.Log = logrus.New()
 			raw, err := io.ReadAll(strings.NewReader(tt.FormatSpec))
 			handleError(err, t)
 			handleError(yaml.Unmarshal(raw, &tt.Config), t)
@@ -226,7 +228,8 @@ func TestFromDAT(t *testing.T) {
 			if tt.Crash {
 				t.Skip("skipping because the test requires a custom logger")
 			}
-			out := fromDAT(strings.NewReader(tt.Input))
+			tt.Config.Log = logrus.New()
+			out := fromDAT(strings.NewReader(tt.Input), &tt.Config)
 
 			err := out.Error()
 			if err != nil {
@@ -314,6 +317,7 @@ func TestCreateDataFrame(t *testing.T) {
 			if tt.Crash {
 				t.Skip("skipping because the test requires a custom logger")
 			}
+			tt.Config.Log = logrus.New()
 			out := CreateDataFrame(strings.NewReader(tt.Input), &tt.Config)
 
 			err := out.Error()
