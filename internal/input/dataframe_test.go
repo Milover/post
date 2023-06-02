@@ -1,6 +1,7 @@
 package input
 
 import (
+	"errors"
 	"io"
 	"reflect"
 	"strings"
@@ -14,6 +15,7 @@ import (
 
 // handleError is a helper that fails the test if the error is not nil.
 func handleError(err error, t *testing.T) {
+	t.Helper()
 	if err != nil {
 		t.Fatalf("unexpected test error: %v", err)
 	}
@@ -47,7 +49,7 @@ var decodeRuneTests = []decodeRuneTest{
 		Output:  'x',
 	},
 	{
-		Name:    "TODO:bad-decode",
+		Name:    "bad-decode",
 		Input:   string(rune(-1)),
 		Default: 'x',
 		Output:  'x',
@@ -74,7 +76,7 @@ type fromCSVTest struct {
 	FormatSpec string
 	Input      string
 	Output     dataframe.DataFrame
-	Crash      bool
+	Error      error
 }
 
 var fromCSVTests = []fromCSVTest{
@@ -87,7 +89,7 @@ var fromCSVTests = []fromCSVTest{
 			series.New([]int{0, 1}, series.Int, "x"),
 			series.New([]int{1, 2}, series.Int, "y"),
 		),
-		Crash: false,
+		Error: nil,
 	},
 	{
 		Name:       "good-default-w-empty-line",
@@ -98,7 +100,7 @@ var fromCSVTests = []fromCSVTest{
 			series.New([]int{0, 1}, series.Int, "x"),
 			series.New([]int{1, 2}, series.Int, "y"),
 		),
-		Crash: false,
+		Error: nil,
 	},
 	{
 		Name:       "good-default-w-comment",
@@ -109,7 +111,7 @@ var fromCSVTests = []fromCSVTest{
 			series.New([]int{0, 1}, series.Int, "x"),
 			series.New([]int{1, 2}, series.Int, "y"),
 		),
-		Crash: false,
+		Error: nil,
 	},
 	{
 		Name:   "good-no-header",
@@ -123,7 +125,7 @@ format_spec:
 			series.Ints([]int{0, 1}),
 			series.Ints([]int{1, 2}),
 		),
-		Crash: false,
+		Error: nil,
 	},
 	{
 		Name:   "good-delimiter",
@@ -137,7 +139,7 @@ format_spec:
 			series.New([]int{0, 1}, series.Int, "x"),
 			series.New([]int{1, 2}, series.Int, "y"),
 		),
-		Crash: false,
+		Error: nil,
 	},
 	{
 		Name:   "good-no-header-delimiter-w-comment",
@@ -153,37 +155,47 @@ format_spec:
 			series.Ints([]int{0, 1}),
 			series.Ints([]int{1, 2}),
 		),
-		Crash: false,
+		Error: nil,
 	},
 	{
-		Name:       "TODO:bad-config",
-		Config:     Config{},
-		FormatSpec: "",
-		Input:      "",
-		Output:     dataframe.DataFrame{},
-		Crash:      true,
+		Name:   "bad-config",
+		Config: Config{},
+		FormatSpec: `
+format_spec:
+  has_header: CRASH ME BBY!
+`,
+		Input:  "",
+		Output: dataframe.DataFrame{},
+		Error: &yaml.TypeError{
+			Errors: []string{"line 3: cannot unmarshal !!str `CRASH M...` into bool"},
+		},
 	},
 }
 
 func TestFromCSV(t *testing.T) {
 	for _, tt := range fromCSVTests {
 		t.Run(tt.Name, func(t *testing.T) {
-			if tt.Crash {
-				t.Skip("skipping because the test requires a custom logger")
-			}
-			tt.Config.Log = logrus.New()
+			tt.Config.Log = logrus.StandardLogger()
+
 			raw, err := io.ReadAll(strings.NewReader(tt.FormatSpec))
 			handleError(err, t)
 			handleError(yaml.Unmarshal(raw, &tt.Config), t)
 
-			out := fromCSV(strings.NewReader(tt.Input), &tt.Config)
-
-			err = out.Error()
+			out, err := fromCSV(strings.NewReader(tt.Input), &tt.Config)
 			if err != nil {
-				t.Fatalf("unexpected fromCSV() error: %v", err)
-			}
-			if !reflect.DeepEqual(*out, tt.Output) {
-				t.Fatalf("fromCSV() output:\ngot  %v\nwant %v", *out, tt.Output)
+				if !reflect.DeepEqual(err, tt.Error) {
+					t.Fatalf("fromCSV() error mismatch:\ngot  %v (%#v)\nwant %v (%#v)", err, err, tt.Error, tt.Error)
+				}
+				if out != nil {
+					t.Fatalf("fromCSV() output:\ngot  %v\nwant nil", out)
+				}
+			} else {
+				if err != nil {
+					t.Fatalf("unexpected fromCSV() error: %v", err)
+				}
+				if !reflect.DeepEqual(*out, tt.Output) {
+					t.Fatalf("fromCSV() output:\ngot  %v\nwant %v", *out, tt.Output)
+				}
 			}
 		})
 	}
@@ -196,7 +208,7 @@ type fromDATTest struct {
 	Config Config
 	Input  string
 	Output dataframe.DataFrame
-	Crash  bool
+	Error  error
 }
 
 var fromDATTests = []fromDATTest{
@@ -211,32 +223,44 @@ var fromDATTests = []fromDATTest{
 			series.Ints([]int{0, 1}),
 			series.Ints([]int{0, 1}),
 		),
-		Crash: false,
+		Error: nil,
 	},
 	{
-		Name:   "TODO:bad-dat",
+		Name:   "empty-dat",
 		Config: Config{},
 		Input:  "",
 		Output: dataframe.DataFrame{},
-		Crash:  true,
+		Error:  errors.New("load records: empty DataFrame"),
 	},
+	//	{ // TODO: this one is a bitch to trigger
+	//		Name:   "bad-dat-read",
+	//		Config: Config{},
+	//		Input:  "",
+	//		Output: dataframe.DataFrame{},
+	//		Error:  nil,
+	//	},
 }
 
 func TestFromDAT(t *testing.T) {
 	for _, tt := range fromDATTests {
 		t.Run(tt.Name, func(t *testing.T) {
-			if tt.Crash {
-				t.Skip("skipping because the test requires a custom logger")
-			}
-			tt.Config.Log = logrus.New()
-			out := fromDAT(strings.NewReader(tt.Input), &tt.Config)
+			tt.Config.Log = logrus.StandardLogger()
+			out, err := fromDAT(strings.NewReader(tt.Input), &tt.Config)
 
-			err := out.Error()
 			if err != nil {
-				t.Fatalf("unexpected fromDAT() error: %v", err)
-			}
-			if !reflect.DeepEqual(*out, tt.Output) {
-				t.Fatalf("fromDAT() output:\ngot  %v\nwant %v", *out, tt.Output)
+				if !reflect.DeepEqual(err, tt.Error) {
+					t.Fatalf("fromDAT() error mismatch:\ngot  %v (%#v)\nwant %v (%#v)", err, err, tt.Error, tt.Error)
+				}
+				if out != nil {
+					t.Fatalf("fromCSV() output:\ngot  %v\nwant nil", out)
+				}
+			} else {
+				if err != nil {
+					t.Fatalf("unexpected fromDAT() error: %v", err)
+				}
+				if !reflect.DeepEqual(*out, tt.Output) {
+					t.Fatalf("fromDAT() output:\ngot  %v\nwant %v", *out, tt.Output)
+				}
 			}
 		})
 	}
@@ -249,7 +273,7 @@ type createDataFrameTest struct {
 	Config Config
 	Input  string
 	Output dataframe.DataFrame
-	Crash  bool
+	Error  error
 }
 
 var createDataFrameTests = []createDataFrameTest{
@@ -267,7 +291,7 @@ var createDataFrameTests = []createDataFrameTest{
 			series.New([]int{0, 1}, series.Int, "d"),
 			series.New([]int{0, 1}, series.Int, "e"),
 		),
-		Crash: false,
+		Error: nil,
 	},
 	{
 		Name: "good-csv",
@@ -279,53 +303,67 @@ var createDataFrameTests = []createDataFrameTest{
 			series.New([]int{0, 1}, series.Int, "x"),
 			series.New([]int{1, 2}, series.Int, "y"),
 		),
-		Crash: false,
+		Error: nil,
 	},
 	{
-		Name: "TODO:bad-format",
+		Name: "bad-format",
 		Config: Config{
 			Format: "",
 		},
 		Input:  "",
 		Output: dataframe.DataFrame{},
-		Crash:  true,
+		Error:  ErrInvalidFormat,
 	},
 	{
-		Name: "TODO:bad-dataframe",
+		Name: "bad-dat",
 		Config: Config{
 			Format: "dat",
 		},
 		Input:  "",
 		Output: dataframe.DataFrame{},
-		Crash:  true,
+		Error:  errors.New("load records: empty DataFrame"),
 	},
 	{
-		Name: "TODO:bad-fields",
+		Name: "bad-csv",
+		Config: Config{
+			Format: "csv",
+		},
+		Input:  "",
+		Output: dataframe.DataFrame{},
+		Error:  errors.New("load records: empty DataFrame"),
+	},
+	{
+		Name: "bad-fields",
 		Config: Config{
 			Format: "csv",
 			Fields: []string{"a", "b", "c", "d", "e"},
 		},
 		Input:  "x,y\n0,1\n1,2",
 		Output: dataframe.DataFrame{},
-		Crash:  true,
+		Error:  errors.New("setting names: wrong dimensions"),
 	},
 }
 
 func TestCreateDataFrame(t *testing.T) {
 	for _, tt := range createDataFrameTests {
 		t.Run(tt.Name, func(t *testing.T) {
-			if tt.Crash {
-				t.Skip("skipping because the test requires a custom logger")
-			}
-			tt.Config.Log = logrus.New()
-			out := CreateDataFrame(strings.NewReader(tt.Input), &tt.Config)
+			tt.Config.Log = logrus.StandardLogger()
+			out, err := CreateDataFrame(strings.NewReader(tt.Input), &tt.Config)
 
-			err := out.Error()
 			if err != nil {
-				t.Fatalf("unexpected CreateDataFrame() error: %v", err)
-			}
-			if !reflect.DeepEqual(*out, tt.Output) {
-				t.Fatalf("CreateDataFrame() output:\ngot  %v\nwant %v", *out, tt.Output)
+				if !reflect.DeepEqual(err, tt.Error) {
+					t.Fatalf("CreateDataFrame() error mismatch:\ngot  %v (%#v)\nwant %v (%#v)", err, err, tt.Error, tt.Error)
+				}
+				if out != nil {
+					t.Fatalf("fromCSV() output:\ngot  %v\nwant nil", out)
+				}
+			} else {
+				if err != nil {
+					t.Fatalf("unexpected CreateDataFrame() error: %v", err)
+				}
+				if !reflect.DeepEqual(*out, tt.Output) {
+					t.Fatalf("CreateDataFrame() output:\ngot  %v\nwant %v", *out, tt.Output)
+				}
 			}
 		})
 	}

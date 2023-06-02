@@ -1,6 +1,7 @@
 package input
 
 import (
+	"errors"
 	"io"
 	"strings"
 	"unicode/utf8"
@@ -8,6 +9,10 @@ import (
 	"github.com/Milover/foam-postprocess/internal/encoding/dat"
 	"github.com/go-gota/gota/dataframe"
 	"github.com/go-gota/gota/series"
+)
+
+var (
+	ErrInvalidFormat = errors.New("invalid input format")
 )
 
 const (
@@ -47,10 +52,11 @@ func decodeRuneOrDefault(s string, dflt rune) rune {
 
 // fromCSV reads and returns a dataframe.DataFrame from CSV formatted input,
 // applying options from the config.
-func fromCSV(in io.Reader, config *Config) *dataframe.DataFrame {
+// If an error occurs, *dataframe.DataFrame will be nil.
+func fromCSV(in io.Reader, config *Config) (*dataframe.DataFrame, error) {
 	s := newCsvSpec()
 	if err := config.FormatSpec.Decode(&s); err != nil {
-		config.Log.Fatalf("error: %v", err)
+		return nil, err
 	}
 	df := dataframe.ReadCSV(
 		in,
@@ -59,44 +65,54 @@ func fromCSV(in io.Reader, config *Config) *dataframe.DataFrame {
 		dataframe.WithComments(decodeRuneOrDefault(s.Comment, DfltCSVComment)),
 		dataframe.DefaultType(series.Float),
 	)
-	return &df
+	if df.Error() != nil {
+		return nil, df.Error()
+	}
+	return &df, nil
 }
 
 // fromCSV reads and returns a dataframe.DataFrame from OpenFOAM DAT formatted
 // input.
-func fromDAT(in io.Reader, config *Config) *dataframe.DataFrame {
+// If an error occurs, *dataframe.DataFrame will be nil.
+func fromDAT(in io.Reader, config *Config) (*dataframe.DataFrame, error) {
 	r := dat.NewReader(in)
 	records, err := r.ReadAll()
 	if err != nil {
-		config.Log.Fatalf("error: %v", err)
+		return nil, err
 	}
 	df := dataframe.LoadRecords(
 		records,
 		dataframe.HasHeader(false),
 		dataframe.DefaultType(series.Float),
 	)
-	return &df
+	if df.Error() != nil {
+		return nil, df.Error()
+	}
+	return &df, nil
 }
 
 // CreateDataFrame reads and returns a dataframe.DataFrame from formatted input,
 // applying options from the config.
-func CreateDataFrame(in io.Reader, config *Config) *dataframe.DataFrame {
+// If an error occurs, *dataframe.DataFrame will be nil.
+func CreateDataFrame(in io.Reader, config *Config) (*dataframe.DataFrame, error) {
 	var df *dataframe.DataFrame
+	var err error
 	switch strings.ToLower(config.Format) {
 	case CSV:
-		df = fromCSV(in, config)
+		if df, err = fromCSV(in, config); err != nil {
+			return nil, err
+		}
 	case DAT:
-		df = fromDAT(in, config)
+		if df, err = fromDAT(in, config); err != nil {
+			return nil, err
+		}
 	default:
-		config.Log.Fatalf("error: unknown input format: %q", config.Format)
-	}
-	if df.Error() != nil {
-		config.Log.Fatalf("error: %v", df.Error())
+		return nil, ErrInvalidFormat
 	}
 	if len(config.Fields) > 0 {
-		if err := df.SetNames(config.Fields...); err != nil {
-			config.Log.Fatalf("error: %v", err)
+		if err = df.SetNames(config.Fields...); err != nil {
+			return nil, err
 		}
 	}
-	return df
+	return df, nil
 }
