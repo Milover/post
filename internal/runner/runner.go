@@ -7,25 +7,23 @@ import (
 
 	"github.com/Milover/foam-postprocess/internal/input"
 	"github.com/Milover/foam-postprocess/internal/output"
+	"github.com/Milover/foam-postprocess/internal/process"
 	"github.com/go-gota/gota/dataframe"
-	"github.com/sirupsen/logrus"
 )
-
-type Config struct {
-	Input  input.Config  `yaml:"input,omitempty"`
-	Output output.Config `yaml:"output,omitempty"`
-
-	Log *logrus.Logger `yaml:"-"`
-}
 
 // TODO: Should just take a raw config (io.Reader or file name) and do
 // everything else.
+// FIXME: Propagate the logger to other configs!
 func Run(in io.Reader, config *Config) error {
 	df, err := input.CreateDataFrame(in, &config.Input)
 	if err != nil {
-		fmt.Errorf("error creating data frame: %w", err)
+		return fmt.Errorf("error creating data frame: %w", err)
 	}
-	// TODO: Process data
+
+	err = process.Process(df, config.Process)
+	if err != nil {
+		return fmt.Errorf("error processing data frame: %w", err)
+	}
 
 	// FIXME: LaTeX has an upper size limit for CSV files that it can handle
 	// so the output should be decimated down to this size if it's too large.

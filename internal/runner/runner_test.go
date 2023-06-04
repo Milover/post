@@ -32,6 +32,14 @@ input:
     has_header: true
     delimiter: "\t"
     comment: "#"
+process:
+  - type: dummy
+    type_spec: null
+  - type: filter
+    type_spec:
+      field: time
+      op: <
+      value: 2
 output:
   directory: ""
   write_file: true
