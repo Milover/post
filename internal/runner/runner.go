@@ -13,8 +13,12 @@ import (
 
 // TODO: Should just take a raw config (io.Reader or file name) and do
 // everything else.
-// FIXME: Propagate the logger to other configs!
 func Run(in io.Reader, config *Config) error {
+	config.Input.Log = config.Log
+	for i := range config.Process {
+		config.Process[i].Log = config.Log
+	}
+
 	df, err := input.CreateDataFrame(in, &config.Input)
 	if err != nil {
 		return fmt.Errorf("error creating data frame: %w", err)
