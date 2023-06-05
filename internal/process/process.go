@@ -12,15 +12,15 @@ import (
 var (
 	ErrInvalidType = fmt.Errorf(
 		"bad process type, available types are: %q",
-		maps.Keys(ProcessorMap))
+		maps.Keys(ProcessorTypes))
 )
 
 // Processor is a function which applies processing on a dataframe.DataFrame
 // based on the configuration.
 type Processor func(*dataframe.DataFrame, *Config) error
 
-// ProcessorMap maps Processor type tags to Processors.
-var ProcessorMap = map[string]Processor{
+// ProcessorTypes maps Processor type tags to Processors.
+var ProcessorTypes = map[string]Processor{
 	"dummy":  dummyProcessor,
 	"filter": filterProcessor,
 }
@@ -51,7 +51,7 @@ func Process(df *dataframe.DataFrame, configs []Config) error {
 // process applies a single Processor as defined in the config
 // to the dataframe.DataFrame.
 func process(df *dataframe.DataFrame, config *Config) error {
-	p, found := ProcessorMap[strings.ToLower(config.Type)]
+	p, found := ProcessorTypes[strings.ToLower(config.Type)]
 	if !found {
 		return ErrInvalidType
 	}
