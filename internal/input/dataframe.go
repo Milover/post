@@ -31,8 +31,8 @@ type csvSpec struct {
 	Comment   string `yaml:"comment,omitempty"`
 }
 
-// newCsvSpec returns a csvSpec with 'sensible' default values.
-func newCsvSpec() csvSpec {
+// defaultCsvSpec returns a csvSpec with 'sensible' default values.
+func defaultCsvSpec() csvSpec {
 	return csvSpec{
 		HasHeader: true,
 		Delimiter: string(DfltCSVDelimiter),
@@ -54,7 +54,7 @@ func decodeRuneOrDefault(s string, dflt rune) rune {
 // applying options from the config.
 // If an error occurs, *dataframe.DataFrame will be nil.
 func fromCSV(in io.Reader, config *Config) (*dataframe.DataFrame, error) {
-	s := newCsvSpec()
+	s := defaultCsvSpec()
 	if err := config.FormatSpec.Decode(&s); err != nil {
 		return nil, err
 	}
