@@ -1,7 +1,7 @@
 package input
 
 import (
-	"errors"
+	"fmt"
 	"io"
 	"strings"
 	"unicode/utf8"
@@ -9,17 +9,28 @@ import (
 	"github.com/Milover/foam-postprocess/internal/encoding/dat"
 	"github.com/go-gota/gota/dataframe"
 	"github.com/go-gota/gota/series"
+	"github.com/sirupsen/logrus"
+	"golang.org/x/exp/maps"
 )
 
 var (
-	ErrInvalidFormat = errors.New("invalid input format")
+	ErrInvalidFormat = fmt.Errorf(
+		"bad input format type, available formats are: %q",
+		maps.Keys(FormatTypes))
 )
 
-const (
-	// Tags for supported input format types.
-	CSV string = "csv"
-	DAT string = "dat"
+// FormatReader is a function which reads in a dataframe.DataFrame from
+// formatted input, the details of which are described in the config.
+type FormatReader func(io.Reader, *Config) (*dataframe.DataFrame, error)
 
+// FormatTypes maps Format type tags to FormatReaders.
+var FormatTypes = map[string]FormatReader{
+	"csv": fromCSV,
+	"dat": fromDAT,
+}
+
+// CSV reader defaults.
+const (
 	DfltCSVDelimiter rune = ','
 	DfltCSVComment   rune = '#'
 )
@@ -95,19 +106,16 @@ func fromDAT(in io.Reader, config *Config) (*dataframe.DataFrame, error) {
 // applying options from the config.
 // If an error occurs, *dataframe.DataFrame will be nil.
 func CreateDataFrame(in io.Reader, config *Config) (*dataframe.DataFrame, error) {
-	var df *dataframe.DataFrame
-	var err error
-	switch strings.ToLower(config.Format) {
-	case CSV:
-		if df, err = fromCSV(in, config); err != nil {
-			return nil, err
-		}
-	case DAT:
-		if df, err = fromDAT(in, config); err != nil {
-			return nil, err
-		}
-	default:
+	formatter, found := FormatTypes[strings.ToLower(config.Format)]
+	if !found {
 		return nil, ErrInvalidFormat
+	}
+	config.Log.WithFields(logrus.Fields{
+		"format": strings.ToLower(config.Format),
+	}).Debug("reading input")
+	df, err := formatter(in, config)
+	if err != nil {
+		return nil, err
 	}
 	if len(config.Fields) > 0 {
 		if err = df.SetNames(config.Fields...); err != nil {
