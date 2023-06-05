@@ -9,6 +9,7 @@ import (
 	"github.com/go-gota/gota/dataframe"
 	"github.com/go-gota/gota/series"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/exp/maps"
 	"golang.org/x/exp/slices"
 )
 
@@ -16,7 +17,9 @@ var (
 	ErrFilterField       = errors.New("filter field does not exist")
 	ErrFilterValue       = errors.New("filter value undefined")
 	ErrFilterFieldType   = errors.New("field-filter value type mismatch")
-	ErrFilterAggregation = errors.New("unknown filter aggregation")
+	ErrFilterAggregation = fmt.Errorf(
+		"bad filter aggregation mode, available modes are: %q",
+		maps.Keys(filterAggregations))
 )
 
 var filterAggregations = map[string]dataframe.Aggregation{
@@ -82,6 +85,10 @@ func filterProcessor(df *dataframe.DataFrame, config *Config) error {
 	if len(spec.Filters) == 0 {
 		return nil
 	}
+	aggr, found := filterAggregations[strings.ToLower(spec.Aggregation)]
+	if !found {
+		return ErrFilterAggregation
+	}
 
 	filters := make([]dataframe.F, len(spec.Filters))
 	for i := range spec.Filters {
@@ -119,10 +126,6 @@ func filterProcessor(df *dataframe.DataFrame, config *Config) error {
 		}
 	}
 
-	aggr, found := filterAggregations[strings.ToLower(spec.Aggregation)]
-	if !found {
-		return ErrFilterAggregation
-	}
 	spec.Log.WithFields(logrus.Fields{"aggregation": aggr}).Debug("applying filters")
 	temp := df.FilterAggregation(aggr, filters...)
 	err := errors.Join(df.Error(), temp.Error()) // which one errors?
