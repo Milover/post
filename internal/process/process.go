@@ -1,15 +1,18 @@
 package process
 
 import (
-	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/go-gota/gota/dataframe"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/exp/maps"
 )
 
 var (
-	ErrInvalidType = errors.New("invalid process type")
+	ErrInvalidType = fmt.Errorf(
+		"bad process type, available types are: %q",
+		maps.Keys(ProcessorMap))
 )
 
 // Processor is a function which applies processing on a dataframe.DataFrame
