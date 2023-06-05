@@ -3,23 +3,16 @@ package input
 import (
 	"errors"
 	"io"
-	"reflect"
 	"strings"
 	"testing"
 
 	"github.com/go-gota/gota/dataframe"
 	"github.com/go-gota/gota/series"
 	"github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus/hooks/test"
+	"github.com/stretchr/testify/assert"
 	"gopkg.in/yaml.v3"
 )
-
-// handleError is a helper that fails the test if the error is not nil.
-func handleError(err error, t *testing.T) {
-	t.Helper()
-	if err != nil {
-		t.Fatalf("unexpected test error: %v", err)
-	}
-}
 
 // Test weather decodeRuneOrDefault works correctly.
 type decodeRuneTest struct {
@@ -59,11 +52,10 @@ var decodeRuneTests = []decodeRuneTest{
 func TestDecodeRuneOrDefault(t *testing.T) {
 	for _, tt := range decodeRuneTests {
 		t.Run(tt.Name, func(t *testing.T) {
+			assert := assert.New(t)
 			out := decodeRuneOrDefault(tt.Input, tt.Default)
 
-			if !reflect.DeepEqual(out, tt.Output) {
-				t.Fatalf("DecodeRuneOrDefault() output:\ngot  %q\nwant %q", out, tt.Output)
-			}
+			assert.Equal(tt.Output, out)
 		})
 	}
 }
@@ -175,27 +167,22 @@ format_spec:
 func TestFromCSV(t *testing.T) {
 	for _, tt := range fromCSVTests {
 		t.Run(tt.Name, func(t *testing.T) {
-			tt.Config.Log = logrus.StandardLogger()
+			assert := assert.New(t)
+			tt.Config.Log, _ = test.NewNullLogger()
+			tt.Config.Log.SetLevel(logrus.DebugLevel)
 
 			raw, err := io.ReadAll(strings.NewReader(tt.FormatSpec))
-			handleError(err, t)
-			handleError(yaml.Unmarshal(raw, &tt.Config), t)
+			assert.Nil(err, "unexpected io.ReadAll() error")
+			err = yaml.Unmarshal(raw, &tt.Config)
+			assert.Nil(err, "unexpected yaml.Unmarshal() error")
 
 			out, err := fromCSV(strings.NewReader(tt.Input), &tt.Config)
-			if err != nil {
-				if !reflect.DeepEqual(err, tt.Error) {
-					t.Fatalf("fromCSV() error mismatch:\ngot  %v (%#v)\nwant %v (%#v)", err, err, tt.Error, tt.Error)
-				}
-				if out != nil {
-					t.Fatalf("fromCSV() output:\ngot  %v\nwant nil", out)
-				}
+
+			assert.Equal(tt.Error, err)
+			if tt.Error != nil {
+				assert.Nil(out)
 			} else {
-				if err != nil {
-					t.Fatalf("unexpected fromCSV() error: %v", err)
-				}
-				if !reflect.DeepEqual(*out, tt.Output) {
-					t.Fatalf("fromCSV() output:\ngot  %v\nwant %v", *out, tt.Output)
-				}
+				assert.Equal(tt.Output, *out)
 			}
 		})
 	}
@@ -232,7 +219,7 @@ var fromDATTests = []fromDATTest{
 		Output: dataframe.DataFrame{},
 		Error:  errors.New("load records: empty DataFrame"),
 	},
-	//	{ // TODO: this one is a bitch to trigger
+	//	{ // TODO: not sure how to trigger this one
 	//		Name:   "bad-dat-read",
 	//		Config: Config{},
 	//		Input:  "",
@@ -244,23 +231,17 @@ var fromDATTests = []fromDATTest{
 func TestFromDAT(t *testing.T) {
 	for _, tt := range fromDATTests {
 		t.Run(tt.Name, func(t *testing.T) {
-			tt.Config.Log = logrus.StandardLogger()
+			assert := assert.New(t)
+			tt.Config.Log, _ = test.NewNullLogger()
+			tt.Config.Log.SetLevel(logrus.DebugLevel)
+
 			out, err := fromDAT(strings.NewReader(tt.Input), &tt.Config)
 
-			if err != nil {
-				if !reflect.DeepEqual(err, tt.Error) {
-					t.Fatalf("fromDAT() error mismatch:\ngot  %v (%#v)\nwant %v (%#v)", err, err, tt.Error, tt.Error)
-				}
-				if out != nil {
-					t.Fatalf("fromCSV() output:\ngot  %v\nwant nil", out)
-				}
+			assert.Equal(tt.Error, err)
+			if tt.Error != nil {
+				assert.Nil(out)
 			} else {
-				if err != nil {
-					t.Fatalf("unexpected fromDAT() error: %v", err)
-				}
-				if !reflect.DeepEqual(*out, tt.Output) {
-					t.Fatalf("fromDAT() output:\ngot  %v\nwant %v", *out, tt.Output)
-				}
+				assert.Equal(tt.Output, *out)
 			}
 		})
 	}
@@ -347,23 +328,17 @@ var createDataFrameTests = []createDataFrameTest{
 func TestCreateDataFrame(t *testing.T) {
 	for _, tt := range createDataFrameTests {
 		t.Run(tt.Name, func(t *testing.T) {
-			tt.Config.Log = logrus.StandardLogger()
+			assert := assert.New(t)
+			tt.Config.Log, _ = test.NewNullLogger()
+			tt.Config.Log.SetLevel(logrus.DebugLevel)
+
 			out, err := CreateDataFrame(strings.NewReader(tt.Input), &tt.Config)
 
-			if err != nil {
-				if !reflect.DeepEqual(err, tt.Error) {
-					t.Fatalf("CreateDataFrame() error mismatch:\ngot  %v (%#v)\nwant %v (%#v)", err, err, tt.Error, tt.Error)
-				}
-				if out != nil {
-					t.Fatalf("fromCSV() output:\ngot  %v\nwant nil", out)
-				}
+			assert.Equal(tt.Error, err)
+			if tt.Error != nil {
+				assert.Nil(out)
 			} else {
-				if err != nil {
-					t.Fatalf("unexpected CreateDataFrame() error: %v", err)
-				}
-				if !reflect.DeepEqual(*out, tt.Output) {
-					t.Fatalf("CreateDataFrame() output:\ngot  %v\nwant %v", *out, tt.Output)
-				}
+				assert.Equal(tt.Output, *out)
 			}
 		})
 	}

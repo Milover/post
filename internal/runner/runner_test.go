@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"reflect"
 	"strings"
 	"testing"
 
+	"github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus/hooks/test"
+	"github.com/stretchr/testify/assert"
 	"gopkg.in/yaml.v3"
 )
 
@@ -16,7 +18,6 @@ type runTest struct {
 	Error  error
 	Config string
 	Input  string
-	Output [][]string
 }
 
 var runTests = []runTest{
@@ -34,12 +35,17 @@ input:
     comment: "#"
 process:
   - type: dummy
-    type_spec: null
   - type: filter
     type_spec:
-      field: time
-      op: <
-      value: 2
+      aggregation: and
+      filters:
+        - field: time
+          op: '<='
+          value: 4
+        - field: u_max
+          op: '<'
+          value: 7
+  - type: dummy
 output:
   directory: ""
   write_file: true
@@ -67,8 +73,10 @@ time	u_max	u_x	u_y	u_z
 1	2.0	1.0	0.0	0.0
 2	4.0	2.0	0.0	0.0
 3	6.0	3.0	0.0	0.0
+4	8.0	4.0	0.0	0.0
+5	10.0	5.0	0.0	0.0
+6	12.0	6.0	0.0	0.0
 `,
-		Output: nil,
 	},
 	{
 		Name:  "basic-dat",
@@ -106,37 +114,29 @@ output:
 2	4.0	(2.0 0.0 0.0)
 3	6.0	(3.0 0.0 0.0)
 `,
-		Output: nil,
 	},
-}
-
-func handleCloseError(c io.Closer, t *testing.T) {
-	if err := c.Close(); err != nil {
-		t.Fatalf("unexpected Run() error: %v", err)
-	}
-}
-
-func handleError(err error, t *testing.T) {
-	if err != nil {
-		t.Fatalf("unexpected Run() error: %v", err)
-	}
 }
 
 func TestRun(t *testing.T) {
 	for _, tt := range runTests {
 		t.Run(tt.Name, func(t *testing.T) {
-			var out [][]string
-
-			// build the config
+			assert := assert.New(t)
 			var config Config
+			config.Log, _ = test.NewNullLogger()
+			config.Log.SetLevel(logrus.DebugLevel)
+
+			// read config
 			raw, err := io.ReadAll(strings.NewReader(tt.Config))
-			handleError(err, t)
-			handleError(yaml.Unmarshal(raw, &config), t)
+			assert.Nil(err, "unexpected io.ReadAll() error")
+			err = yaml.Unmarshal(raw, &config)
+			assert.Nil(err, "unexpected yaml.Unmarshal() error")
 
 			// create and set the data file
 			csvFile, err := os.Create(fmt.Sprint(tt.Name, ".csv"))
-			handleError(err, t)
-			defer handleCloseError(csvFile, t)
+			assert.Nil(err, "unexpected os.Create() error")
+			defer func() {
+				assert.Nil(csvFile.Close(), "unexpected Close() error")
+			}()
 			config.Output.Writer = csvFile
 
 			// create and set the graph files
@@ -144,7 +144,7 @@ func TestRun(t *testing.T) {
 			for gID := range config.Output.Graphs {
 				g := &config.Output.Graphs[gID]
 				graphFiles[gID], err = os.Create(fmt.Sprintf("%v.tex", g.Name))
-				handleError(err, t)
+				assert.Nil(err, "unexpected os.Create() error")
 				g.Writer = graphFiles[gID]
 
 				for aID := range g.Axes {
@@ -154,28 +154,15 @@ func TestRun(t *testing.T) {
 					}
 				}
 			}
-			// do the test
+
 			err = Run(strings.NewReader(tt.Input), &config)
 
-			// cleanup and check the errors
+			// cleanup
 			for _, gf := range graphFiles {
-				handleCloseError(gf, t)
+				assert.Nil(gf.Close(), "unexpected Close() error")
 			}
-			if err != nil {
-				if err != tt.Error {
-					t.Fatalf("Run() error mismatch:\ngot  %v (%#v)\nwant %v (%#v)", err, err, tt.Error, tt.Error)
-				}
-				if out != nil {
-					t.Fatalf("Run() output:\ngot  %q\nwant nil", out)
-				}
-			} else {
-				if err != nil {
-					t.Fatalf("unexpected Run() error: %v", err)
-				}
-				if !reflect.DeepEqual(out, tt.Output) {
-					t.Fatalf("Run() output:\ngot  %q\nwant %q", out, tt.Output)
-				}
-			}
+
+			assert.Equal(tt.Error, err)
 		})
 	}
 }

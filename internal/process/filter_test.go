@@ -9,6 +9,7 @@ import (
 	"github.com/go-gota/gota/dataframe"
 	"github.com/go-gota/gota/series"
 	"github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/yaml.v3"
 )
@@ -236,7 +237,7 @@ type_spec:
 		),
 		Error: ErrFilterField,
 	},
-	//	{ // TODO: this one is a bitch to trigger
+	//	{ // TODO: not sure how to trigger this one
 	//		Name: "bad-type",
 	//		Config: Config{
 	//			Type: "filter",
@@ -253,17 +254,15 @@ type_spec:
 func TestFilterProcessor(t *testing.T) {
 	for _, tt := range filterTests {
 		t.Run(tt.Name, func(t *testing.T) {
-			// setup
 			assert := assert.New(t)
-			//tt.Config.Log, _ = test.NewNullLogger()
-			tt.Config.Log = logrus.StandardLogger()
+			tt.Config.Log, _ = test.NewNullLogger()
 			tt.Config.Log.SetLevel(logrus.DebugLevel)
 
 			// read spec
 			raw, err := io.ReadAll(strings.NewReader(tt.TypeSpec))
-			assert.Nil(err)
+			assert.Nil(err, "unexpected io.ReadAll() error")
 			err = yaml.Unmarshal(raw, &tt.Config)
-			assert.Nil(err)
+			assert.Nil(err, "unexpected yaml.Unmarshal() error")
 
 			err = filterProcessor(&tt.Input, &tt.Config)
 

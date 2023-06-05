@@ -1,9 +1,10 @@
 package dat
 
 import (
-	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 type readTest struct {
@@ -328,25 +329,19 @@ t	x (x y z) ((x y z) (x y z) (x y z))
 	},
 }
 
-func TestRead(t *testing.T) {
+func TestReadAll(t *testing.T) {
 	for _, tt := range readTests {
 		t.Run(tt.Name, func(t *testing.T) {
+			assert := assert.New(t)
 			r := NewReader(strings.NewReader(tt.Input))
+
 			out, err := r.ReadAll()
-			if err != nil {
-				if err != tt.Error {
-					t.Fatalf("ReadAll() error mismatch:\ngot  %v (%#v)\nwant %v (%#v)", err, err, tt.Error, tt.Error)
-				}
-				if out != nil {
-					t.Fatalf("ReadAll() output:\ngot  %q\nwant nil", out)
-				}
+
+			assert.Equal(tt.Error, err)
+			if tt.Error != nil {
+				assert.Nil(out)
 			} else {
-				if err != nil {
-					t.Fatalf("unexpected Readall() error: %v", err)
-				}
-				if !reflect.DeepEqual(out, tt.Output) {
-					t.Fatalf("ReadAll() output:\ngot  %q\nwant %q", out, tt.Output)
-				}
+				assert.Equal(tt.Output, out)
 			}
 		})
 	}
