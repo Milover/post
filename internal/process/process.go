@@ -62,6 +62,6 @@ func process(df *dataframe.DataFrame, config *Config) error {
 }
 
 // dummyProcessor is a do-nothing processor used for testing purposes.
-func dummyProcessor(_ *dataframe.DataFrame, config *Config) error {
+func dummyProcessor(_ *dataframe.DataFrame, _ *Config) error {
 	return nil
 }

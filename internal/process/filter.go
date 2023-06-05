@@ -46,7 +46,8 @@ func defaultFilterSetSpec() filterSetSpec {
 	return filterSetSpec{Aggregation: "or"}
 }
 
-// createFilter creates a dataframe.F from an input filterSpec.
+// createFilter creates a dataframe.F from an input filterSpec
+// and a filter (comparison) value.
 func createFilter[T validType](spec *filterSpec, val T) dataframe.F {
 	spec.Log.WithFields(logrus.Fields{
 		"type":  fmt.Sprintf("%T", val),
@@ -61,8 +62,17 @@ func createFilter[T validType](spec *filterSpec, val T) dataframe.F {
 	}
 }
 
-// filterProcessor mutates the dataframe.DataFrame by applying a row filter
-// based on the field, comparison operator and value, as defined in the config.
+// filterProcessor mutates the dataframe.DataFrame by applying a set of row
+// filters as defined in the config.
+//
+// The filter behaviour is described by providing the field (name) on which
+// to apply a filter, the comparison operator and a comparison value.
+// Rows satisfying the comparison are kept, while others are discarded.
+//
+// All defined filters are applied at the same time. The way in which they
+// are aggregated is controlled by setting the 'aggregation' field in the spec,
+// 'and' or 'or' aggregation modes are available.
+// The 'or' mode is the default if the 'aggregation' field is unset.
 func filterProcessor(df *dataframe.DataFrame, config *Config) error {
 	spec := defaultFilterSetSpec()
 	spec.Log = config.Log
