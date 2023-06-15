@@ -14,11 +14,11 @@ import (
 )
 
 var (
-	ErrFilterField       = errors.New("filter field does not exist")
-	ErrFilterValue       = errors.New("filter value undefined")
-	ErrFilterFieldType   = errors.New("field-filter value type mismatch")
+	ErrFilterField       = errors.New("filter: field does not exist")
+	ErrFilterValue       = errors.New("filter: value undefined")
+	ErrFilterFieldType   = errors.New("filter: field value type mismatch")
 	ErrFilterAggregation = fmt.Errorf(
-		"bad filter aggregation mode, available modes are: %q",
+		"filter: bad aggregation mode, available modes are: %q",
 		maps.Keys(filterAggregations))
 )
 
