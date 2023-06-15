@@ -8,9 +8,9 @@ import (
 )
 
 type Config struct {
-	Input   input.Config     `yaml:"input,omitempty"`
-	Process []process.Config `yaml:"process,omitempty"`
-	Output  output.Config    `yaml:"output,omitempty"`
+	Input   input.Config     `yaml:"input"`
+	Process []process.Config `yaml:"process"`
+	Output  output.Config    `yaml:"output"`
 
 	Log *logrus.Logger `yaml:"-"`
 }

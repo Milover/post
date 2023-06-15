@@ -37,9 +37,9 @@ const (
 
 // csvSpec contains data needed for parsing CSV formatted input.
 type csvSpec struct {
-	HasHeader bool   `yaml:"has_header,omitempty"`
-	Delimiter string `yaml:"delimiter,omitempty"`
-	Comment   string `yaml:"comment,omitempty"`
+	HasHeader bool   `yaml:"has_header"`
+	Delimiter string `yaml:"delimiter"`
+	Comment   string `yaml:"comment"`
 }
 
 // defaultCsvSpec returns a csvSpec with 'sensible' default values.

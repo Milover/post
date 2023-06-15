@@ -12,30 +12,30 @@ import (
 var templates embed.FS
 
 type TeXGraph struct {
-	Name string    `yaml:"name,omitempty"`
-	Axes []TexAxis `yaml:"axes,omitempty"`
+	Name string    `yaml:"name"`
+	Axes []TexAxis `yaml:"axes"`
 
 	// TODO: This probably shouldn't be here.
 	Writer io.Writer `yaml:"-"`
 }
 
 type TexAxis struct {
-	X      AxisLine   `yaml:"x,omitempty"`
-	Y      AxisLine   `yaml:"y,omitempty"`
-	Tables []TeXTable `yaml:"tables,omitempty"`
+	X      AxisLine   `yaml:"x"`
+	Y      AxisLine   `yaml:"y"`
+	Tables []TeXTable `yaml:"tables"`
 }
 
 type AxisLine struct {
-	Min   float64 `yaml:"min,omitempty"`
-	Max   float64 `yaml:"max,omitempty"`
-	Label string  `yaml:"label,omitempty"`
+	Min   float64 `yaml:"min"`
+	Max   float64 `yaml:"max"`
+	Label string  `yaml:"label"`
 }
 
 type TeXTable struct {
-	XField      string `yaml:"x_field,omitempty"`
-	YField      string `yaml:"y_field,omitempty"`
-	LegendEntry string `yaml:"legend_entry,omitempty"`
-	TableFile   string `yaml:"-,omitempty"`
+	XField      string `yaml:"x_field"`
+	YField      string `yaml:"y_field"`
+	LegendEntry string `yaml:"legend_entry"`
+	TableFile   string `yaml:"-"`
 }
 
 func CompileTeXGraph(g *TeXGraph) error {

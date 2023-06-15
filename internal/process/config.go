@@ -6,8 +6,8 @@ import (
 )
 
 type Config struct {
-	Type     string    `yaml:"type,omitempty"`
-	TypeSpec yaml.Node `yaml:"type_spec,omitempty"`
+	Type     string    `yaml:"type"`
+	TypeSpec yaml.Node `yaml:"type_spec"`
 
 	Log *logrus.Logger `yaml:"-"`
 }

@@ -18,8 +18,8 @@ var (
 
 // averageCycleSpec contains data needed for defining an averaging Processor.
 type averageCycleSpec struct {
-	Field   string `yaml:"field,omitempty"`
-	NCycles int    `yaml:"n_cycles,omitempty"`
+	Field   string `yaml:"field"`
+	NCycles int    `yaml:"n_cycles"`
 
 	Log *logrus.Logger `yaml:"-"`
 }

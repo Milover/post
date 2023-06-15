@@ -29,17 +29,17 @@ var filterAggregations = map[string]dataframe.Aggregation{
 
 // filterSetSpec contains data needed for defining a filter-set Processor.
 type filterSetSpec struct {
-	Aggregation string       `yaml:"aggregation,omitempty"`
-	Filters     []filterSpec `yaml:"filters,omitempty"`
+	Aggregation string       `yaml:"aggregation"`
+	Filters     []filterSpec `yaml:"filters"`
 
 	Log *logrus.Logger `yaml:"-"`
 }
 
 // filterSpec contains data needed for defining a filter Processor.
 type filterSpec struct {
-	Field string            `yaml:"field,omitempty"`
-	Op    series.Comparator `yaml:"op,omitempty"`
-	Value string            `yaml:"value,omitempty"`
+	Field string            `yaml:"field"`
+	Op    series.Comparator `yaml:"op"`
+	Value string            `yaml:"value"`
 
 	Log *logrus.Logger `yaml:"-"`
 }
