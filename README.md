@@ -27,10 +27,12 @@ Utilities for post-processing OpenFOAM function object data.
 
 - processing
 	- *add more processors*
-	- cycle ensemble average
-	- basic arithmetic (add, subtract, multiply, divide by constant)
+	- [x]  average (ensemble) cycle
+	- [x] arithmetic expressions
+        - support arbitrary arithmetic expressions with fields/constants
 - input
-	- [ ] need to support OpenFOAM series type inputs:
+    - [ ] combine multiple files into single dataframe
+	- [ ] support OpenFOAM time series type inputs:
 		```
 		.
 		├── 0.0
