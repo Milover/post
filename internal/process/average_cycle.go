@@ -46,8 +46,7 @@ func averageCycle(df *dataframe.DataFrame, spec *averageCycleSpec) error {
 	col := slices.Index(df.Names(), spec.Field)
 	avg := make([]float64, period)
 	for i := range avg {
-		// Khan summation
-		var c, t, y float64
+		var c, t, y float64 // Khan summation
 		for j := 0; j < spec.NCycles; j++ {
 			y = df.Elem(i+j*period, col).Float() - c
 			t = avg[i] + y
@@ -56,8 +55,16 @@ func averageCycle(df *dataframe.DataFrame, spec *averageCycleSpec) error {
 		}
 		avg[i] /= float64(spec.NCycles)
 	}
-	// time matching
-	if len(spec.TimeField) != 0 {
+	// build time series
+	time := make([]float64, period)
+	if len(spec.TimeField) == 0 {
+		spec.TimeField = "time"
+		tStep := 1.0 / float64(period)
+		for i := range time {
+			time[i] = tStep * float64(1+i)
+		}
+	} else {
+		// time matching
 		spec.Log.WithFields(logrus.Fields{
 			"time-field":     spec.TimeField,
 			"time-precision": spec.TimePrecision}).
@@ -65,20 +72,16 @@ func averageCycle(df *dataframe.DataFrame, spec *averageCycleSpec) error {
 		col := slices.Index(df.Names(), spec.TimeField)
 		tPeriod := df.Elem(period, col).Float() - df.Elem(0, col).Float()
 		tStep := tPeriod / float64(period)
-		time := make([]float64, period)
-		// Khan summation
-		// NOTE: uniform time step is implicitly satisfied
-		var sum, c, t, y float64
+		var sum, c, t, y float64 // Khan summation
 		for i := range time {
 			if i != 0 {
 				sum = time[i-1]
 			}
-			y = tStep - c
+			y = tStep - c // ensures uniform time step
 			t = sum + y
 			c = (t - sum) - y
 			time[i] = t
-			// match times
-			// FIXME: this should compare to some precision
+
 			for j := 0; j < spec.NCycles; j++ {
 				target := df.Elem(i+j*period, col).Float() - tPeriod*float64(j)
 				var match bool
@@ -87,21 +90,17 @@ func averageCycle(df *dataframe.DataFrame, spec *averageCycleSpec) error {
 				} else {
 					match = math.Abs(time[i]-target) < spec.TimePrecision
 				}
-				if !match {
-					if j == 0 {
-						return ErrAverageCycleNonuniformTime
-					}
+				if !match && j == 0 {
+					return ErrAverageCycleNonuniformTime
+				} else if !match {
 					return ErrAverageCycleTimeMismatch
 				}
 			}
 		}
-		*df = dataframe.New(
-			series.New(avg, series.Float, spec.Field),
-			series.New(time, series.Float, spec.TimeField))
-		return df.Error()
 	}
-
-	*df = dataframe.New(series.New(avg, series.Float, spec.Field))
+	*df = dataframe.New(
+		series.New(avg, series.Float, spec.Field),
+		series.New(time, series.Float, spec.TimeField))
 	return df.Error()
 }
 

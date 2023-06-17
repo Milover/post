@@ -38,6 +38,14 @@ func addNoise(v []float64, amp float64) []float64 {
 	return v
 }
 
+// multiply performs an elementwise multiply with a constant.
+func multiply(v []float64, c float64) []float64 {
+	for i := range v {
+		v[i] *= c
+	}
+	return v
+}
+
 var averageCycleTests = []averageCycleTest{
 	{
 		Name: "good",
@@ -56,9 +64,10 @@ type_spec:
 				1.0, 2.0, 3.0, 2.0, 1.0, 0.0,
 				0.5, 1.5, 2.5, 1.5, 0.5, -0.5,
 			}, series.Float, "x")),
-		Output: dataframe.New(series.New(
-			[]float64{1.0, 2.0, 3.0, 2.0, 1.0, 0.0},
-			series.Float, "x")),
+		Output: dataframe.New(
+			series.New([]float64{1.0, 2.0, 3.0, 2.0, 1.0, 0.0}, series.Float, "x"),
+			series.New(multiply([]float64{1, 2, 3, 4, 5, 6}, 1.0/6.0), series.Float, "time"),
+		),
 		Error: nil,
 	},
 	{
