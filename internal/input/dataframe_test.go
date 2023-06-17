@@ -325,14 +325,14 @@ var createDataFrameTests = []createDataFrameTest{
 	},
 }
 
-func TestCreateDataFrame(t *testing.T) {
+func TestReadDataFrame(t *testing.T) {
 	for _, tt := range createDataFrameTests {
 		t.Run(tt.Name, func(t *testing.T) {
 			assert := assert.New(t)
 			tt.Config.Log, _ = test.NewNullLogger()
 			tt.Config.Log.SetLevel(logrus.DebugLevel)
 
-			out, err := CreateDataFrame(strings.NewReader(tt.Input), &tt.Config)
+			out, err := ReadDataFrame(strings.NewReader(tt.Input), &tt.Config)
 
 			assert.Equal(tt.Error, err)
 			if tt.Error != nil {

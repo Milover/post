@@ -1,8 +1,10 @@
 package input
 
 import (
+	"errors"
 	"fmt"
 	"io"
+	"os"
 	"strings"
 	"unicode/utf8"
 
@@ -14,6 +16,7 @@ import (
 )
 
 var (
+	ErrInputFile     = errors.New("input: input file not specified")
 	ErrInvalidFormat = fmt.Errorf(
 		"bad input format type, available formats are: %q",
 		maps.Keys(FormatTypes))
@@ -102,10 +105,10 @@ func fromDAT(in io.Reader, config *Config) (*dataframe.DataFrame, error) {
 	return &df, nil
 }
 
-// CreateDataFrame reads and returns a dataframe.DataFrame from formatted input,
+// ReadDataFrame reads and returns a dataframe.DataFrame from formatted input,
 // applying options from the config.
 // If an error occurs, *dataframe.DataFrame will be nil.
-func CreateDataFrame(in io.Reader, config *Config) (*dataframe.DataFrame, error) {
+func ReadDataFrame(in io.Reader, config *Config) (*dataframe.DataFrame, error) {
 	formatter, found := FormatTypes[strings.ToLower(config.Format)]
 	if !found {
 		return nil, ErrInvalidFormat
@@ -123,4 +126,15 @@ func CreateDataFrame(in io.Reader, config *Config) (*dataframe.DataFrame, error)
 		}
 	}
 	return df, nil
+}
+
+// CeateDataFrame creates a dataframe.DataFrame as specified in the config.
+// If an error occurs, *dataframe.DataFrame will be nil.
+func CreateDataFrame(config *Config) (*dataframe.DataFrame, error) {
+	f, err := os.Open(config.File)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	return ReadDataFrame(f, config)
 }
