@@ -38,10 +38,18 @@ func addNoise(v []float64, amp float64) []float64 {
 	return v
 }
 
-// multiply performs an elementwise multiply with a constant.
+// multiply performs elementwise multiply with a constant.
 func multiply(v []float64, c float64) []float64 {
 	for i := range v {
 		v[i] *= c
+	}
+	return v
+}
+
+// divide performs elementwise division with a constant.
+func divide(v []float64, c float64) []float64 {
+	for i := range v {
+		v[i] /= c
 	}
 	return v
 }
@@ -66,7 +74,7 @@ type_spec:
 			}, series.Float, "x")),
 		Output: dataframe.New(
 			series.New([]float64{1.0, 2.0, 3.0, 2.0, 1.0, 0.0}, series.Float, "x"),
-			series.New(multiply([]float64{1, 2, 3, 4, 5, 6}, 1.0/6.0), series.Float, "time"),
+			series.New(divide([]float64{1, 2, 3, 4, 5, 6}, 6.0), series.Float, "time"),
 		),
 		Error: nil,
 	},
@@ -215,7 +223,7 @@ type_spec:
 		),
 		Output: dataframe.New(
 			series.New([]float64{1.0, 2.0, 3.0, 2.0, 1.0, 0.0}, series.Float, "x"),
-			series.New([]float64{1.0, 2.0, 3.0, 4.0, 5.0, 6.0}, series.Float, "t"),
+			series.New(divide([]float64{1, 2, 3, 4, 5, 6}, 6.0), series.Float, "t"),
 		),
 		Error: nil,
 	},
@@ -247,14 +255,7 @@ type_spec:
 		),
 		Output: dataframe.New(
 			series.New([]float64{1.0, 2.0, 3.0, 2.0, 1.0, 0.0}, series.Float, "x"),
-			series.New([]float64{
-				0.9987454041006346,
-				1.9974908082012692,
-				2.9962362123019037,
-				3.9949816164025385,
-				4.993727020503173,
-				5.9924724246038075,
-			}, series.Float, "t"),
+			series.New(divide([]float64{1, 2, 3, 4, 5, 6}, 6.0), series.Float, "t"),
 		),
 		Error: nil,
 	},

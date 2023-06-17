@@ -57,12 +57,11 @@ func averageCycle(df *dataframe.DataFrame, spec *averageCycleSpec) error {
 	}
 	// build time series
 	time := make([]float64, period)
+	for i := range time {
+		time[i] = float64(1+i) / float64(period)
+	}
 	if len(spec.TimeField) == 0 {
 		spec.TimeField = "time"
-		tStep := 1.0 / float64(period)
-		for i := range time {
-			time[i] = tStep * float64(1+i)
-		}
 	} else {
 		// time matching
 		spec.Log.WithFields(logrus.Fields{
@@ -72,23 +71,24 @@ func averageCycle(df *dataframe.DataFrame, spec *averageCycleSpec) error {
 		col := slices.Index(df.Names(), spec.TimeField)
 		tPeriod := df.Elem(period, col).Float() - df.Elem(0, col).Float()
 		tStep := tPeriod / float64(period)
+		matchTime := make([]float64, period)
 		var sum, c, t, y float64 // Khan summation
-		for i := range time {
+		for i := range matchTime {
 			if i != 0 {
-				sum = time[i-1]
+				sum = matchTime[i-1]
 			}
 			y = tStep - c // ensures uniform time step
 			t = sum + y
 			c = (t - sum) - y
-			time[i] = t
+			matchTime[i] = t
 
 			for j := 0; j < spec.NCycles; j++ {
 				target := df.Elem(i+j*period, col).Float() - tPeriod*float64(j)
 				var match bool
 				if spec.TimePrecision == 0 {
-					match = time[i] == target
+					match = matchTime[i] == target
 				} else {
-					match = math.Abs(time[i]-target) < spec.TimePrecision
+					match = math.Abs(matchTime[i]-target) < spec.TimePrecision
 				}
 				if !match && j == 0 {
 					return ErrAverageCycleNonuniformTime
@@ -113,10 +113,17 @@ func averageCycle(df *dataframe.DataFrame, spec *averageCycleSpec) error {
 // where ϕ is the slice of values to be averaged, ω the angular velocity,
 // t the time and T the period.
 //
-// Time matching can be optionally specified, as well as the match precision.
+// The resulting dataframe.DataFrame will contain
+// a cycle average field (named the same as the operand field) and a
+// time field (named 'time') containing times for each
+// cycle average field element in the range <0, T].
+//
+// Time matching can be optionally specified, as well as the match precision,
+// by setting 'time_field' and 'time_precision' respectively in the config.
 // This checks wheather the time (step) is uniform and weather there is a
 // mismatch between the expected time of the averaged value, as per the number
 // of cycles defined in the config and the supplied data, and the read time.
+// NOTE: In this case the output time field will be named after 'time_field'.
 //
 // If an error occurs, the state of df is unknown.
 func averageCycleProcessor(df *dataframe.DataFrame, config *Config) error {
