@@ -2,6 +2,7 @@ package process
 
 import (
 	"io"
+	"math/rand"
 	"strings"
 	"testing"
 
@@ -22,6 +23,37 @@ type averageCycleTest struct {
 	Error  error
 }
 
+// rng is a random number generator used during testing.
+var rng *rand.Rand
+
+// addNoise adds (mutates) random noise, up to amplitude amp, to a slice
+// of values.
+func addNoise(v []float64, amp float64) []float64 {
+	if rng == nil {
+		rng = rand.New(rand.NewSource(0))
+	}
+	for i := range v {
+		v[i] += amp * rng.Float64()
+	}
+	return v
+}
+
+// multiply performs elementwise multiply with a constant.
+func multiply(v []float64, c float64) []float64 {
+	for i := range v {
+		v[i] *= c
+	}
+	return v
+}
+
+// divide performs elementwise division with a constant.
+func divide(v []float64, c float64) []float64 {
+	for i := range v {
+		v[i] /= c
+	}
+	return v
+}
+
 var averageCycleTests = []averageCycleTest{
 	{
 		Name: "good",
@@ -40,9 +72,10 @@ type_spec:
 				1.0, 2.0, 3.0, 2.0, 1.0, 0.0,
 				0.5, 1.5, 2.5, 1.5, 0.5, -0.5,
 			}, series.Float, "x")),
-		Output: dataframe.New(series.New(
-			[]float64{1.0, 2.0, 3.0, 2.0, 1.0, 0.0},
-			series.Float, "x")),
+		Output: dataframe.New(
+			series.New([]float64{1.0, 2.0, 3.0, 2.0, 1.0, 0.0}, series.Float, "x"),
+			series.New(divide([]float64{1, 2, 3, 4, 5, 6}, 6.0), series.Float, "time"),
+		),
 		Error: nil,
 	},
 	{
@@ -162,11 +195,142 @@ type_spec:
 			}, series.Float, "x")),
 		Error: ErrAverageCycleNCycles,
 	},
+	// time matching
+	{
+		Name: "good-time-matching",
+		Config: Config{
+			Type: "average-cycle",
+		},
+		Spec: `
+type_spec:
+  field: x
+  n_cycles: 4
+  time_field: t
+`,
+		Input: dataframe.New(
+			series.New([]float64{
+				1.0, 2.0, 3.0, 2.0, 1.0, 0.0,
+				1.5, 2.5, 3.5, 2.5, 1.5, 0.5,
+				1.0, 2.0, 3.0, 2.0, 1.0, 0.0,
+				0.5, 1.5, 2.5, 1.5, 0.5, -0.5,
+			}, series.Float, "x"),
+			series.New([]float64{
+				1.0, 2.0, 3.0, 4.0, 5.0, 6.0,
+				7.0, 8.0, 9.0, 10.0, 11.0, 12.0,
+				13.0, 14.0, 15.0, 16.0, 17.0, 18.0,
+				19.0, 20.0, 21.0, 22.0, 23.0, 24.0,
+			}, series.Float, "t"),
+		),
+		Output: dataframe.New(
+			series.New([]float64{1.0, 2.0, 3.0, 2.0, 1.0, 0.0}, series.Float, "x"),
+			series.New(divide([]float64{1, 2, 3, 4, 5, 6}, 6.0), series.Float, "t"),
+		),
+		Error: nil,
+	},
+	{
+		Name: "good-time-matching-precision",
+		Config: Config{
+			Type: "average-cycle",
+		},
+		Spec: `
+type_spec:
+  field: x
+  n_cycles: 4
+  time_field: t
+  time_precision: 0.1
+`,
+		Input: dataframe.New(
+			series.New([]float64{
+				1.0, 2.0, 3.0, 2.0, 1.0, 0.0,
+				1.5, 2.5, 3.5, 2.5, 1.5, 0.5,
+				1.0, 2.0, 3.0, 2.0, 1.0, 0.0,
+				0.5, 1.5, 2.5, 1.5, 0.5, -0.5,
+			}, series.Float, "x"),
+			series.New(addNoise([]float64{
+				1.0, 2.0, 3.0, 4.0, 5.0, 6.0,
+				7.0, 8.0, 9.0, 10.0, 11.0, 12.0,
+				13.0, 14.0, 15.0, 16.0, 17.0, 18.0,
+				19.0, 20.0, 21.0, 22.0, 23.0, 24.0,
+			}, 0.01), series.Float, "t"),
+		),
+		Output: dataframe.New(
+			series.New([]float64{1.0, 2.0, 3.0, 2.0, 1.0, 0.0}, series.Float, "x"),
+			series.New(divide([]float64{1, 2, 3, 4, 5, 6}, 6.0), series.Float, "t"),
+		),
+		Error: nil,
+	},
+	{
+		Name: "bad-time-mismatch",
+		Config: Config{
+			Type: "average-cycle",
+		},
+		Spec: `
+type_spec:
+  field: x
+  n_cycles: 2
+  time_field: t
+`,
+		Input: dataframe.New(
+			series.New([]float64{
+				1.0, 2.0, 3.0, 2.0, 1.0, 0.0,
+				1.5, 2.5, 3.5, 2.5, 1.5, 0.5,
+			}, series.Float, "x"),
+			series.New([]float64{
+				1.0, 2.0, 3.0, 4.0, 5.0, 6.0,
+				7.0, 8.0, 9.0, 10.5, 11.0, 12.0,
+			}, series.Float, "t"),
+		),
+		Output: dataframe.New(
+			series.New([]float64{
+				1.0, 2.0, 3.0, 2.0, 1.0, 0.0,
+				1.5, 2.5, 3.5, 2.5, 1.5, 0.5,
+			}, series.Float, "x"),
+			series.New([]float64{
+				1.0, 2.0, 3.0, 4.0, 5.0, 6.0,
+				7.0, 8.0, 9.0, 10.5, 11.0, 12.0,
+			}, series.Float, "t"),
+		),
+		Error: ErrAverageCycleTimeMismatch,
+	},
+	{
+		Name: "bad-time-nonuniform",
+		Config: Config{
+			Type: "average-cycle",
+		},
+		Spec: `
+type_spec:
+  field: x
+  n_cycles: 2
+  time_field: t
+`,
+		Input: dataframe.New(
+			series.New([]float64{
+				1.0, 2.0, 3.0, 2.0, 1.0, 0.0,
+				1.5, 2.5, 3.5, 2.5, 1.5, 0.5,
+			}, series.Float, "x"),
+			series.New([]float64{
+				1.0, 2.0, 3.5, 4.0, 5.5, 6.0,
+				7.0, 8.0, 9.5, 10.0, 11.5, 12.0,
+			}, series.Float, "t"),
+		),
+		Output: dataframe.New(
+			series.New([]float64{
+				1.0, 2.0, 3.0, 2.0, 1.0, 0.0,
+				1.5, 2.5, 3.5, 2.5, 1.5, 0.5,
+			}, series.Float, "x"),
+			series.New([]float64{
+				1.0, 2.0, 3.5, 4.0, 5.5, 6.0,
+				7.0, 8.0, 9.5, 10.0, 11.5, 12.0,
+			}, series.Float, "t"),
+		),
+		Error: ErrAverageCycleNonuniformTime,
+	},
 }
 
 // TestAverageCycleProcessor tests weather the cycle-average is computed
 // correctly.
 func TestAverageCycleProcessor(t *testing.T) {
+	rand.Seed(0)
 	for _, tt := range averageCycleTests {
 		t.Run(tt.Name, func(t *testing.T) {
 			assert := assert.New(t)
