@@ -1,3 +1,4 @@
+// TODO: the gval.Language stuff should go into a separate module.
 package process
 
 import (
@@ -11,22 +12,37 @@ import (
 )
 
 var (
-	ErrExpression           = errors.New("expression: bad expression")
 	ErrExpressionType       = errors.New("expression: bad type in expression")
 	ErrExpressionVectorSize = errors.New("expression: vector size mismatch")
-	ErrResult               = errors.New("expression: result field name empty")
+	ErrResult               = errors.New("expression: result field empty")
+	ErrExpression           = errors.New("expression: expression field empty")
 )
 
 type opFunc func(_, _ interface{}) (interface{}, error)
 
-var errFunc = func(err error) opFunc {
-	return func(_, _ interface{}) (interface{}, error) {
-		return nil, err
+// A buffer for the result of an expression.
+var buffer []float64
+
+// resizeBuffer sets the length of a buffer to the length of a, allocating new
+// memory if necessary.
+func resizeBuffer(a []float64, buff *[]float64) {
+	if len(a) > len(*buff) {
+		*buff = make([]float64, len(a))
+	} else {
+		*buff = (*buff)[:len(a)]
 	}
 }
 
 func makeVectorOp(op func(float64, float64) float64) opFunc {
+	r := buffer
 	return func(a, b interface{}) (interface{}, error) {
+		if as, ok := a.([]float64); ok {
+			resizeBuffer(as, &r)
+		}
+		if bs, ok := b.([]float64); ok {
+			resizeBuffer(bs, &r)
+		}
+
 		switch a.(type) {
 		case []float64:
 			switch b.(type) {
@@ -37,16 +53,16 @@ func makeVectorOp(op func(float64, float64) float64) opFunc {
 					return nil, ErrExpressionVectorSize
 				}
 				for i := range x {
-					x[i] = op(x[i], y[i])
+					r[i] = op(x[i], y[i])
 				}
-				return x, nil
+				return r, nil
 			case float64:
 				x := a.([]float64)
 				y := b.(float64)
 				for i := range x {
-					x[i] = op(x[i], y)
+					r[i] = op(x[i], y)
 				}
-				return x, nil
+				return r, nil
 			default:
 				return nil, ErrExpressionType
 			}
@@ -56,9 +72,9 @@ func makeVectorOp(op func(float64, float64) float64) opFunc {
 				x := a.(float64)
 				y := b.([]float64)
 				for i := range y {
-					y[i] = op(y[i], x)
+					r[i] = op(y[i], x)
 				}
-				return y, nil
+				return r, nil
 			default:
 				return nil, ErrExpressionType
 			}
@@ -67,6 +83,8 @@ func makeVectorOp(op func(float64, float64) float64) opFunc {
 		}
 	}
 }
+
+// Math operators for makeVectorOp().
 func add(a, b float64) float64 {
 	return a + b
 }
@@ -83,7 +101,7 @@ func pow(a, b float64) float64 {
 	return math.Pow(a, b)
 }
 
-var seriesArithmetic = gval.NewLanguage(
+var sliceArithmetic = gval.NewLanguage(
 	gval.InfixOperator("+", makeVectorOp(add)),
 	gval.InfixOperator("-", makeVectorOp(sub)),
 	gval.InfixOperator("*", makeVectorOp(mul)),
@@ -91,8 +109,8 @@ var seriesArithmetic = gval.NewLanguage(
 	gval.InfixOperator("**", makeVectorOp(pow)),
 )
 
-func SeriesArithmetic() gval.Language {
-	return seriesArithmetic
+func SliceArithmetic() gval.Language {
+	return sliceArithmetic
 }
 
 // expressionSetSpec contains data needed for defining a expression-set Processor.
@@ -115,7 +133,7 @@ func expressionProcessor(df *dataframe.DataFrame, config *Config) error {
 		return err
 	}
 	if len(spec.Expression) == 0 {
-		return nil
+		return ErrExpression
 	}
 	if len(spec.Result) == 0 {
 		return ErrResult
@@ -126,13 +144,13 @@ func expressionProcessor(df *dataframe.DataFrame, config *Config) error {
 	for n := range names {
 		env[names[n]] = df.Col(names[n]).Float()
 		if df.Error() != nil {
-			panic("todo: implement non float fields")
+			return df.Error()
 		}
 	}
 	// remap operations to work on slices/series.Series
 	lang := gval.NewLanguage(
 		gval.Arithmetic(),
-		SeriesArithmetic(),
+		SliceArithmetic(),
 	)
 
 	spec.Log.WithFields(logrus.Fields{
