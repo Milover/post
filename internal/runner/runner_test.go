@@ -1,7 +1,6 @@
 package runner
 
 import (
-	"fmt"
 	"io"
 	"os"
 	"strings"
@@ -26,7 +25,7 @@ var runTests = []runTest{
 		Error: nil,
 		Config: `
 input:
-  file: null
+  file: in.csv
   fields: [time, u_max, u_x, u_y, u_z]
   format: csv
   format_spec:
@@ -48,7 +47,7 @@ process:
   - type: dummy
 output:
   directory: ""
-  write_file: true
+  table_file: "basic-csv"
   graphs:
     - name: "graph-csv0"
       axes:
@@ -83,12 +82,12 @@ time	u_max	u_x	u_y	u_z
 		Error: nil,
 		Config: `
 input:
-  file: null
+  file: in.dat
   fields: [time, u_max, u_x, u_y, u_z]
   format: dat
 output:
   directory: ""
-  write_file: true
+  table_file: "basic-dat"
   graphs:
     - name: "graph-dat0"
       axes:
@@ -121,46 +120,23 @@ func TestRun(t *testing.T) {
 	for _, tt := range runTests {
 		t.Run(tt.Name, func(t *testing.T) {
 			assert := assert.New(t)
+
 			var config Config
 			config.Log, _ = test.NewNullLogger()
 			config.Log.SetLevel(logrus.DebugLevel)
-
 			// read config
 			raw, err := io.ReadAll(strings.NewReader(tt.Config))
 			assert.Nil(err, "unexpected io.ReadAll() error")
 			err = yaml.Unmarshal(raw, &config)
 			assert.Nil(err, "unexpected yaml.Unmarshal() error")
 
-			// create and set the data file
-			csvFile, err := os.Create(fmt.Sprint(tt.Name, ".csv"))
+			// write input
+			in, err := os.Create(config.Input.File)
 			assert.Nil(err, "unexpected os.Create() error")
-			defer func() {
-				assert.Nil(csvFile.Close(), "unexpected Close() error")
-			}()
-			config.Output.Writer = csvFile
+			_, err = in.WriteString(tt.Input)
+			assert.Nil(err, "unexpected os.File.Write() error")
 
-			// create and set the graph files
-			graphFiles := make([]*os.File, len(config.Output.Graphs))
-			for gID := range config.Output.Graphs {
-				g := &config.Output.Graphs[gID]
-				graphFiles[gID], err = os.Create(fmt.Sprintf("%v.tex", g.Name))
-				assert.Nil(err, "unexpected os.Create() error")
-				g.Writer = graphFiles[gID]
-
-				for aID := range g.Axes {
-					a := &g.Axes[aID]
-					for tID := range a.Tables {
-						a.Tables[tID].TableFile = csvFile.Name()
-					}
-				}
-			}
-
-			err = Run(strings.NewReader(tt.Input), &config)
-
-			// cleanup
-			for _, gf := range graphFiles {
-				assert.Nil(gf.Close(), "unexpected Close() error")
-			}
+			err = Run(&config)
 
 			assert.Equal(tt.Error, err)
 		})

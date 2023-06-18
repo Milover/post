@@ -12,11 +12,9 @@ import (
 var templates embed.FS
 
 type TeXGraph struct {
-	Name string    `yaml:"name"`
-	Axes []TexAxis `yaml:"axes"`
-
-	// TODO: This probably shouldn't be here.
-	Writer io.Writer `yaml:"-"`
+	Name      string    `yaml:"name"`
+	Axes      []TexAxis `yaml:"axes"`
+	TableFile string    `yaml:"table-file"`
 }
 
 type TexAxis struct {
@@ -38,19 +36,29 @@ type TeXTable struct {
 	TableFile   string `yaml:"-"`
 }
 
-func CompileTeXGraph(g *TeXGraph) error {
+func GenerateTeXGraph(file string) error {
 	return exec.Command("pdflatex",
 		"-halt-on-error",
 		"-interaction=nonstopmode",
-		fmt.Sprint(g.Name, ".tex"),
+		fmt.Sprint(file),
 	).Run()
 }
 
 // TODO: Should probably also take an io.Writer.
-func WriteTeXGraph(g *TeXGraph) error {
+func WriteTeXGraph(w io.Writer, g *TeXGraph) error {
+	g.propagateCSV()
 	return template.Must(template.
 		New("master.tmpl").
 		Delims("__{", "}__").
 		ParseFS(templates, "tmpl/*.tmpl")).
-		Execute(g.Writer, g)
+		Execute(w, g)
+}
+
+func (g *TeXGraph) propagateCSV() {
+	for aID := range g.Axes {
+		a := &g.Axes[aID]
+		for tID := range a.Tables {
+			a.Tables[tID].TableFile = g.TableFile
+		}
+	}
 }
