@@ -8,21 +8,6 @@ import (
 	"github.com/go-gota/gota/dataframe"
 )
 
-// Output writes all data and graph files, and generates the graphs from the
-// files.
-func Output(df *dataframe.DataFrame, config *Config) error {
-	if err := WriteCSV(df, config); err != nil {
-		return err
-	}
-	if err := WriteGraphFiles(config); err != nil {
-		return err
-	}
-	if err := GenerateGraphs(config); err != nil {
-		return err
-	}
-	return nil
-}
-
 func outDir(config *Config) (string, error) {
 	if err := os.MkdirAll(filepath.Clean(config.Directory), 0755); err != nil {
 		return "", err
@@ -94,6 +79,10 @@ func GenerateGraphs(config *Config) error {
 	for i := range config.Graphs {
 		g := &config.Graphs[i]
 		f := filepath.Join(outdir, g.Name+".tex")
+		if _, e := os.Stat(f); e != nil {
+			err = errors.Join(err, e)
+			continue
+		}
 		if e := GenerateTeXGraph(f); e != nil {
 			err = errors.Join(err, e)
 		}

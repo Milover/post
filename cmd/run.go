@@ -14,9 +14,18 @@ import (
 )
 
 var (
-	verbose    bool   = false
-	quiet      bool   = false
+	// configFile is the default file name of the config file, it is used
+	// if no config file is supplied as a command line argument.
 	configFile string = "config.yaml"
+
+	verbose bool
+	quiet   bool
+
+	dryRun           bool
+	noProcess        bool
+	noWriteCSV       bool
+	noWriteGraphs    bool
+	noGenerateGraphs bool
 )
 
 type Config struct {
@@ -53,6 +62,10 @@ func run(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	if dryRun {
+		return nil
+	}
+
 	// propagate logger
 	config.Input.Log = config.Log
 	for i := range config.Process {
@@ -63,11 +76,26 @@ func run(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("error creating data frame: %w", err)
 	}
-	if err = process.Process(df, config.Process); err != nil {
-		return fmt.Errorf("error processing data frame: %w", err)
+	if !noProcess {
+		if err = process.Process(df, config.Process); err != nil {
+			return fmt.Errorf("error processing data frame: %w", err)
+		}
 	}
-	if err = output.Output(df, &config.Output); err != nil {
-		return fmt.Errorf("output error: %w", err)
+	if !noWriteCSV {
+		if err := output.WriteCSV(df, &config.Output); err != nil {
+			return fmt.Errorf("output error: %w", err)
+		}
 	}
+	if !noWriteGraphs {
+		if err := output.WriteGraphFiles(&config.Output); err != nil {
+			return fmt.Errorf("output error: %w", err)
+		}
+	}
+	if !noGenerateGraphs {
+		if err := output.GenerateGraphs(&config.Output); err != nil {
+			return fmt.Errorf("output error: %w", err)
+		}
+	}
+
 	return nil
 }

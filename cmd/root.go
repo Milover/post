@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -8,24 +9,20 @@ import (
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "foam-postprocess",
-	Short: "A brief description of your application",
-	Long: `A longer description that spans multiple lines and likely contains
-examples and usage of using your application. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
-	// Uncomment the following line if your bare application
-	// has an action associated with it:
-	// Run: func(cmd *cobra.Command, args []string) { },
+	Use:   "foam-postprocess [run file]",
+	Short: "A program for working with  OpenFOAM functionObject output files",
+	Long:  `A program for working with  OpenFOAM functionObject output files`,
+	Args: cobra.MatchAll(
+		cobra.MaximumNArgs(1),
+	),
+	RunE: run,
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
-	err := rootCmd.Execute()
-	if err != nil {
+	if err := rootCmd.Execute(); err != nil {
+		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 }
@@ -36,8 +33,54 @@ func init() {
 	// will be global for your application.
 
 	// rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.foam-postprocess.yaml)")
+	rootCmd.PersistentFlags().BoolVarP(
+		&verbose,
+		"verbose",
+		"v",
+		false,
+		"more verbose log output",
+	)
+	rootCmd.PersistentFlags().BoolVarP(
+		&quiet,
+		"quiet",
+		"q",
+		false,
+		"suppress all log output",
+	)
+	rootCmd.MarkFlagsMutuallyExclusive("verbose", "quiet")
+
+	rootCmd.PersistentFlags().BoolVar(
+		&dryRun,
+		"dry-run",
+		false,
+		"read the config and exit",
+	)
+	rootCmd.PersistentFlags().BoolVar(
+		&noProcess,
+		"no-process",
+		false,
+		"don't process the input data",
+	)
+	rootCmd.PersistentFlags().BoolVar(
+		&noWriteCSV,
+		"no-write-csv",
+		false,
+		"don't write data to csv",
+	)
+	rootCmd.PersistentFlags().BoolVar(
+		&noWriteGraphs,
+		"no-write-graphs",
+		false,
+		"don't write graph files",
+	)
+	rootCmd.PersistentFlags().BoolVar(
+		&noGenerateGraphs,
+		"no-generate-graphs",
+		false,
+		"don't generate graphs",
+	)
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
-	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	// rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
