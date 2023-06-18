@@ -27,11 +27,11 @@ Utilities for post-processing OpenFOAM function object data.
 
 - processing
 	- *add more processors*
-	- [x]  average (ensemble) cycle
+	- [x] average (ensemble) cycle
 	- [x] arithmetic expressions
-        - support arbitrary arithmetic expressions with fields/constants
+		- support arbitrary arithmetic expressions with fields/constants
 - input
-    - [ ] combine multiple files into single dataframe
+	- [ ] combine multiple files into single dataframe
 	- [ ] support OpenFOAM time series type inputs:
 		```
 		.
@@ -42,11 +42,11 @@ Utilities for post-processing OpenFOAM function object data.
 		└── ...
 		```
 - config stuff
-	- [ ] ~~move config stuff to separate module~~
-		- keeping configs in the modules they belong to - every module pretty
-		  much has it's own config, the `runner` module sources the configs
-		  from top level modules, and the top level module configs source
-		  module specific configs as necessary
+	- [ ] ~~move config stuff to separate package~~
+		- keeping configs in packages they belong to - every package pretty
+		  much has it's own config, the ~~`runner`~~ `cmd` package sources
+		  configs from top-level packages, which in turn source package-specific
+		  configs as necessary
 		- this is mostly fine, although propagating the `Logger` might become
 		  an issue at some point
 	- [x] add input validation
@@ -57,10 +57,13 @@ Utilities for post-processing OpenFOAM function object data.
 		- [x] start simple: replace already present stuff
 		- [ ] add stuff important for debugging
 			- essentially done, maybe check if we need to add logging in
-			  the output module
+			  the `output` package
 - code organization
-	- [ ] add functionality for (output) file management (creation)
-	- [ ] the main `Run()` function should accept mostly raw input
+	- [x] add functionality for (output) file management (creation)
+	- [x] the main `Run()` function should accept mostly raw input
 		(e.g. just a config file name) and probably use only some top-level
 		config stuff to create output files and then pass along raw-config
 		segments for further processing
+		- internal package APIs only require their own config, or their own
+		  config and a `dataframe.DataFrame`, as inputs
+		- moved all execution controls to `cmd` package
