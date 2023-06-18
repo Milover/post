@@ -249,7 +249,7 @@ func TestFromDAT(t *testing.T) {
 
 // Test weather CreateDataFrame correctly applies config options, and
 // reads and constructs the dataframe.DataFrame.
-type createDataFrameTest struct {
+type readDataFrameTest struct {
 	Name   string
 	Config Config
 	Input  string
@@ -257,7 +257,7 @@ type createDataFrameTest struct {
 	Error  error
 }
 
-var createDataFrameTests = []createDataFrameTest{
+var readDataFrameTests = []readDataFrameTest{
 	{
 		Name: "good-dat",
 		Config: Config{
@@ -326,7 +326,7 @@ var createDataFrameTests = []createDataFrameTest{
 }
 
 func TestReadDataFrame(t *testing.T) {
-	for _, tt := range createDataFrameTests {
+	for _, tt := range readDataFrameTests {
 		t.Run(tt.Name, func(t *testing.T) {
 			assert := assert.New(t)
 			tt.Config.Log, _ = test.NewNullLogger()
