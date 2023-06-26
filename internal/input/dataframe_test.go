@@ -343,3 +343,144 @@ func TestReadDataFrame(t *testing.T) {
 		})
 	}
 }
+
+// Test weather ReadSeries correctly applies config options, and
+// reads and constructs the dataframe.DataFrame.
+type readSeriesTest struct {
+	Name        string
+	Config      Config
+	SeriesSpec  string
+	Output      dataframe.DataFrame
+	SkipCompare bool
+	Error       error
+}
+
+var readSeriesTests = []readSeriesTest{
+	{
+		Name: "good-csv",
+		Config: Config{
+			Format: "csv",
+			Fields: []string{"x", "y"},
+		},
+		SeriesSpec: `
+series_spec:
+  series_directory: 'testdata/foam_series.good'
+  series_file: 'data.csv'
+  series_time_name: 'time'
+`,
+		Output: dataframe.New(
+			series.New([]float64{
+				0.1, 0.1, 0.1, 0.1, 0.1, 0.1,
+				0.2, 0.2, 0.2, 0.2, 0.2, 0.2,
+				0.3, 0.3, 0.3, 0.3, 0.3, 0.3}, series.Float, "time"),
+			series.New([]int{
+				0, 1, 2, 3, 4, 5,
+				0, 1, 2, 3, 4, 5,
+				0, 1, 2, 3, 4, 5}, series.Int, "x"),
+			series.New([]int{
+				0, 1, 2, 2, 1, 0,
+				0, 1, 2, 2, 1, 0,
+				0, 1, 2, 2, 1, 0}, series.Int, "y"),
+		),
+		Error: nil,
+	},
+	{
+		Name: "good-dat",
+		Config: Config{
+			Format: "dat",
+			Fields: []string{"x", "y"},
+		},
+		SeriesSpec: `
+series_spec:
+  series_directory: 'testdata/foam_series.good'
+  series_file: 'data.dat'
+  series_time_name: 'time'
+`,
+		Output: dataframe.New(
+			series.New([]float64{
+				0.1, 0.1, 0.1, 0.1, 0.1, 0.1,
+				0.2, 0.2, 0.2, 0.2, 0.2, 0.2,
+				0.3, 0.3, 0.3, 0.3, 0.3, 0.3}, series.Float, "time"),
+			series.New([]int{
+				0, 1, 2, 3, 4, 5,
+				0, 1, 2, 3, 4, 5,
+				0, 1, 2, 3, 4, 5}, series.Int, "x"),
+			series.New([]int{
+				0, 1, 2, 2, 1, 0,
+				0, 1, 2, 2, 1, 0,
+				0, 1, 2, 2, 1, 0}, series.Int, "y"),
+		),
+		Error: nil,
+	},
+	{
+		Name: "good-empty",
+		Config: Config{
+			Format: "csv",
+			Fields: []string{"x", "y"},
+		},
+		SeriesSpec: `
+series_spec:
+  series_directory: 'testdata/foam_series.good_empty'
+  series_file: 'data.csv'
+  series_time_name: 'time'
+`,
+		Output:      dataframe.DataFrame{},
+		SkipCompare: true,
+		Error:       nil,
+	},
+	{
+		Name: "good-empty-times",
+		Config: Config{
+			Format: "csv",
+			Fields: []string{"x", "y"},
+		},
+		SeriesSpec: `
+series_spec:
+  series_directory: 'testdata/foam_series.good_empty'
+  series_file: 'data.csv'
+  series_time_name: 'time'
+`,
+		Output:      dataframe.DataFrame{},
+		SkipCompare: true,
+		Error:       nil,
+	},
+	{
+		Name: "bad-unequal-rows",
+		Config: Config{
+			Format: "csv",
+			Fields: []string{"x", "y"},
+		},
+		SeriesSpec: `
+series_spec:
+  series_directory: 'testdata/foam_series.bad_unequal_rows'
+  series_file: 'data.csv'
+  series_time_name: 'time'
+`,
+		Output: dataframe.DataFrame{},
+		Error:  errors.New("arguments have different dimensions"),
+	},
+}
+
+func TestReadSeries(t *testing.T) {
+	for _, tt := range readSeriesTests {
+		t.Run(tt.Name, func(t *testing.T) {
+			assert := assert.New(t)
+			tt.Config.Log, _ = test.NewNullLogger()
+			tt.Config.Log.SetLevel(logrus.DebugLevel)
+
+			raw, err := io.ReadAll(strings.NewReader(tt.SeriesSpec))
+			assert.Nil(err, "unexpected io.ReadAll() error")
+			err = yaml.Unmarshal(raw, &tt.Config)
+			assert.Nil(err, "unexpected yaml.Unmarshal() error")
+
+			out, err := ReadSeries(&tt.Config)
+
+			assert.Equal(tt.Error, err)
+			if tt.Error != nil {
+				assert.Nil(out)
+			} else if !tt.SkipCompare {
+				assert.Equal(tt.Output, *out)
+			}
+		})
+	}
+}
