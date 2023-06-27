@@ -126,7 +126,8 @@ func filterProcessor(df *dataframe.DataFrame, config *Config) error {
 		}
 	}
 
-	spec.Log.WithFields(logrus.Fields{"aggregation": aggr}).Debug("applying filters")
+	spec.Log.WithFields(logrus.Fields{"aggregation": aggr}).
+		Debug("applying filters")
 	temp := df.FilterAggregation(aggr, filters...)
 	err := errors.Join(df.Error(), temp.Error()) // which one errors?
 	*df = temp
