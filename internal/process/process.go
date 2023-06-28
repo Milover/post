@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/go-gota/gota/dataframe"
+	"github.com/go-gota/gota/series"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/exp/maps"
 )
@@ -69,4 +70,29 @@ func process(df *dataframe.DataFrame, config *Config) error {
 // dummyProcessor is a do-nothing processor used for testing purposes.
 func dummyProcessor(_ *dataframe.DataFrame, _ *Config) error {
 	return nil
+}
+
+// selectNumFields is a function that selects only numeric (int, float) fields
+// in a dataframe.DataFrame, and removes all other fields.
+func selectNumFields(df *dataframe.DataFrame) error {
+	keep := make([]int, 0, df.Ncol())
+	for i, typ := range df.Types() {
+		if typ == series.Int || typ == series.Float {
+			keep = append(keep, i)
+		}
+	}
+	*df = df.Select(keep)
+	return df.Error()
+}
+
+// intsToFloats is a function that converts int fields to float fields.
+func intsToFloats(df *dataframe.DataFrame) error {
+	f := func(s series.Series) series.Series {
+		if s.Type() != series.Int {
+			return s
+		}
+		return series.New(s.Float(), series.Float, s.Name)
+	}
+	*df = df.Capply(f)
+	return df.Error()
 }
