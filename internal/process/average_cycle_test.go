@@ -62,7 +62,6 @@ var averageCycleTests = []averageCycleTest{
 		},
 		Spec: `
 type_spec:
-  field: x
   n_cycles: 4
 `,
 		Input: dataframe.New(series.New(
@@ -79,67 +78,112 @@ type_spec:
 		Error: nil,
 	},
 	{
+		Name: "good-int",
+		Config: Config{
+			Type: "average-cycle",
+		},
+		Spec: `
+type_spec:
+  n_cycles: 4
+`,
+		Input: dataframe.New(series.New(
+			[]int{
+				1, 2, 3, 2, 1, 0,
+				2, 3, 4, 3, 2, 1,
+				1, 2, 3, 2, 1, 0,
+				0, 1, 2, 1, 0, -1,
+			}, series.Int, "x")),
+		Output: dataframe.New(
+			series.New([]float64{1.0, 2.0, 3.0, 2.0, 1.0, 0.0}, series.Float, "x"),
+			series.New(divide([]float64{1, 2, 3, 4, 5, 6}, 6.0), series.Float, "time"),
+		),
+		Error: nil,
+	},
+	{
+		Name: "good-multifield",
+		Config: Config{
+			Type: "average-cycle",
+		},
+		Spec: `
+type_spec:
+  n_cycles: 4
+`,
+		Input: dataframe.New(
+			series.New([]float64{
+				1.0, 2.0, 3.0, 2.0, 1.0, 0.0,
+				1.5, 2.5, 3.5, 2.5, 1.5, 0.5,
+				1.0, 2.0, 3.0, 2.0, 1.0, 0.0,
+				0.5, 1.5, 2.5, 1.5, 0.5, -0.5,
+			}, series.Float, "x"),
+			series.New([]float64{
+				1.0, 2.0, 3.0, 2.0, 1.0, 0.0,
+				1.5, 2.5, 3.5, 2.5, 1.5, 0.5,
+				1.0, 2.0, 3.0, 2.0, 1.0, 0.0,
+				0.5, 1.5, 2.5, 1.5, 0.5, -0.5,
+			}, series.Float, "y"),
+			series.New([]float64{
+				1.0, 2.0, 3.0, 2.0, 1.0, 0.0,
+				1.5, 2.5, 3.5, 2.5, 1.5, 0.5,
+				1.0, 2.0, 3.0, 2.0, 1.0, 0.0,
+				0.5, 1.5, 2.5, 1.5, 0.5, -0.5,
+			}, series.Float, "z")),
+		Output: dataframe.New(
+			series.New([]float64{1.0, 2.0, 3.0, 2.0, 1.0, 0.0}, series.Float, "x"),
+			series.New([]float64{1.0, 2.0, 3.0, 2.0, 1.0, 0.0}, series.Float, "y"),
+			series.New([]float64{1.0, 2.0, 3.0, 2.0, 1.0, 0.0}, series.Float, "z"),
+			series.New(divide([]float64{1, 2, 3, 4, 5, 6}, 6.0), series.Float, "time"),
+		),
+		Error: nil,
+	},
+	{
+		Name: "good-multifield-mixed-types",
+		Config: Config{
+			Type: "average-cycle",
+		},
+		Spec: `
+type_spec:
+  n_cycles: 4
+`,
+		Input: dataframe.New(
+			series.New([]int{
+				1, 2, 3, 2, 1, 0,
+				2, 3, 4, 3, 2, 1,
+				1, 2, 3, 2, 1, 0,
+				0, 1, 2, 1, 0, -1,
+			}, series.Int, "x"),
+			series.New([]float64{
+				1.0, 2.0, 3.0, 2.0, 1.0, 0.0,
+				1.5, 2.5, 3.5, 2.5, 1.5, 0.5,
+				1.0, 2.0, 3.0, 2.0, 1.0, 0.0,
+				0.5, 1.5, 2.5, 1.5, 0.5, -0.5,
+			}, series.Float, "y"),
+			series.New([]string{
+				"a", "b", "c", "d", "e", "f",
+				"a", "b", "c", "d", "e", "f",
+				"a", "b", "c", "d", "e", "f",
+				"a", "b", "c", "d", "e", "f",
+			}, series.String, "z")),
+		Output: dataframe.New(
+			series.New([]float64{1.0, 2.0, 3.0, 2.0, 1.0, 0.0}, series.Float, "x"),
+			series.New([]float64{1.0, 2.0, 3.0, 2.0, 1.0, 0.0}, series.Float, "y"),
+			series.New(divide([]float64{1, 2, 3, 4, 5, 6}, 6.0), series.Float, "time"),
+		),
+		Error: nil,
+	},
+	{
 		Name: "bad-spec",
 		Config: Config{
 			Type: "average-cycle",
 		},
 		Spec: `
 type_spec:
-  field: x
   n_cycles: [CRASH ME BBY!]
 `,
 		Input:  dataframe.New(series.New([]float64{1.0, 2.0}, series.Float, "x")),
 		Output: dataframe.New(series.New([]float64{1.0, 2.0}, series.Float, "x")),
 		Error: &yaml.TypeError{
-			Errors: []string{"line 4: cannot unmarshal !!seq into int"},
+			Errors: []string{"line 3: cannot unmarshal !!seq into int"},
 		},
-	},
-	{
-		Name: "bad-cycle-field",
-		Config: Config{
-			Type: "average-cycle",
-		},
-		Spec: `
-type_spec:
-  field: CRASH ME BBY!
-  n_cycles: 1
-`,
-		Input: dataframe.New(series.New(
-			[]float64{1.0, 2.0, 3.0, 2.0, 1.0, 0.0}, series.Float, "x")),
-		Output: dataframe.New(series.New(
-			[]float64{1.0, 2.0, 3.0, 2.0, 1.0, 0.0}, series.Float, "x")),
-		Error: ErrAverageCycleField,
-	},
-	{
-		Name: "bad-empty-cycle-field",
-		Config: Config{
-			Type: "average-cycle",
-		},
-		Spec: `
-type_spec:
-  n_cycles: 1
-`,
-		Input: dataframe.New(series.New(
-			[]float64{1.0, 2.0, 3.0, 2.0, 1.0, 0.0}, series.Float, "x")),
-		Output: dataframe.New(series.New(
-			[]float64{1.0, 2.0, 3.0, 2.0, 1.0, 0.0}, series.Float, "x")),
-		Error: ErrAverageCycleField,
-	},
-	{
-		Name: "bad-cycle-field-type",
-		Config: Config{
-			Type: "average-cycle",
-		},
-		Spec: `
-type_spec:
-  field: x
-  n_cycles: 1
-`,
-		Input: dataframe.New(series.New(
-			[]int{1, 2, 3, 2, 1, 0}, series.Int, "x")),
-		Output: dataframe.New(series.New(
-			[]int{1, 2, 3, 2, 1, 0}, series.Int, "x")),
-		Error: ErrAverageCycleFieldType,
 	},
 	{
 		Name: "bad-n-cycles-0",
@@ -148,7 +192,6 @@ type_spec:
 		},
 		Spec: `
 type_spec:
-  field: x
   n_cycles: 0
 `,
 		Input: dataframe.New(series.New(
@@ -164,7 +207,6 @@ type_spec:
 		},
 		Spec: `
 type_spec:
-  field: x
   n_cycles: -1
 `,
 		Input: dataframe.New(series.New(
@@ -180,7 +222,6 @@ type_spec:
 		},
 		Spec: `
 type_spec:
-  field: x
   n_cycles: 2
 `,
 		Input: dataframe.New(series.New(
@@ -203,7 +244,6 @@ type_spec:
 		},
 		Spec: `
 type_spec:
-  field: x
   n_cycles: 4
   time_field: t
 `,
@@ -228,13 +268,56 @@ type_spec:
 		Error: nil,
 	},
 	{
+		Name: "good-time-matching-multifield",
+		Config: Config{
+			Type: "average-cycle",
+		},
+		Spec: `
+type_spec:
+  n_cycles: 4
+  time_field: t
+`,
+		Input: dataframe.New(
+			series.New([]float64{
+				1.0, 2.0, 3.0, 2.0, 1.0, 0.0,
+				1.5, 2.5, 3.5, 2.5, 1.5, 0.5,
+				1.0, 2.0, 3.0, 2.0, 1.0, 0.0,
+				0.5, 1.5, 2.5, 1.5, 0.5, -0.5,
+			}, series.Float, "x"),
+			series.New([]float64{
+				1.0, 2.0, 3.0, 2.0, 1.0, 0.0,
+				1.5, 2.5, 3.5, 2.5, 1.5, 0.5,
+				1.0, 2.0, 3.0, 2.0, 1.0, 0.0,
+				0.5, 1.5, 2.5, 1.5, 0.5, -0.5,
+			}, series.Float, "y"),
+			series.New([]float64{
+				1.0, 2.0, 3.0, 2.0, 1.0, 0.0,
+				1.5, 2.5, 3.5, 2.5, 1.5, 0.5,
+				1.0, 2.0, 3.0, 2.0, 1.0, 0.0,
+				0.5, 1.5, 2.5, 1.5, 0.5, -0.5,
+			}, series.Float, "z"),
+			series.New([]float64{
+				1.0, 2.0, 3.0, 4.0, 5.0, 6.0,
+				7.0, 8.0, 9.0, 10.0, 11.0, 12.0,
+				13.0, 14.0, 15.0, 16.0, 17.0, 18.0,
+				19.0, 20.0, 21.0, 22.0, 23.0, 24.0,
+			}, series.Float, "t"),
+		),
+		Output: dataframe.New(
+			series.New([]float64{1.0, 2.0, 3.0, 2.0, 1.0, 0.0}, series.Float, "x"),
+			series.New([]float64{1.0, 2.0, 3.0, 2.0, 1.0, 0.0}, series.Float, "y"),
+			series.New([]float64{1.0, 2.0, 3.0, 2.0, 1.0, 0.0}, series.Float, "z"),
+			series.New(divide([]float64{1, 2, 3, 4, 5, 6}, 6.0), series.Float, "t"),
+		),
+		Error: nil,
+	},
+	{
 		Name: "good-time-matching-precision",
 		Config: Config{
 			Type: "average-cycle",
 		},
 		Spec: `
 type_spec:
-  field: x
   n_cycles: 4
   time_field: t
   time_precision: 0.1
@@ -266,7 +349,6 @@ type_spec:
 		},
 		Spec: `
 type_spec:
-  field: x
   n_cycles: 2
   time_field: t
 `,
@@ -299,7 +381,6 @@ type_spec:
 		},
 		Spec: `
 type_spec:
-  field: x
   n_cycles: 2
   time_field: t
 `,
@@ -323,7 +404,7 @@ type_spec:
 				7.0, 8.0, 9.5, 10.0, 11.5, 12.0,
 			}, series.Float, "t"),
 		),
-		Error: ErrAverageCycleNonuniformTime,
+		Error: ErrAverageCycleTimeMismatch,
 	},
 }
 
