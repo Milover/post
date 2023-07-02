@@ -2,8 +2,8 @@ package process
 
 import (
 	"errors"
-	"math"
 
+	"github.com/Milover/foam-postprocess/internal/numeric"
 	"github.com/go-gota/gota/dataframe"
 	"github.com/go-gota/gota/series"
 	"github.com/sirupsen/logrus"
@@ -13,8 +13,9 @@ import (
 var (
 	ErrAverageCycleField         = errors.New("average-cycle: bad field")
 	ErrAverageCycleFieldType     = errors.New("average-cycle: bad field type, must be float64")
-	ErrAverageCycleNCycles       = errors.New("average-cycle: bad number of cycles, nCycles % nRows != 0")
+	ErrAverageCycleNCycles       = errors.New("average-cycle: bad number of cycles")
 	ErrAverageCycleNCycles0      = errors.New("average-cycle: bad number of cycles, nCycles <= 0")
+	ErrAverageCycleNRowsPerTime  = errors.New("average-cycle: bad number of rows per time")
 	ErrAverageCycleTimeField     = errors.New("average-cycle: bad time field")
 	ErrAverageCycleTimePrecision = errors.New("average-cycle: bad time precision, must be >= 0")
 	ErrAverageCycleTimeMismatch  = errors.New("average-cycle: cycle time mismatch")
@@ -32,26 +33,57 @@ type averageCycleSpec struct {
 // defaultAverageCycleSpec returns a averageCycleSpec
 // with 'sensible' default values.
 func defaultAverageCycleSpec() averageCycleSpec {
-	return averageCycleSpec{}
+	return averageCycleSpec{
+		TimePrecision: numeric.Eps,
+	}
+}
+
+// entriesPerTimeStep is a function which returns the number of df rows
+// associated with a single time step.
+func entriesPerTimeStep(df *dataframe.DataFrame, spec *averageCycleSpec) int {
+	// if the time field is not specified, there can only be
+	// one entry per time step
+	if len(spec.TimeField) == 0 {
+		return 1
+	}
+	// XXX: we expect that a field named spec.TimeField exists, and that
+	// it is of type series.Float (float64)
+	time := df.Col(spec.TimeField).Float() // XXX: does this allocate a new slice?
+	var nEntries int
+	for _, t := range time {
+		if !numeric.EqualEps(time[0], t, spec.TimePrecision) {
+			break
+		}
+		nEntries++
+	}
+	return nEntries
 }
 
 // averageCycle computes the enesemble average of a cycle as specified in the
 // spec, and sets df to the result.
+// A time field, named 'time', is added to df if 'TimeField' is not set.
+// NOTE: the time field, even if 'TimeField' is set, will be the last
+// field in df if no error occurs. The order of other fields is preserved.
 func averageCycle(df *dataframe.DataFrame, spec *averageCycleSpec) error {
 	nRows := df.Nrow()
 	if nRows%spec.NCycles != 0 {
 		return ErrAverageCycleNCycles
 	}
 	period := nRows / spec.NCycles
+	nPerTime := entriesPerTimeStep(df, spec)
+	if period%nPerTime != 0 {
+		return ErrAverageCycleNRowsPerTime
+	}
 	vals := make([]float64, period)
 	ss := make([]series.Series, 0, df.Ncol()+1)
+
 	// compute the cycle average for each field using Khan sumation
 	for col, name := range df.Names() {
 		// don't average the time field
 		if name == spec.TimeField {
 			continue
 		}
-		if col != 0 {
+		if col != 0 { // reset the sum
 			for i := range vals {
 				vals[i] = 0
 			}
@@ -68,41 +100,35 @@ func averageCycle(df *dataframe.DataFrame, spec *averageCycleSpec) error {
 		}
 		ss = append(ss, series.New(vals, series.Float, name))
 	}
-	// build time series
+
+	// build the time series
+	var tCurrent float64
 	for i := range vals {
-		vals[i] = float64(i+1) / float64(period)
+		if i%nPerTime == 0 {
+			tCurrent = float64(i/nPerTime+1) / float64(period/nPerTime)
+		}
+		vals[i] = tCurrent
 	}
+	// match times
 	if len(spec.TimeField) == 0 {
 		spec.TimeField = "time"
 	} else {
-		// time matching
 		spec.Log.WithFields(logrus.Fields{
 			"time-field":     spec.TimeField,
 			"time-precision": spec.TimePrecision}).
 			Debug("matching times")
-		col := slices.Index(df.Names(), spec.TimeField)
-		tPeriod := df.Elem(period, col).Float() - df.Elem(0, col).Float()
-		tStep := tPeriod / float64(period)
-		matchTime := make([]float64, period)
-		// build the time series by summing the time step using Khan summation
-		var sum, c, t, y float64
-		for i := range matchTime {
-			y = tStep - c // ensures uniform time step
-			t = sum + y
-			c = (t - sum) - y
-			sum, matchTime[i] = t, t
+		readT := df.Col(spec.TimeField).Float() // XXX: does this allocate?
+		deltaT := readT[nPerTime] - readT[0]
+		cycleT := deltaT + readT[period-1] - readT[0]
+		offsetT := readT[0] - deltaT
 
-			// check whether the times, at the same points in the cycle,
-			// are spaced exactly N periods apart, up to the specified precision
+		// check whether the times, at the same points in the cycle,
+		// are spaced exactly N periods apart, up to the specified precision
+		for i := range vals {
 			for j := 0; j < spec.NCycles; j++ {
-				target := df.Elem(i+j*period, col).Float() - tPeriod*float64(j)
-				var match bool
-				if spec.TimePrecision == 0 {
-					match = matchTime[i] == target
-				} else {
-					match = math.Abs(matchTime[i]-target) < spec.TimePrecision
-				}
-				if !match {
+				computed := offsetT + cycleT*(vals[i]+float64(j))
+				read := readT[i+j*period]
+				if !numeric.EqualEps(computed, read, spec.TimePrecision) {
 					return ErrAverageCycleTimeMismatch
 				}
 			}
