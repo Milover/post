@@ -61,17 +61,10 @@ func WriteGraphFiles(config *Config) error {
 		config.Log.WithFields(logrus.Fields{
 			"file": f,
 		}).Debug("writing graph file")
-		w, err := os.Create(f)
-		if err != nil {
-			return err
-		}
-		if e := WriteTeXGraph(w, g); e != nil {
-			err = errors.Join(err, e)
-			continue
-		}
-		if e := w.Close(); e != nil {
-			err = errors.Join(err, e)
-		}
+		w, errCreate := os.Create(f)
+		errGraph := WriteTeXGraph(w, g)
+		errClose := w.Close()
+		err = errors.Join(err, errCreate, errGraph, errClose)
 	}
 	return err
 }
