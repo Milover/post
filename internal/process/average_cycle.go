@@ -30,9 +30,9 @@ type averageCycleSpec struct {
 	Log *logrus.Logger `yaml:"-"`
 }
 
-// defaultAverageCycleSpec returns a averageCycleSpec
+// DefaultAverageCycleSpec returns a averageCycleSpec
 // with 'sensible' default values.
-func defaultAverageCycleSpec() averageCycleSpec {
+func DefaultAverageCycleSpec() averageCycleSpec {
 	return averageCycleSpec{
 		TimePrecision: numeric.Eps,
 	}
@@ -177,7 +177,7 @@ func averageCycle(df *dataframe.DataFrame, spec *averageCycleSpec) error {
 //
 // If an error occurs, the state of df is unknown.
 func averageCycleProcessor(df *dataframe.DataFrame, config *Config) error {
-	spec := defaultAverageCycleSpec()
+	spec := DefaultAverageCycleSpec()
 	spec.Log = config.Log
 	if err := config.TypeSpec.Decode(&spec); err != nil {
 		return err
