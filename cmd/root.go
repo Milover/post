@@ -1,8 +1,8 @@
 package cmd
 
 import (
-	"fmt"
-	"os"
+	"log"
+	"unsafe"
 
 	"github.com/spf13/cobra"
 )
@@ -22,8 +22,7 @@ var rootCmd = &cobra.Command{
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
+		log.Fatal(err)
 	}
 }
 
@@ -33,21 +32,12 @@ func init() {
 	// will be global for your application.
 
 	// rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.foam-postprocess.yaml)")
-	rootCmd.PersistentFlags().BoolVarP(
-		&verbose,
+	rootCmd.PersistentFlags().CountVarP(
+		(*int)(unsafe.Pointer(&logLevel)), // XXX: unsafe, logLevel = uint32
 		"verbose",
 		"v",
-		false,
 		"more verbose log output",
 	)
-	rootCmd.PersistentFlags().BoolVarP(
-		&quiet,
-		"quiet",
-		"q",
-		false,
-		"suppress all log output",
-	)
-	rootCmd.MarkFlagsMutuallyExclusive("verbose", "quiet")
 
 	rootCmd.PersistentFlags().BoolVar(
 		&dryRun,

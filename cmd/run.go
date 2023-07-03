@@ -18,8 +18,7 @@ var (
 	// if no config file is supplied as a command line argument.
 	configFile string = "config.yaml"
 
-	verbose bool
-	quiet   bool
+	logLevel logrus.Level = logrus.FatalLevel
 
 	dryRun           bool
 	noProcess        bool
@@ -36,14 +35,17 @@ type Config struct {
 	Log *logrus.Logger `yaml:"-"`
 }
 
+func logError(err error, log *logrus.Logger) error {
+	if err != nil {
+		log.Error(err)
+	}
+	return err
+}
+
 func run(cmd *cobra.Command, args []string) error {
 	var config Config
 	config.Log = logrus.StandardLogger()
-	if verbose {
-		config.Log.SetLevel(logrus.DebugLevel)
-	} else if quiet {
-		config.Log.SetLevel(logrus.ErrorLevel)
-	}
+	config.Log.SetLevel(logLevel)
 
 	// read in config
 	if len(args) != 0 {
@@ -74,26 +76,26 @@ func run(cmd *cobra.Command, args []string) error {
 
 	df, err := input.CreateDataFrame(&config.Input)
 	if err != nil {
-		return fmt.Errorf("error creating data frame: %w", err)
+		return logError(fmt.Errorf("error creating data frame: %w", err), config.Log)
 	}
 	if !noProcess {
 		if err = process.Process(df, config.Process); err != nil {
-			return fmt.Errorf("error processing data frame: %w", err)
+			return logError(fmt.Errorf("error processing data frame: %w", err), config.Log)
 		}
 	}
 	if !noWriteCSV {
 		if err := output.WriteCSV(df, &config.Output); err != nil {
-			return fmt.Errorf("output error: %w", err)
+			return logError(fmt.Errorf("output error: %w", err), config.Log)
 		}
 	}
 	if !noWriteGraphs {
 		if err := output.WriteGraphFiles(&config.Output); err != nil {
-			return fmt.Errorf("output error: %w", err)
+			return logError(fmt.Errorf("output error: %w", err), config.Log)
 		}
 	}
 	if !noGenerateGraphs {
 		if err := output.GenerateGraphs(&config.Output); err != nil {
-			return fmt.Errorf("output error: %w", err)
+			return logError(fmt.Errorf("output error: %w", err), config.Log)
 		}
 	}
 
