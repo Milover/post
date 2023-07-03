@@ -48,8 +48,8 @@ type csvSpec struct {
 	Comment   string `yaml:"comment"`
 }
 
-// defaultCsvSpec returns a csvSpec with 'sensible' default values.
-func defaultCsvSpec() csvSpec {
+// DefaultCsvSpec returns a csvSpec with 'sensible' default values.
+func DefaultCsvSpec() csvSpec {
 	return csvSpec{
 		HasHeader: true,
 		Delimiter: string(DfltCSVDelimiter),
@@ -88,8 +88,8 @@ type seriesSpec struct {
 	Log *logrus.Logger `yaml:"-"`
 }
 
-// defaultCsvSeriesSpec returns a seriesSpec with 'sensible' default values.
-func defaultSeriesSpec() seriesSpec {
+// DefaultCsvSeriesSpec returns a seriesSpec with 'sensible' default values.
+func DefaultSeriesSpec() seriesSpec {
 	return seriesSpec{
 		SeriesTimeName: "time",
 	}
@@ -109,7 +109,7 @@ func decodeRuneOrDefault(s string, dflt rune) rune {
 // applying options from the config.
 // If an error occurs, *dataframe.DataFrame will be nil.
 func fromCSV(in io.Reader, config *Config) (*dataframe.DataFrame, error) {
-	s := defaultCsvSpec()
+	s := DefaultCsvSpec()
 	if err := config.FormatSpec.Decode(&s); err != nil {
 		return nil, err
 	}
@@ -154,9 +154,7 @@ func ReadDataFrame(in io.Reader, config *Config) (*dataframe.DataFrame, error) {
 	if !found {
 		return nil, ErrInvalidFormat
 	}
-	config.Log.WithFields(logrus.Fields{
-		"format": strings.ToLower(config.Format),
-	}).Debug("reading input")
+	config.Log.Debug("reading input")
 	df, err := formatter(in, config)
 	if err != nil {
 		return nil, err
@@ -182,7 +180,7 @@ type walkStruct struct {
 // an OpenFOAM table series input.
 // If an error occurs, *dataframe.DataFrame will be nil.
 func ReadSeries(config *Config) (*dataframe.DataFrame, error) {
-	s := defaultSeriesSpec()
+	s := DefaultSeriesSpec()
 	if err := config.SeriesSpec.Decode(&s); err != nil {
 		return nil, err
 	}
@@ -218,6 +216,10 @@ func ReadSeries(config *Config) (*dataframe.DataFrame, error) {
 			return nil
 		}
 
+		config.Log.WithFields(logrus.Fields{
+			"file":   path,
+			"format": strings.ToLower(config.Format),
+		}).Debug("reading dataframe")
 		// try to create a dataframe from the file
 		f, err := fsys.Open(path)
 		if err != nil {
@@ -263,6 +265,10 @@ func CreateDataFrame(config *Config) (*dataframe.DataFrame, error) {
 	if config.IsSeries() {
 		return ReadSeries(config)
 	}
+	config.Log.WithFields(logrus.Fields{
+		"file":   config.File,
+		"format": strings.ToLower(config.Format),
+	}).Debug("creating dataframe")
 	f, err := os.Open(config.File)
 	if err != nil {
 		return nil, err

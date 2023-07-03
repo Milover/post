@@ -2,9 +2,9 @@ package output
 
 import (
 	"embed"
-	"fmt"
 	"io"
 	"os/exec"
+	"path/filepath"
 	"text/template"
 )
 
@@ -40,11 +40,11 @@ func GenerateTeXGraph(file string) error {
 	return exec.Command("pdflatex",
 		"-halt-on-error",
 		"-interaction=nonstopmode",
-		fmt.Sprint(file),
+		"-output-directory="+filepath.Dir(file),
+		file,
 	).Run()
 }
 
-// TODO: Should probably also take an io.Writer.
 func WriteTeXGraph(w io.Writer, g *TeXGraph) error {
 	g.propagateCSV()
 	return template.Must(template.

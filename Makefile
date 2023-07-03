@@ -1,6 +1,6 @@
 # Makefile
 
-TARGET		:= foam-postprocess
+TARGET		:= fp
 
 build:
 	go build -o $(TARGET) main.go
@@ -10,6 +10,9 @@ run:
 
 test:
 	go test ./...
+
+test-integration:
+	go test -tags=integration ./...
 
 vet:
 	go vet ./...

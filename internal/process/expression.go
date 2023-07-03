@@ -121,13 +121,13 @@ type expressionSpec struct {
 	Log *logrus.Logger `yaml:"-"`
 }
 
-// defaultExpressionSetSpec returns a expressionSetSpec with 'sensible' default values.
-func defaultExpressionSpec() expressionSpec {
+// DefaultExpressionSetSpec returns a expressionSetSpec with 'sensible' default values.
+func DefaultExpressionSpec() expressionSpec {
 	return expressionSpec{}
 }
 
 func expressionProcessor(df *dataframe.DataFrame, config *Config) error {
-	spec := defaultExpressionSpec()
+	spec := DefaultExpressionSpec()
 	spec.Log = config.Log
 	if err := config.TypeSpec.Decode(&spec); err != nil {
 		return err
@@ -161,7 +161,6 @@ func expressionProcessor(df *dataframe.DataFrame, config *Config) error {
 	if err != nil {
 		return err
 	}
-	rs := series.New(r, series.Float, spec.Result)
-	*df = df.Mutate(rs)
-	return errors.Join(df.Error())
+	*df = df.Mutate(series.New(r, series.Float, spec.Result))
+	return df.Error()
 }

@@ -44,8 +44,8 @@ type filterSpec struct {
 	Log *logrus.Logger `yaml:"-"`
 }
 
-// defaultFilterSetSpec returns a filterSetSpec with 'sensible' default values.
-func defaultFilterSetSpec() filterSetSpec {
+// DefaultFilterSetSpec returns a filterSetSpec with 'sensible' default values.
+func DefaultFilterSetSpec() filterSetSpec {
 	return filterSetSpec{Aggregation: "or"}
 }
 
@@ -77,7 +77,7 @@ func createFilter[T validType](spec *filterSpec, val T) dataframe.F {
 // 'and' or 'or' aggregation modes are available.
 // The 'or' mode is the default if the 'aggregation' field is unset.
 func filterProcessor(df *dataframe.DataFrame, config *Config) error {
-	spec := defaultFilterSetSpec()
+	spec := DefaultFilterSetSpec()
 	spec.Log = config.Log
 	if err := config.TypeSpec.Decode(&spec); err != nil {
 		return err

@@ -61,9 +61,15 @@ func process(df *dataframe.DataFrame, config *Config) error {
 	config.Log.WithFields(logrus.Fields{
 		"processor": strings.ToLower(config.Type),
 	}).Debug("applying processor")
+	config.Log.WithFields(logrus.Fields{
+		"fields": df.Names(),
+	}).Trace("starting")
 	if err := p(df, config); err != nil {
 		return err
 	}
+	config.Log.WithFields(logrus.Fields{
+		"fields": df.Names(),
+	}).Trace("done")
 	return nil
 }
 
