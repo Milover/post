@@ -24,24 +24,13 @@ type averageCycleTest struct {
 }
 
 // rng is a random number generator used during testing.
-var rng *rand.Rand
+var rng *rand.Rand = rand.New(rand.NewSource(0))
 
 // addNoise adds (mutates) random noise, up to amplitude amp, to a slice
 // of values.
 func addNoise(v []float64, amp float64) []float64 {
-	if rng == nil {
-		rng = rand.New(rand.NewSource(0))
-	}
 	for i := range v {
 		v[i] += amp * rng.Float64()
-	}
-	return v
-}
-
-// multiply performs elementwise multiply with a constant.
-func multiply(v []float64, c float64) []float64 {
-	for i := range v {
-		v[i] *= c
 	}
 	return v
 }
@@ -556,7 +545,6 @@ type_spec:
 // TestAverageCycleProcessor tests weather the cycle-average is computed
 // correctly.
 func TestAverageCycleProcessor(t *testing.T) {
-	rand.Seed(0)
 	for _, tt := range averageCycleTests {
 		t.Run(tt.Name, func(t *testing.T) {
 			assert := assert.New(t)
