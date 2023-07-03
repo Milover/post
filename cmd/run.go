@@ -35,19 +35,28 @@ type Config struct {
 	Log *logrus.Logger `yaml:"-"`
 }
 
-func logError(err error, log *logrus.Logger) error {
+func (c *Config) propagateLogger(log *logrus.Logger) {
+	c.Log = log
+	c.Input.Log = log
+	for i := range c.Process {
+		c.Process[i].Log = log
+	}
+	c.Output.Log = log
+}
+
+func (c *Config) logError(err error) error {
 	if err != nil {
-		log.Error(err)
+		c.Log.Error(err)
 	}
 	return err
 }
 
 func run(cmd *cobra.Command, args []string) error {
-	var config Config
-	config.Log = logrus.StandardLogger()
-	config.Log.SetLevel(logLevel)
+	logger := logrus.StandardLogger()
+	logger.SetLevel(logLevel)
 
-	// read in config
+	// read in configs
+	var configs []Config
 	if len(args) != 0 {
 		configFile = args[0]
 	}
@@ -60,43 +69,41 @@ func run(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	if err = yaml.Unmarshal(raw, &config); err != nil {
+	if err = yaml.Unmarshal(raw, &configs); err != nil {
 		return err
 	}
-
 	if dryRun {
 		return nil
 	}
 
-	// propagate logger
-	config.Input.Log = config.Log
-	for i := range config.Process {
-		config.Process[i].Log = config.Log
-	}
-	config.Output.Log = config.Log
+	// work
+	for i := range configs {
+		c := &configs[i]
+		c.propagateLogger(logger)
 
-	df, err := input.CreateDataFrame(&config.Input)
-	if err != nil {
-		return logError(fmt.Errorf("error creating data frame: %w", err), config.Log)
-	}
-	if !noProcess {
-		if err = process.Process(df, config.Process); err != nil {
-			return logError(fmt.Errorf("error processing data frame: %w", err), config.Log)
+		df, err := input.CreateDataFrame(&c.Input)
+		if err != nil {
+			return c.logError(fmt.Errorf("error creating data frame: %w", err))
 		}
-	}
-	if !noWriteCSV {
-		if err := output.WriteCSV(df, &config.Output); err != nil {
-			return logError(fmt.Errorf("output error: %w", err), config.Log)
+		if !noProcess {
+			if err = process.Process(df, c.Process); err != nil {
+				return c.logError(fmt.Errorf("error processing data frame: %w", err))
+			}
 		}
-	}
-	if !noWriteGraphs {
-		if err := output.WriteGraphFiles(&config.Output); err != nil {
-			return logError(fmt.Errorf("output error: %w", err), config.Log)
+		if !noWriteCSV {
+			if err := output.WriteCSV(df, &c.Output); err != nil {
+				return c.logError(fmt.Errorf("output error: %w", err))
+			}
 		}
-	}
-	if !noGenerateGraphs {
-		if err := output.GenerateGraphs(&config.Output); err != nil {
-			return logError(fmt.Errorf("output error: %w", err), config.Log)
+		if !noWriteGraphs {
+			if err := output.WriteGraphFiles(&c.Output); err != nil {
+				return c.logError(fmt.Errorf("output error: %w", err))
+			}
+		}
+		if !noGenerateGraphs {
+			if err := output.GenerateGraphs(&c.Output); err != nil {
+				return c.logError(fmt.Errorf("output error: %w", err))
+			}
 		}
 	}
 
