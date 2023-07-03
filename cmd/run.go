@@ -14,12 +14,6 @@ import (
 )
 
 var (
-	// configFile is the default file name of the config file, it is used
-	// if no config file is supplied as a command line argument.
-	configFile string = "config.yaml"
-
-	logLevel logrus.Level = logrus.FatalLevel
-
 	dryRun           bool
 	noProcess        bool
 	noWriteCSV       bool

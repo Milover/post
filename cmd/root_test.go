@@ -13,6 +13,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// run command tests
 type runTest struct {
 	Name   string
 	Error  error
@@ -153,6 +154,31 @@ func TestRun(t *testing.T) {
 			})
 			//logLevel = logrus.TraceLevel
 			err = run(&cobra.Command{}, []string{})
+			assert.Equal(tt.Error, err)
+		})
+	}
+}
+
+// writeConfigTemplate command tests
+type writeConfigTemplateTest struct {
+	Name  string
+	Error error
+}
+
+var writeConfigTemplateTests = []writeConfigTemplateTest{
+	{
+		Name:  "good",
+		Error: nil,
+	},
+}
+
+func TestWriteConfigTemplate(t *testing.T) {
+	for _, tt := range writeConfigTemplateTests {
+		t.Run(tt.Name, func(t *testing.T) {
+			assert := assert.New(t)
+
+			//logLevel = logrus.TraceLevel
+			err := writeConfigTemplate(&cobra.Command{}, []string{})
 			assert.Equal(tt.Error, err)
 		})
 	}
