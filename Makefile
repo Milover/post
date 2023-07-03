@@ -1,6 +1,6 @@
 # Makefile
 
-TARGET		:= foam-postprocess
+TARGET		:= fp
 
 build:
 	go build -o $(TARGET) main.go
