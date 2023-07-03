@@ -31,8 +31,9 @@ Utilities for post-processing OpenFOAM function object data.
 	- [x] arithmetic expressions
 		- support arbitrary arithmetic expressions with fields/constants
 - input
-	- [ ] combine multiple files into single dataframe
-	- [ ] support OpenFOAM time series type inputs:
+	- [ ] combine multiple files into single dataframe (?)
+        - what exactly are we trying to combine?
+	- [x] support OpenFOAM time series type inputs:
 		```
 		.
 		├── 0.0
@@ -67,3 +68,12 @@ Utilities for post-processing OpenFOAM function object data.
 		- internal package APIs only require their own config, or their own
 		  config and a `dataframe.DataFrame`, as inputs
 		- moved all execution controls to `cmd` package
+
+### Quality of life stuff
+
+- [ ] better error messages
+- [ ] more processors?
+- [ ] the run file template generation should be automated
+    - not happening any time soon
+- [ ] should make the data container (currently `dataframe.DataFrame`) an interface
+    - not happening any time soon
