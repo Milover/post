@@ -161,7 +161,6 @@ func expressionProcessor(df *dataframe.DataFrame, config *Config) error {
 	if err != nil {
 		return err
 	}
-	rs := series.New(r, series.Float, spec.Result)
-	*df = df.Mutate(rs)
-	return errors.Join(df.Error())
+	*df = df.Mutate(series.New(r, series.Float, spec.Result))
+	return df.Error()
 }
