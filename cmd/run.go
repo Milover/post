@@ -73,6 +73,7 @@ func run(cmd *cobra.Command, args []string) error {
 	for i := range config.Process {
 		config.Process[i].Log = config.Log
 	}
+	config.Output.Log = config.Log
 
 	df, err := input.CreateDataFrame(&config.Input)
 	if err != nil {

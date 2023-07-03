@@ -1,5 +1,7 @@
 package output
 
+import "github.com/sirupsen/logrus"
+
 type Config struct {
 	// Directory is an output directory for all data. If it is an empty string,
 	// the current working directory is used. The path is created recursively
@@ -11,4 +13,6 @@ type Config struct {
 	// TODO: This should be a *yaml.Node because we might not be using TeX,
 	// and even if we are, the input needs to be validated.
 	Graphs []TeXGraph `yaml:"graphs"`
+
+	Log *logrus.Logger `yaml:"-"`
 }
