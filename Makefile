@@ -11,6 +11,9 @@ run:
 test:
 	go test ./...
 
+test-integration:
+	go test -tags=integration ./...
+
 vet:
 	go vet ./...
 
