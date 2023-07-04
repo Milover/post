@@ -23,7 +23,7 @@ const (
     series_spec:
       series_directory:         # root series directory
       series_file:              # series data file name
-      series_time_name:         # generateed time field name; 'time' by default
+      series_time_name:         # generated time field name; 'time' by default
   process:
     - type: average-cycle
       type_spec:
@@ -32,7 +32,7 @@ const (
         time_precision:         # machine precision by default
     - type: filter
       type_spec:
-        aggregation:            # one of 'and', 'or'
+        aggregation:            # one of 'and', 'or'; by default 'or'
         filters:
           - field:
             op:                 # one of '==', '!=', '>', '>=', '<', '<='
@@ -59,6 +59,7 @@ const (
               - x_field:
                 y_field:
                 legend_entry:   # raw TeX
+                table_file:     # optional; default is 'output.table_file'
 `
 )
 
