@@ -2,6 +2,7 @@ package process
 
 import (
 	"io"
+	"math"
 	"math/rand"
 	"strings"
 	"testing"
@@ -43,6 +44,44 @@ func divide(v []float64, c float64) []float64 {
 	return v
 }
 
+// zeroAvg returns a slice of values, which have an ensemble average of 0.
+func zeroAvg(nHalfValues int) []float64 {
+	v := make([]float64, 2*nHalfValues)
+	for i := 0; i < nHalfValues; i++ {
+		v[i] = math.Sin(2 * math.Pi * float64(i+1) / float64(nHalfValues))
+		v[i+nHalfValues] = -math.Sin(2 * math.Pi * float64(i+1) / float64(nHalfValues))
+	}
+	return v
+}
+
+func cycleZeroAvg(cycles, nHalfValues int) []float64 {
+	v := make([]float64, 0, cycles*2*nHalfValues)
+	for i := 0; i < cycles; i++ {
+		v = append(v, zeroAvg(nHalfValues)...)
+	}
+	return v
+}
+
+// nOfValue is a function that returns a slice of length n, initialized with
+// value.
+func nOfValue(value float64, n int) []float64 {
+	vs := make([]float64, n)
+	for i := range vs {
+		vs[i] = value
+	}
+	return vs
+}
+
+// floatSeq is a funcion which returns a sequence of integers
+// starting at from, and ending at to (inclusive).
+func floatSeq(from, to int) []float64 {
+	vs := make([]float64, 0, to-from+1)
+	for i := from; i <= to; i++ {
+		vs = append(vs, float64(i))
+	}
+	return vs
+}
+
 var averageCycleTests = []averageCycleTest{
 	{
 		Name: "good",
@@ -63,6 +102,22 @@ type_spec:
 		Output: dataframe.New(
 			series.New([]float64{1.0, 2.0, 3.0, 2.0, 1.0, 0.0}, series.Float, "x"),
 			series.New(divide([]float64{1, 2, 3, 4, 5, 6}, 6.0), series.Float, "time"),
+		),
+		Error: nil,
+	},
+	{
+		Name: "good-sin-values",
+		Config: Config{
+			Type: "average-cycle",
+		},
+		Spec: `
+type_spec:
+  n_cycles: 10
+`,
+		Input: dataframe.New(series.New(cycleZeroAvg(5, 20), series.Float, "x")),
+		Output: dataframe.New(
+			series.New(nOfValue(0, 20), series.Float, "x"),
+			series.New(divide(floatSeq(1, 20), 20.0), series.Float, "time"),
 		),
 		Error: nil,
 	},
