@@ -33,7 +33,7 @@ type TeXTable struct {
 	XField      string `yaml:"x_field"`
 	YField      string `yaml:"y_field"`
 	LegendEntry string `yaml:"legend_entry"`
-	TableFile   string `yaml:"-"`
+	TableFile   string `yaml:"table_file"`
 }
 
 func GenerateTeXGraph(file string) error {
@@ -46,7 +46,7 @@ func GenerateTeXGraph(file string) error {
 }
 
 func WriteTeXGraph(w io.Writer, g *TeXGraph) error {
-	g.propagateCSV()
+	g.propagateTableFile()
 	return template.Must(template.
 		New("master.tmpl").
 		Delims("__{", "}__").
@@ -54,11 +54,17 @@ func WriteTeXGraph(w io.Writer, g *TeXGraph) error {
 		Execute(w, g)
 }
 
-func (g *TeXGraph) propagateCSV() {
+// propagateTableFile is a function which propagates the graphs 'TableFile'
+// to each TeXTable present in the graph.
+// The TeXTable.TableFile is set only if it is undefined, i.e., if it was not
+// specified in the run file.
+func (g *TeXGraph) propagateTableFile() {
 	for aID := range g.Axes {
 		a := &g.Axes[aID]
 		for tID := range a.Tables {
-			a.Tables[tID].TableFile = g.TableFile
+			if len(a.Tables[tID].TableFile) == 0 {
+				a.Tables[tID].TableFile = g.TableFile
+			}
 		}
 	}
 }

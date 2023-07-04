@@ -413,6 +413,66 @@ series_spec:
 		Error: nil,
 	},
 	{
+		Name: "good-unsorted",
+		Config: Config{
+			Format: "dat",
+			Fields: []string{"x"},
+		},
+		SeriesSpec: `
+series_spec:
+  series_directory: 'testdata/foam_series.good.unsorted'
+  series_file: 'data.dat'
+  series_time_name: 'time'
+`,
+		Output: dataframe.New(
+			series.New([]float64{
+				0, 0,
+				1, 1,
+				2, 2,
+				3, 3,
+				4, 4,
+				5, 5,
+				6, 6,
+				7, 7,
+				8, 8,
+				9, 9,
+				10, 10,
+				11, 11,
+				12, 12,
+				13, 13,
+				14, 14,
+				15, 15,
+				16, 16,
+				17, 17,
+				18, 18,
+				19, 19,
+				20, 20}, series.Float, "time"),
+			series.New([]int{
+				0, 0,
+				0, 1,
+				0, 2,
+				0, 3,
+				0, 4,
+				0, 5,
+				0, 6,
+				0, 7,
+				0, 8,
+				0, 9,
+				0, 10,
+				0, 11,
+				0, 12,
+				0, 13,
+				0, 14,
+				0, 15,
+				0, 16,
+				0, 17,
+				0, 18,
+				0, 19,
+				0, 20}, series.Int, "x"),
+		),
+		Error: nil,
+	},
+	{
 		Name: "good-empty",
 		Config: Config{
 			Format: "csv",

@@ -256,6 +256,12 @@ func ReadSeries(config *Config) (*dataframe.DataFrame, error) {
 		return nil, err
 	}
 
+	if df != nil {
+		*df = df.Arrange(dataframe.Sort(s.SeriesTimeName))
+		if df.Error() != nil {
+			return nil, df.Error()
+		}
+	}
 	return df, nil
 }
 
