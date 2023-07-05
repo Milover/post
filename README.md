@@ -71,7 +71,7 @@ Utilities for post-processing OpenFOAM function object data.
 
 ### Quality of life stuff
 
-- [ ] add option to skip reading the input
+- [x] add option to skip reading the input
 - [ ] some way of generating several output files in one pipeline
     - **add better explanation and an example use case**
 - [ ] add option for skipping an entire pipeline
