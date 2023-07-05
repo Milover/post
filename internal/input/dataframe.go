@@ -154,7 +154,7 @@ func ReadDataFrame(in io.Reader, config *Config) (*dataframe.DataFrame, error) {
 	if !found {
 		return nil, ErrInvalidFormat
 	}
-	config.Log.Debug("reading input")
+	config.Log.Trace("reading input")
 	df, err := formatter(in, config)
 	if err != nil {
 		return nil, err
@@ -219,7 +219,7 @@ func ReadSeries(config *Config) (*dataframe.DataFrame, error) {
 		config.Log.WithFields(logrus.Fields{
 			"file":   path,
 			"format": strings.ToLower(config.Format),
-		}).Debug("reading dataframe")
+		}).Trace("reading dataframe")
 		// try to create a dataframe from the file
 		f, err := fsys.Open(path)
 		if err != nil {
