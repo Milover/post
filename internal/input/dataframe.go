@@ -6,6 +6,7 @@ import (
 	"io"
 	"io/fs"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"unicode/utf8"
@@ -194,7 +195,15 @@ func ReadSeries(config *Config) (*dataframe.DataFrame, error) {
 	// walk and process the series directory
 	var df *dataframe.DataFrame
 	var ws walkStruct
-	fsys := os.DirFS(s.SeriesDirectory)
+	cwd, err := os.Getwd()
+	if err != nil {
+		return nil, err
+	}
+	workDir := filepath.Join(cwd, s.SeriesDirectory)
+	if _, err := os.Stat(workDir); err != nil {
+		return nil, err
+	}
+	fsys := os.DirFS(workDir)
 	// FIXME: the dataframe.DataFrame operations are mysterious, so no idea
 	// where allocations happen or how many there are --- should check this
 	// at some point.
@@ -255,7 +264,6 @@ func ReadSeries(config *Config) (*dataframe.DataFrame, error) {
 	if err := fs.WalkDir(fsys, ".", walkFn); err != nil {
 		return nil, err
 	}
-
 	if df != nil {
 		*df = df.Arrange(dataframe.Sort(s.SeriesTimeName))
 		if df.Error() != nil {
@@ -269,6 +277,7 @@ func ReadSeries(config *Config) (*dataframe.DataFrame, error) {
 // If an error occurs, *dataframe.DataFrame will be nil.
 func CreateDataFrame(config *Config) (*dataframe.DataFrame, error) {
 	if config.IsSeries() {
+		config.Log.Trace("creating dataframe from series")
 		return ReadSeries(config)
 	}
 	config.Log.WithFields(logrus.Fields{
