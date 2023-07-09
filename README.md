@@ -76,7 +76,7 @@ Utilities for post-processing OpenFOAM function object data.
 - [ ] add option for skipping an entire pipeline
 - [ ] better control over TeX graphs
 	- either custom templates, or support raw TeX in config file
-	- [ ] support for custom templates
+	- [x] support for custom templates
 	- [ ] support for raw TeX in config file
 - [ ] some way of generating several output files in one pipeline
     - **add better explanation and an example use case**
