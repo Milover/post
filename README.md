@@ -72,15 +72,26 @@ Utilities for post-processing OpenFOAM function object data.
 ### Quality of life stuff
 
 - [x] add option to skip reading the input
-- [ ] specifying `input.fields` should be optional
+- [ ] ~~specifying `input.fields` should be optional~~
+	- already was optional
 - [ ] add option for skipping an entire pipeline
 - [ ] better control over TeX graphs
 	- either custom templates, or support raw TeX in config file
 	- [x] support for custom templates
+	- [ ] add cli command for generating default templates
 	- [ ] support for raw TeX in config file
-- [ ] some way of generating several output files in one pipeline
-    - **add better explanation and an example use case**
+- [ ] input/output
+	- [ ] support output to memory
+		- instead of writing data to disk, store the dataframe, and make
+		  it available to other pipelines
+	- [ ] support combining multiple input files in to one
+	- [ ] support generating multiple outputs in one pipeline
+		- **add better explanation and an example use case**
+		- usefull when working with a series type input
+    - [ ] support compressed input
+    - [ ] support binary input
 - [ ] better error messages
+- [ ] re-sampling support
 - [ ] parallelism/concurrency (at least some parts)?
 - [ ] the config file template generation should be automated
     - not happening any time soon
