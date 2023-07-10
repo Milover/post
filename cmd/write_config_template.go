@@ -12,7 +12,7 @@ const (
 	showcaseConfig string = `# run file template
 - input:
     file:                       # input file name; unused if 'series_spec' is defined
-    fields: []                  # list of field names
+    fields: []                  # list of field names; optional
     format:                     # 'dat' or 'csv'
     format_spec:
       # 'csv' spec; 'dat' doesn't require a spec
@@ -25,6 +25,7 @@ const (
       series_file:              # series data file name
       series_time_name:         # generated time field name; 'time' by default
   process:
+    # some example processor specs, executed in order listed
     - type: average-cycle
       type_spec:
         n_cycles:
@@ -44,8 +45,12 @@ const (
   output:
     directory:                  # output directory name, created if not present
     table_file:                 # output file name
+    grapher:                    # only 'tex' currently
     graphs:
       - name:                   # used as a basename for all graph related files
+        template_dir:           # template directory; optional
+        template_main:          # root template file name; optional
+        template_delims:        # go template delimiters; ['__{','}__'] by default; optional
         axes:
           - x:
               min:
