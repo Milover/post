@@ -1,0 +1,51 @@
+# run file template
+- input: # Salon, et al. 2007, fig 21
+    file: "flat_plate.stuff/salon_ac.stokes.2007/fig_21/raw/tau_w.csv"
+    fields: [phase, tauWBar]
+    format: dat
+  output:
+    directory: outdir
+    table_file: dns_salon_2007_tau_w_bar
+- input: # cycle average tauWBar at probe location
+    file: "flat_plate.stuff/postProcessing.LES/cont.probes/0/tauWBar"
+    fields: [time, tauWBar]
+    format: dat
+  process:
+    - type: filter
+      type_spec:
+        aggregation:
+        filters:
+          - field: time
+            op: '>'
+            value: 19.999999999999
+    - type: average-cycle
+      type_spec:
+        n_cycles: 10
+        time_field: time
+        time_precision: 1e-10
+    - type: expression
+      type_spec:
+        expression: '180*time'
+        result: phase
+  output:
+    directory: outdir
+    table_file: wale_tau_w_bar_avg
+    graphs:
+      - name: tau_w_bar_avg
+        axes:
+          - x:
+              min: 0
+              max: 180
+              label: '$\phi$, (deg.)'
+            y:
+              min: 0
+              max: 2.5
+              label: '$\tau_\text{w} / \rho U_0 (2\nu\omega)^{\frac{1}{2}}$'
+            tables:
+              - x_field: phase
+                y_field: tauWBar
+                legend_entry: 'WALE'
+              - x_field: phase
+                y_field: tauWBar
+                legend_entry: 'DNS'
+                table_file: 'outdir/dns_salon_2007_tau_w_bar.csv'

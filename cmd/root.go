@@ -11,9 +11,9 @@ import (
 var (
 	// configFile is the default file name of the config file, it is used
 	// if no config file is supplied as a command line argument.
-	configFile string = "config.yaml"
+	configFile string = "fp_config.yaml"
 
-	logLevel logrus.Level = logrus.FatalLevel
+	logLevel logrus.Level
 )
 
 var (
@@ -59,6 +59,7 @@ func init() {
 		"v",
 		"verbose log output",
 	)
+	logLevel = logrus.WarnLevel
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
@@ -69,11 +70,23 @@ func init() {
 		false,
 		"read the config and exit",
 	)
+	rootCmd.Flags().StringSliceVar(
+		&skipIDs,
+		"skip",
+		[]string{},
+		"a list of pipeline IDs to be skipped during processing",
+	)
+	rootCmd.Flags().BoolVar(
+		&onlyGraphs,
+		"only-graphs",
+		false,
+		"only write and generate graphs, skip input, processing and output",
+	)
 	rootCmd.Flags().BoolVar(
 		&noProcess,
 		"no-process",
 		false,
-		"don't process the input data",
+		"don't process data",
 	)
 	rootCmd.Flags().BoolVar(
 		&noWriteCSV,

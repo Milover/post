@@ -2,14 +2,38 @@ package output
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/go-gota/gota/dataframe"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/exp/maps"
+	"gopkg.in/yaml.v3"
 )
 
-func outDir(config *Config) (string, error) {
+var (
+	ErrInvalidGrapher = fmt.Errorf(
+		"bad input grapher, available graphers are: %q",
+		maps.Keys(GrapherFactories))
+)
+
+type Grapher interface {
+	Write(*Config) error
+	Generate(*Config) error
+}
+
+type GrapherFactory func(*yaml.Node) (Grapher, error)
+
+// GrapherFactories maps Format type tags to FormatReaders.
+var GrapherFactories = map[string]GrapherFactory{
+	"tex": NewTeXGrapher,
+}
+
+var factory GrapherFactory // :(
+
+func OutDir(config *Config) (string, error) {
 	if err := os.MkdirAll(filepath.Clean(config.Directory), 0755); err != nil {
 		return "", err
 	}
@@ -20,14 +44,14 @@ func outDir(config *Config) (string, error) {
 // FIXME: LaTeX has an upper size limit for CSV files that it can handle
 // so the output should be decimated down to this size if it's too large.
 func WriteCSV(df *dataframe.DataFrame, config *Config) error {
-	csv, err := outDir(config)
+	csv, err := OutDir(config)
 	if err != nil {
 		return err
 	}
 	if len(config.TableFile) == 0 {
 		return err
 	}
-	csv = filepath.Join(csv, config.TableFile+".csv")
+	csv = filepath.Join(csv, config.TableFile)
 	config.Log.WithFields(logrus.Fields{
 		"file": csv,
 	}).Debug("writing csv")
@@ -44,51 +68,39 @@ func WriteCSV(df *dataframe.DataFrame, config *Config) error {
 	return nil
 }
 
-// WriteGraphFiles writes graph files, using options from the config.
-func WriteGraphFiles(config *Config) error {
-	outdir, err := outDir(config)
-	if err != nil {
-		return err
+type execFunc func(Grapher, *Config) error
+
+func graphExecute(config *Config, exec execFunc, action string) error {
+	if len(config.Graphs) == 0 {
+		return nil
 	}
-	// we can only write LaTeX graphs
+	var found bool
+	if factory, found = GrapherFactories[strings.ToLower(config.Grapher)]; !found {
+		return ErrInvalidGrapher
+	}
+	config.Log.WithFields(logrus.Fields{
+		"directory":  config.Directory,
+		"table-file": config.TableFile,
+		"grapher":    config.Grapher,
+	}).Debug(action + " graph")
+	var err error
 	for i := range config.Graphs {
-		g := &config.Graphs[i]
-		if len(g.TableFile) == 0 {
-			g.TableFile = filepath.Join(outdir, config.TableFile+".csv") // TODO
+		g, e := factory(&config.Graphs[i])
+		if e != nil {
+			err = errors.Join(err, e)
+		} else {
+			err = errors.Join(err, exec(g, config))
 		}
-		// write graph file
-		f := filepath.Join(outdir, g.Name+".tex") // TODO
-		config.Log.WithFields(logrus.Fields{
-			"file": f,
-		}).Debug("writing graph file")
-		w, errCreate := os.Create(f)
-		errGraph := WriteTeXGraph(w, g)
-		errClose := w.Close()
-		err = errors.Join(err, errCreate, errGraph, errClose)
 	}
 	return err
 }
 
+// WriteGraphFiles writes graph files, using options from the config.
+func WriteGraphFiles(config *Config) error {
+	return graphExecute(config, Grapher.Write, "writing")
+}
+
 // GenerateGraphs generates the actual graphs, e.g., PDFs from TeX files.
 func GenerateGraphs(config *Config) error {
-	outdir, err := outDir(config)
-	if err != nil {
-		return err
-	}
-	// we can only compile LaTeX graphs
-	for i := range config.Graphs {
-		g := &config.Graphs[i]
-		f := filepath.Join(outdir, g.Name+".tex")
-		config.Log.WithFields(logrus.Fields{
-			"file": f,
-		}).Debug("generating graph")
-		if _, e := os.Stat(f); e != nil {
-			err = errors.Join(err, e)
-			continue
-		}
-		if e := GenerateTeXGraph(f); e != nil {
-			err = errors.Join(err, e)
-		}
-	}
-	return err
+	return graphExecute(config, Grapher.Generate, "generating")
 }

@@ -2,19 +2,58 @@ package output
 
 import (
 	"embed"
-	"io"
+	"errors"
+	"io/fs"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"text/template"
+
+	"github.com/sirupsen/logrus"
+	"gopkg.in/yaml.v3"
 )
 
 //go:embed tmpl
-var templates embed.FS
+var dfltTeXTemplates embed.FS
 
-type TeXGraph struct {
-	Name      string    `yaml:"name"`
-	Axes      []TexAxis `yaml:"axes"`
-	TableFile string    `yaml:"table-file"`
+var (
+	ErrTeXGraphSpec      = errors.New("output: TeX: graph spec == nil")
+	ErrTeXGraphName      = errors.New("output: TeX: graph name not specified")
+	ErrTeXGraphTableFile = errors.New("output: TeX: graph table file not specified")
+)
+
+const (
+	DfltTexTemplateDir  string = "tmpl/*.tmpl"
+	DfltTexTemplateMain string = "master.tmpl"
+)
+
+var (
+	DfltTeXTemplateDelims = []string{"__{", "}__"}
+)
+
+type TeXGrapher struct {
+	Name           string    `yaml:"name"`
+	Axes           []TexAxis `yaml:"axes"`
+	TableFile      string    `yaml:"table_file"`
+	TemplateDir    string    `yaml:"template_file"`
+	TemplateMain   string    `yaml:"template_main"`
+	TemplateDelims []string  `yaml:"template_delims"`
+
+	Templates fs.FS      `yaml:"-"`
+	Spec      *yaml.Node `yaml:"-"`
+}
+
+func NewTeXGrapher(spec *yaml.Node) (Grapher, error) {
+	g := &TeXGrapher{
+		TemplateDir:    DfltTexTemplateDir,
+		TemplateMain:   DfltTexTemplateMain,
+		TemplateDelims: DfltTeXTemplateDelims,
+		Templates:      dfltTeXTemplates,
+	}
+	if err := spec.Decode(g); err != nil {
+		return nil, err
+	}
+	return g, nil
 }
 
 type TexAxis struct {
@@ -36,35 +75,89 @@ type TeXTable struct {
 	TableFile   string `yaml:"table_file"`
 }
 
-func GenerateTeXGraph(file string) error {
+func (g *TeXGrapher) filepath(config *Config) (string, error) {
+	if len(g.Name) == 0 {
+		return "", ErrTeXGraphName
+	}
+	outDir, err := OutDir(config)
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(outDir, g.Name), nil
+}
+
+func (g *TeXGrapher) Write(config *Config) error {
+	path, err := g.filepath(config)
+	if err != nil {
+		return err
+	}
+	config.Log.WithFields(logrus.Fields{
+		"file": path,
+	}).Trace("writing TeX graph file")
+	w, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	defer w.Close()
+
+	if err := g.propagateTableFile(config); err != nil {
+		return err
+	}
+	if g.TemplateDir != DfltTexTemplateDir {
+		if _, err := os.Stat(g.TemplateDir); err != nil {
+			return err
+		}
+		g.Templates = os.DirFS(g.TemplateDir)
+	}
+	return template.Must(template.
+		New(g.TemplateMain).
+		Delims(g.TemplateDelims[0], g.TemplateDelims[1]).
+		ParseFS(g.Templates, g.TemplateDir)).
+		Execute(w, g)
+}
+
+func (g *TeXGrapher) Generate(config *Config) error {
+	path, err := g.filepath(config)
+	if err != nil {
+		return err
+	}
+	if _, err := os.Stat(path); err != nil {
+		return err
+	}
+	outDir, _ := OutDir(config)
+	config.Log.WithFields(logrus.Fields{
+		"file": path,
+	}).Trace("generating TeX graph")
 	return exec.Command("pdflatex",
 		"-halt-on-error",
 		"-interaction=nonstopmode",
-		"-output-directory="+filepath.Dir(file),
-		file,
+		"-output-directory="+outDir,
+		path,
 	).Run()
-}
-
-func WriteTeXGraph(w io.Writer, g *TeXGraph) error {
-	g.propagateTableFile()
-	return template.Must(template.
-		New("master.tmpl").
-		Delims("__{", "}__").
-		ParseFS(templates, "tmpl/*.tmpl")).
-		Execute(w, g)
 }
 
 // propagateTableFile is a function which propagates the graphs 'TableFile'
 // to each TeXTable present in the graph.
 // The TeXTable.TableFile is set only if it is undefined, i.e., if it was not
 // specified in the run file.
-func (g *TeXGraph) propagateTableFile() {
+func (g *TeXGrapher) propagateTableFile(config *Config) error {
+	outDir, err := OutDir(config)
+	if err != nil {
+		return err
+	}
+	if len(g.TableFile) == 0 {
+		g.TableFile = filepath.Join(outDir, config.TableFile)
+	}
 	for aID := range g.Axes {
 		a := &g.Axes[aID]
 		for tID := range a.Tables {
 			if len(a.Tables[tID].TableFile) == 0 {
 				a.Tables[tID].TableFile = g.TableFile
 			}
+			if len(a.Tables[tID].TableFile) == 0 {
+				return ErrTeXGraphTableFile
+			}
 		}
 	}
+	return nil
 }

@@ -4,24 +4,31 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strconv"
 
 	"github.com/Milover/foam-postprocess/internal/input"
 	"github.com/Milover/foam-postprocess/internal/output"
 	"github.com/Milover/foam-postprocess/internal/process"
+	"github.com/go-gota/gota/dataframe"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"golang.org/x/exp/slices"
 	"gopkg.in/yaml.v3"
 )
 
 var (
 	dryRun           bool
+	onlyGraphs       bool
 	noProcess        bool
 	noWriteCSV       bool
 	noWriteGraphs    bool
 	noGenerateGraphs bool
+
+	skipIDs []string
 )
 
 type Config struct {
+	ID      string           `yaml:"id"`
 	Input   input.Config     `yaml:"input"`
 	Process []process.Config `yaml:"process"`
 	Output  output.Config    `yaml:"output"`
@@ -74,17 +81,29 @@ func run(cmd *cobra.Command, args []string) error {
 	for i := range configs {
 		c := &configs[i]
 		c.propagateLogger(logger)
-
-		df, err := input.CreateDataFrame(&c.Input)
-		if err != nil {
-			return c.logError(fmt.Errorf("error creating data frame: %w", err))
+		if len(c.ID) == 0 {
+			c.ID = strconv.Itoa(i)
 		}
-		if !noProcess {
+		if slices.Contains(skipIDs, c.ID) {
+			c.Log.WithFields(logrus.Fields{
+				"id": c.ID,
+			}).Info("skipping pipeline")
+			continue
+		}
+
+		var df *dataframe.DataFrame
+		if !onlyGraphs {
+			df, err = input.CreateDataFrame(&c.Input)
+			if err != nil {
+				return c.logError(fmt.Errorf("error creating data frame: %w", err))
+			}
+		}
+		if !onlyGraphs && !noProcess {
 			if err = process.Process(df, c.Process); err != nil {
 				return c.logError(fmt.Errorf("error processing data frame: %w", err))
 			}
 		}
-		if !noWriteCSV {
+		if !onlyGraphs && !noWriteCSV {
 			if err := output.WriteCSV(df, &c.Output); err != nil {
 				return c.logError(fmt.Errorf("output error: %w", err))
 			}
