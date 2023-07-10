@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strconv"
 
 	"github.com/Milover/foam-postprocess/internal/input"
 	"github.com/Milover/foam-postprocess/internal/output"
@@ -11,6 +12,7 @@ import (
 	"github.com/go-gota/gota/dataframe"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"golang.org/x/exp/slices"
 	"gopkg.in/yaml.v3"
 )
 
@@ -21,9 +23,12 @@ var (
 	noWriteCSV       bool
 	noWriteGraphs    bool
 	noGenerateGraphs bool
+
+	skipIDs []string
 )
 
 type Config struct {
+	ID      string           `yaml:"id"`
 	Input   input.Config     `yaml:"input"`
 	Process []process.Config `yaml:"process"`
 	Output  output.Config    `yaml:"output"`
@@ -76,6 +81,15 @@ func run(cmd *cobra.Command, args []string) error {
 	for i := range configs {
 		c := &configs[i]
 		c.propagateLogger(logger)
+		if len(c.ID) == 0 {
+			c.ID = strconv.Itoa(i)
+		}
+		if slices.Contains(skipIDs, c.ID) {
+			c.Log.WithFields(logrus.Fields{
+				"id": c.ID,
+			}).Info("skipping pipeline")
+			continue
+		}
 
 		var df *dataframe.DataFrame
 		if !onlyGraphs {

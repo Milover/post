@@ -70,6 +70,12 @@ func init() {
 		false,
 		"read the config and exit",
 	)
+	rootCmd.Flags().StringSliceVar(
+		&skipIDs,
+		"skip",
+		[]string{},
+		"a list of pipeline IDs to be skipped during processing",
+	)
 	rootCmd.Flags().BoolVar(
 		&onlyGraphs,
 		"only-graphs",

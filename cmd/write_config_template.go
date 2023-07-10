@@ -10,7 +10,8 @@ import (
 const (
 	// FIXME: this should probably be automatically assembled
 	showcaseConfig string = `# run file template
-- input:
+- id:                           # pipeline identifier; optional
+  input:
     file:                       # input file name; unused if 'series_spec' is defined
     fields: []                  # list of field names; optional
     format:                     # 'dat' or 'csv'
