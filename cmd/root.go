@@ -11,7 +11,7 @@ import (
 var (
 	// configFile is the default file name of the config file, it is used
 	// if no config file is supplied as a command line argument.
-	configFile string = "config.yaml"
+	configFile string = "fp_config.yaml"
 
 	logLevel logrus.Level
 )
