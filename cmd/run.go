@@ -31,7 +31,7 @@ type Config struct {
 	ID      string           `yaml:"id"`
 	Input   input.Config     `yaml:"input"`
 	Process []process.Config `yaml:"process"`
-	Output  output.Config    `yaml:"output"`
+	Output  []output.Config  `yaml:"output"`
 
 	Log *logrus.Logger `yaml:"-"`
 }
@@ -42,7 +42,9 @@ func (c *Config) propagateLogger(log *logrus.Logger) {
 	for i := range c.Process {
 		c.Process[i].Log = log
 	}
-	c.Output.Log = log
+	for i := range c.Output {
+		c.Output[i].Log = log
+	}
 }
 
 func (c *Config) logError(err error) error {
@@ -103,21 +105,25 @@ func run(cmd *cobra.Command, args []string) error {
 				return c.logError(fmt.Errorf("error processing data frame: %w", err))
 			}
 		}
-		if !onlyGraphs && !noWriteCSV {
-			if err := output.WriteCSV(df, &c.Output); err != nil {
-				return c.logError(fmt.Errorf("output error: %w", err))
-			}
+		if err = output.Output(df, c.Output); err != nil {
+			return c.logError(fmt.Errorf("output error: %w", err))
 		}
-		if !noWriteGraphs {
-			if err := output.WriteGraphFiles(&c.Output); err != nil {
-				return c.logError(fmt.Errorf("output error: %w", err))
-			}
-		}
-		if !noGenerateGraphs {
-			if err := output.GenerateGraphs(&c.Output); err != nil {
-				return c.logError(fmt.Errorf("output error: %w", err))
-			}
-		}
+
+		//		if !onlyGraphs && !noWriteCSV {
+		//			if err := output.WriteCSV(df, &c.Output); err != nil {
+		//				return c.logError(fmt.Errorf("output error: %w", err))
+		//			}
+		//		}
+		//		if !noWriteGraphs {
+		//			if err := output.WriteGraphFiles(&c.Output); err != nil {
+		//				return c.logError(fmt.Errorf("output error: %w", err))
+		//			}
+		//		}
+		//		if !noGenerateGraphs {
+		//			if err := output.GenerateGraphs(&c.Output); err != nil {
+		//				return c.logError(fmt.Errorf("output error: %w", err))
+		//			}
+		//		}
 	}
 
 	return nil

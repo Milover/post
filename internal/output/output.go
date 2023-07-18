@@ -14,93 +14,61 @@ import (
 )
 
 var (
-	ErrInvalidGrapher = fmt.Errorf(
-		"bad input grapher, available graphers are: %q",
-		maps.Keys(GrapherFactories))
+	ErrInvalidOutputer = fmt.Errorf(
+		"bad output type, available types are: %q",
+		maps.Keys(OutputerFactories))
 )
 
-type Grapher interface {
-	Write(*Config) error
-	Generate(*Config) error
+type OutputerFactory func(*yaml.Node, *Config) (Outputer, error)
+
+var OutputerFactories = map[string]OutputerFactory{
+	"csv":   NewCSVOutputer,
+	"graph": NewGraphOutputer,
 }
 
-type GrapherFactory func(*yaml.Node) (Grapher, error)
-
-// GrapherFactories maps Format type tags to FormatReaders.
-var GrapherFactories = map[string]GrapherFactory{
-	"tex": NewTeXGrapher,
+type Outputer interface {
+	Output(*dataframe.DataFrame) error
 }
 
-var factory GrapherFactory // :(
-
-func OutDir(config *Config) (string, error) {
-	if err := os.MkdirAll(filepath.Clean(config.Directory), 0755); err != nil {
+func OutDir(dirPath string) (string, error) {
+	if len(dirPath) == 0 {
+		return dirPath, nil
+	}
+	if err := os.MkdirAll(filepath.Clean(dirPath), 0755); err != nil {
 		return "", err
 	}
-	return config.Directory, nil
+	return dirPath, nil
 }
 
-// WriteCSV writes df to a CSV file, using options from the config.
-// FIXME: LaTeX has an upper size limit for CSV files that it can handle
-// so the output should be decimated down to this size if it's too large.
-func WriteCSV(df *dataframe.DataFrame, config *Config) error {
-	csv, err := OutDir(config)
-	if err != nil {
-		return err
-	}
-	if len(config.TableFile) == 0 {
-		return err
-	}
-	csv = filepath.Join(csv, config.TableFile)
-	config.Log.WithFields(logrus.Fields{
-		"file": csv,
-	}).Debug("writing csv")
-	w, err := os.Create(csv)
-	if err != nil {
-		return err
-	}
-	if err := df.WriteCSV(w, dataframe.WriteHeader(true)); err != nil {
-		return err
-	}
-	if err := w.Close(); err != nil {
-		return err
-	}
-	return nil
-}
-
-type execFunc func(Grapher, *Config) error
-
-func graphExecute(config *Config, exec execFunc, action string) error {
-	if len(config.Graphs) == 0 {
-		return nil
-	}
-	var found bool
-	if factory, found = GrapherFactories[strings.ToLower(config.Grapher)]; !found {
-		return ErrInvalidGrapher
-	}
-	config.Log.WithFields(logrus.Fields{
-		"directory":  config.Directory,
-		"table-file": config.TableFile,
-		"grapher":    config.Grapher,
-	}).Debug(action + " graph")
+// Process applies all Processors as defined in the config
+// to the dataframe.DataFrame.
+// Each Processor is applied sequentially, in the order they appear in
+// the config, and the result of one Processor is passed as the input to the
+// next one.
+//
+// An error is returned if any of the Processors return an error.
+// If an error is returned, the dataframe.DataFrame state is unknown.
+func Output(df *dataframe.DataFrame, configs []Config) error {
 	var err error
-	for i := range config.Graphs {
-		g, e := factory(&config.Graphs[i])
-		if e != nil {
-			err = errors.Join(err, e)
-		} else {
-			err = errors.Join(err, exec(g, config))
-		}
+	for i := range configs {
+		err = errors.Join(err, output(df, &configs[i]))
 	}
 	return err
 }
 
-// WriteGraphFiles writes graph files, using options from the config.
-func WriteGraphFiles(config *Config) error {
-	return graphExecute(config, Grapher.Write, "writing")
-}
-
-// GenerateGraphs generates the actual graphs, e.g., PDFs from TeX files.
-func GenerateGraphs(config *Config) error {
-	return graphExecute(config, Grapher.Generate, "generating")
+// process applies a single Processor as defined in the config
+// to the dataframe.DataFrame.
+func output(df *dataframe.DataFrame, config *Config) error {
+	of, found := OutputerFactories[strings.ToLower(config.Type)]
+	if !found {
+		return ErrInvalidOutputer
+	}
+	config.Log.WithFields(logrus.Fields{
+		"type": strings.ToLower(config.Type),
+	}).Debug("outputting")
+	o, err := of(&config.TypeSpec, config)
+	if err != nil {
+		return err
+	}
+	return o.Output(df)
 }
