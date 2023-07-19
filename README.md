@@ -78,18 +78,33 @@ Utilities for post-processing OpenFOAM function object data.
 - [ ] better control over TeX graphs
 	- either custom templates, or support raw TeX in config file
 	- [x] support for custom templates
-	- [ ] add cli command for generating default templates
+	- [ ] add cli command for generating/outputting default templates
 	- [ ] (?) support for raw TeX in config file
-- [ ] input/output
+- [ ] io refactor and improvements
+    - [ ] merge config and io class implementation
+        - separating the config from the implementation is impractical, just
+          make the io thing a standalone class that can read its config
+          and do the work
+        - watch out how we handle multiple io, because we have to preserve the
+          individual configs
+    - [ ] remove the `directory` field from the output config
+        - this should be implied when specifying the output file name, we
+          should simply create the path if it doesn't exist, there's should
+          be no need to specify the output directory explicitly
+        - keeping the io configs the same also simplifies the implementation,
+          since the class structure can remain the same
 	- [ ] support output to memory
-		- instead of writing data to disk, store the dataframe, and make
-		  it available to other pipelines
+		- instead of writing data to disk, store the dataframe on a 'registry'
+          and make it available to other pipelines
 	- [ ] support combining multiple input files in to one
-	- [ ] support generating multiple outputs in one pipeline
-		- **add better explanation and an example use case**
-		- usefull when working with series type input
+	- [x] support generating multiple outputs in one pipeline
+		- ~~add better explanation and an example use case~~
+		- useful when working with series type input
+        - also separated 'graphing' and 'output' into different sections
     - [ ] support compressed input
+        - would be handy
     - [ ] support binary input
+        - not super important
 - [ ] better error messages
 - [ ] re-sampling support
 - [ ] (?) parallelism/concurrency (at least some parts)
