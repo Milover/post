@@ -15,8 +15,7 @@ const (
     file:                       # input file name; unused if 'series_spec' is defined
     fields: []                  # list of field names; optional
     format:                     # 'dat' or 'csv'
-    format_spec:
-      # 'csv' spec; 'dat' doesn't require a spec
+    format_spec:                # 'csv' spec; 'dat' doesn't require a spec
       has_header:               # 'true' by default
       delimiter:                # ',' by default
       comment:                  # '#' by default
@@ -44,14 +43,19 @@ const (
         expression:             # an arithmetic expression using constants and field names
         result:                 # name of the resulting field
   output:
-    directory:                  # output directory name, created if not present
-    table_file:                 # output file name
-    grapher:                    # only 'tex' currently
+    - type:                     # 'csv' or 'ram'
+      type_spec:                # 'csv' spec; 'ram' doesn't require a spec
+        directory:              # output directory name, created if not present
+        file:                   # output file name
+  graph:
+    type:                       # only 'tex' currently
     graphs:
       - name:                   # used as a basename for all graph related files
+        directory:              # output directory name, created if not present
         template_dir:           # template directory; optional
         template_main:          # root template file name; optional
         template_delims:        # go template delimiters; ['__{','}__'] by default; optional
+        table_file:             # optional; needed if 'tables.table_file' is undefined
         axes:
           - x:
               min:
@@ -65,7 +69,7 @@ const (
               - x_field:
                 y_field:
                 legend_entry:   # raw TeX
-                table_file:     # optional; default is 'output.table_file'
+                table_file:     # optional; needed if 'graphs.table_file' is undefined
 `
 )
 
