@@ -6,6 +6,7 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/Milover/foam-postprocess/internal/graph"
 	"github.com/Milover/foam-postprocess/internal/input"
 	"github.com/Milover/foam-postprocess/internal/output"
 	"github.com/Milover/foam-postprocess/internal/process"
@@ -17,12 +18,13 @@ import (
 )
 
 var (
-	dryRun           bool
-	onlyGraphs       bool
-	noProcess        bool
-	noWriteCSV       bool
-	noWriteGraphs    bool
-	noGenerateGraphs bool
+	dryRun          bool
+	onlyGraphs      bool
+	noProcess       bool
+	noOutput        bool
+	noGraph         bool
+	noGraphWrite    bool
+	noGraphGenerate bool
 
 	skipIDs []string
 )
@@ -32,6 +34,7 @@ type Config struct {
 	Input   input.Config     `yaml:"input"`
 	Process []process.Config `yaml:"process"`
 	Output  []output.Config  `yaml:"output"`
+	Graph   graph.Config     `yaml:"graph"`
 
 	Log *logrus.Logger `yaml:"-"`
 }
@@ -45,6 +48,7 @@ func (c *Config) propagateLogger(log *logrus.Logger) {
 	for i := range c.Output {
 		c.Output[i].Log = log
 	}
+	c.Graph.Log = log
 }
 
 func (c *Config) logError(err error) error {
@@ -99,31 +103,29 @@ func run(cmd *cobra.Command, args []string) error {
 			if err != nil {
 				return c.logError(fmt.Errorf("error creating data frame: %w", err))
 			}
-		}
-		if !onlyGraphs && !noProcess {
-			if err = process.Process(df, c.Process); err != nil {
-				return c.logError(fmt.Errorf("error processing data frame: %w", err))
+			if !noProcess {
+				if err = process.Process(df, c.Process); err != nil {
+					return c.logError(fmt.Errorf("error processing data frame: %w", err))
+				}
+			}
+			if !noOutput {
+				if err = output.Output(df, c.Output); err != nil {
+					return c.logError(fmt.Errorf("output error: %w", err))
+				}
 			}
 		}
-		if err = output.Output(df, c.Output); err != nil {
-			return c.logError(fmt.Errorf("output error: %w", err))
+		if !noGraph {
+			if !noGraphWrite {
+				if err := graph.Write(df, &c.Graph); err != nil {
+					return c.logError(fmt.Errorf("error writing graphs: %w", err))
+				}
+			}
+			if !noGraphGenerate {
+				if err := graph.Generate(df, &c.Graph); err != nil {
+					return c.logError(fmt.Errorf("error generating graphs: %w", err))
+				}
+			}
 		}
-
-		//		if !onlyGraphs && !noWriteCSV {
-		//			if err := output.WriteCSV(df, &c.Output); err != nil {
-		//				return c.logError(fmt.Errorf("output error: %w", err))
-		//			}
-		//		}
-		//		if !noWriteGraphs {
-		//			if err := output.WriteGraphFiles(&c.Output); err != nil {
-		//				return c.logError(fmt.Errorf("output error: %w", err))
-		//			}
-		//		}
-		//		if !noGenerateGraphs {
-		//			if err := output.GenerateGraphs(&c.Output); err != nil {
-		//				return c.logError(fmt.Errorf("output error: %w", err))
-		//			}
-		//		}
 	}
 
 	return nil

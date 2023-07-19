@@ -22,8 +22,7 @@ var (
 type OutputerFactory func(*yaml.Node, *Config) (Outputer, error)
 
 var OutputerFactories = map[string]OutputerFactory{
-	"csv":   NewCSVOutputer,
-	"graph": NewGraphOutputer,
+	"csv": NewCSVOutputer,
 }
 
 type Outputer interface {

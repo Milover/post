@@ -1,4 +1,4 @@
-package output
+package graph
 
 import (
 	"embed"
@@ -32,7 +32,11 @@ var (
 )
 
 type TeXGrapher struct {
-	Name           string    `yaml:"name"`
+	Name string `yaml:"name"`
+	// Directory is an output directory for all files. If it is an empty string,
+	// the current working directory is used. The path is created recursively
+	// if it does not exist.
+	Directory      string    `yaml:"directory"`
 	Axes           []TexAxis `yaml:"axes"`
 	TableFile      string    `yaml:"table_file"`
 	TemplateDir    string    `yaml:"template_file"`
@@ -44,7 +48,7 @@ type TeXGrapher struct {
 	Log       *logrus.Logger `yaml:"-"`
 }
 
-func newTeXGrapher(spec *yaml.Node, out *GraphOutputer) (Grapher, error) {
+func newTeXGrapher(spec *yaml.Node, config *Config) (Grapher, error) {
 	g := &TeXGrapher{
 		TemplateDir:    DfltTexTemplateDir,
 		TemplateMain:   DfltTexTemplateMain,
@@ -54,7 +58,15 @@ func newTeXGrapher(spec *yaml.Node, out *GraphOutputer) (Grapher, error) {
 	if err := spec.Decode(g); err != nil {
 		return nil, err
 	}
-	g.Log = out.Log
+	if len(g.Name) == 0 {
+		return nil, ErrTeXGraphName
+	}
+	if len(g.Directory) != 0 {
+		if err := os.MkdirAll(filepath.Clean(g.Directory), 0755); err != nil {
+			return nil, err
+		}
+	}
+	g.Log = config.Log
 	return g, nil
 }
 
@@ -77,22 +89,8 @@ type TeXTable struct {
 	TableFile   string `yaml:"table_file"`
 }
 
-func (g *TeXGrapher) filepath(dirPath string) (string, error) {
-	if len(g.Name) == 0 {
-		return "", ErrTeXGraphName
-	}
-	outDir, err := OutDir(dirPath)
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(outDir, g.Name), nil
-}
-
-func (g *TeXGrapher) Write(out *GraphOutputer) error {
-	path, err := g.filepath(out.Directory)
-	if err != nil {
-		return err
-	}
+func (g *TeXGrapher) Write() error {
+	path := filepath.Join(g.Directory, g.Name)
 	g.Log.WithFields(logrus.Fields{
 		"file": path,
 	}).Trace("writing TeX graph file")
@@ -118,11 +116,8 @@ func (g *TeXGrapher) Write(out *GraphOutputer) error {
 		Execute(w, g)
 }
 
-func (g *TeXGrapher) Generate(out *GraphOutputer) error {
-	path, err := g.filepath(out.Directory)
-	if err != nil {
-		return err
-	}
+func (g *TeXGrapher) Generate() error {
+	path := filepath.Join(g.Directory, g.Name)
 	if _, err := os.Stat(path); err != nil {
 		return err
 	}
@@ -132,7 +127,7 @@ func (g *TeXGrapher) Generate(out *GraphOutputer) error {
 	return exec.Command("pdflatex",
 		"-halt-on-error",
 		"-interaction=nonstopmode",
-		"-output-directory="+out.Directory, // filepath checks out.Directory
+		"-output-directory="+g.Directory,
 		path,
 	).Run()
 }

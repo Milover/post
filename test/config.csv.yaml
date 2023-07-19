@@ -30,31 +30,34 @@
         expression: '180*time'
         result: phase
   output:
+    #- type: ram
     - type: csv
       type_spec:
         directory: outdir
         file: wale_tau_w_bar_avg.csv
-    - type: graph
-      type_spec:
-        grapher: tex
+  graph:
+    type: tex
+    graphs:
+      - name: tau_w_bar_avg.tex
+        template_dir:
+        template_main:
+        template_delims: ['__{','}__']
         directory: outdir
-        graphs:
-          - name: tau_w_bar_avg.tex
-            table_file: 'outdir/wale_tau_w_bar_avg.csv'
-            axes:
-              - x:
-                  min: 0
-                  max: 180
-                  label: '$\phi$, (deg.)'
-                y:
-                  min: 0
-                  max: 2.5
-                  label: '$\tau_\text{w} / \rho U_0 (2\nu\omega)^{\frac{1}{2}}$'
-                tables:
-                  - x_field: phase
-                    y_field: tauWBar
-                    legend_entry: 'WALE'
-                  - x_field: phase
-                    y_field: tauWBar
-                    legend_entry: 'DNS'
-                    table_file: 'outdir/dns_salon_2007_tau_w_bar.csv'
+        table_file: 'outdir/wale_tau_w_bar_avg.csv'
+        axes:
+          - x:
+              min: 0
+              max: 180
+              label: '$\phi$, (deg.)'
+            y:
+              min: 0
+              max: 2.5
+              label: '$\tau_\text{w} / \rho U_0 (2\nu\omega)^{\frac{1}{2}}$'
+            tables:
+              - x_field: phase
+                y_field: tauWBar
+                legend_entry: 'WALE'
+              - x_field: phase
+                y_field: tauWBar
+                legend_entry: 'DNS'
+                table_file: 'outdir/dns_salon_2007_tau_w_bar.csv'
