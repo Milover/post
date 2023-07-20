@@ -30,7 +30,9 @@
         expression: '180*time'
         result: phase
   output:
-    #- type: ram
+#    - type: ram
+#      type_spec:
+#        name: wale_tau_w_bar_avg
     - type: csv
       type_spec:
         directory: outdir
