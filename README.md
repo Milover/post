@@ -100,7 +100,7 @@ Utilities for post-processing OpenFOAM function object data.
 		- ~~add better explanation and an example use case~~
 		- useful when working with series type input
         - also separated 'graphing' and 'output' into different sections
-	- [ ] support combining multiple input files in to one
+	- [x] support combining multiple input files in to one
         - not sure if this is super necessary; also this probably isn't that
           useful until resampling is implemented
     - [ ] support compressed input

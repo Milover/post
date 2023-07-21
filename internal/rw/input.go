@@ -28,6 +28,7 @@ var Readers = map[string]ReaderFactory{
 	"dat":         func(n *yaml.Node) (Reader, error) { return NewDat(n) },
 	"foam-series": func(n *yaml.Node) (Reader, error) { return NewFoamSeries(n) },
 	"ram":         func(n *yaml.Node) (Reader, error) { return NewRam(n) },
+	"multiple":    func(n *yaml.Node) (Reader, error) { return NewMultiple(n) },
 }
 var ReadersOutOf = map[string]ReaderOutOfFactory{
 	"csv": func(n *yaml.Node) (ReaderOutOf, error) { return NewCsv(n) },
@@ -65,12 +66,7 @@ func Read(config *Config) (*dataframe.DataFrame, error) {
 	if err != nil {
 		return nil, err
 	}
-	if len(config.Fields) > 0 {
-		if err = df.SetNames(config.Fields...); err != nil {
-			return nil, err
-		}
-	}
-	return df, nil
+	return SetNames(df, config.Fields)
 }
 
 func ReadOutOf(in io.Reader, config *Config) (*dataframe.DataFrame, error) {
@@ -86,8 +82,12 @@ func ReadOutOf(in io.Reader, config *Config) (*dataframe.DataFrame, error) {
 	if err != nil {
 		return nil, err
 	}
-	if len(config.Fields) > 0 {
-		if err = df.SetNames(config.Fields...); err != nil {
+	return SetNames(df, config.Fields)
+}
+
+func SetNames(df *dataframe.DataFrame, names []string) (*dataframe.DataFrame, error) {
+	if len(names) > 0 {
+		if err := df.SetNames(names...); err != nil {
 			return nil, err
 		}
 	}

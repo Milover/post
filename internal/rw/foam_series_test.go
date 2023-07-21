@@ -15,7 +15,6 @@ import (
 type foamSeriesTest struct {
 	Name        string
 	Config      string
-	Input       string
 	Output      dataframe.DataFrame
 	SkipCompare bool
 	Error       error
