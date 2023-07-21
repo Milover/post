@@ -23,7 +23,7 @@ Utilities for post-processing OpenFOAM function object data.
 - [x] output LaTeX graphs
 	- should use templates
 
-### Fairly important additional stuff
+### Important additions
 
 - processing
 	- *add more processors*
@@ -31,8 +31,9 @@ Utilities for post-processing OpenFOAM function object data.
 	- [x] arithmetic expressions
 		- support arbitrary arithmetic expressions with fields/constants
 - input
-	- [ ] (?) combine multiple files into single dataframe
-        - what exactly are we trying to combine?
+	- [x] (?) combine multiple files into single dataframe
+        - ~~what exactly are we trying to combine?~~
+        - see the io refactor bullet under [Sec. 'Quality of life'](#quality-of-life) 
 	- [x] support OpenFOAM time series type inputs:
 		```
 		.
@@ -69,7 +70,7 @@ Utilities for post-processing OpenFOAM function object data.
 		  config and a `dataframe.DataFrame`, as inputs
 		- moved all execution controls to `cmd` package
 
-### Quality of life stuff
+### Quality of life
 
 - [x] add option to skip reading the input
 - [ ] ~~specifying `input.fields` should be optional~~
@@ -105,6 +106,8 @@ Utilities for post-processing OpenFOAM function object data.
           useful until resampling is implemented
     - [ ] support compressed input
         - would be handy
+        - [ ] compressed archives
+        - [ ] compressed individual files
     - [ ] support binary input
         - not super important
 - [ ] better error messages
