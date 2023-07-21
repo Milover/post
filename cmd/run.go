@@ -7,9 +7,8 @@ import (
 	"strconv"
 
 	"github.com/Milover/foam-postprocess/internal/graph"
-	"github.com/Milover/foam-postprocess/internal/input"
-	"github.com/Milover/foam-postprocess/internal/output"
 	"github.com/Milover/foam-postprocess/internal/process"
+	"github.com/Milover/foam-postprocess/internal/rw"
 	"github.com/go-gota/gota/dataframe"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -31,9 +30,9 @@ var (
 
 type Config struct {
 	ID      string           `yaml:"id"`
-	Input   input.Config     `yaml:"input"`
+	Input   rw.Config        `yaml:"input"`
 	Process []process.Config `yaml:"process"`
-	Output  []output.Config  `yaml:"output"`
+	Output  []rw.Config      `yaml:"output"`
 	Graph   graph.Config     `yaml:"graph"`
 
 	Log *logrus.Logger `yaml:"-"`
@@ -41,12 +40,8 @@ type Config struct {
 
 func (c *Config) propagateLogger(log *logrus.Logger) {
 	c.Log = log
-	c.Input.Log = log
 	for i := range c.Process {
 		c.Process[i].Log = log
-	}
-	for i := range c.Output {
-		c.Output[i].Log = log
 	}
 	c.Graph.Log = log
 }
@@ -99,7 +94,7 @@ func run(cmd *cobra.Command, args []string) error {
 
 		var df *dataframe.DataFrame
 		if !onlyGraphs {
-			df, err = input.CreateDataFrame(&c.Input)
+			df, err = rw.Read(&c.Input)
 			if err != nil {
 				return c.logError(fmt.Errorf("error creating data frame: %w", err))
 			}
@@ -109,7 +104,7 @@ func run(cmd *cobra.Command, args []string) error {
 				}
 			}
 			if !noOutput {
-				if err = output.Output(df, c.Output); err != nil {
+				if err = rw.Write(df, c.Output); err != nil {
 					return c.logError(fmt.Errorf("output error: %w", err))
 				}
 			}

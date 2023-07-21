@@ -12,20 +12,27 @@ const (
 	showcaseConfig string = `# run file template
 - id:                           # pipeline identifier; optional
   input:
-    file:                       # input file name; unused if 'series_spec' is defined
     fields: []                  # list of field names; optional
-    format:                     # 'dat' or 'csv'
-    format_spec:                # 'csv' spec; 'dat' doesn't require a spec
-      has_header:               # 'true' by default
+    type:                       # one of 'dat', 'csv', 'foam-series', 'ram'
+   # some example type specs; there can only be 1 input type per pipeline
+    type_spec:
+      file:                     # input file name; usually required
+     # 'csv' specific
+      header:                   # 'true' by default
       delimiter:                # ',' by default
       comment:                  # '#' by default
-    # should only be defined if input is an OpenFOAM series
-    series_spec:
-      series_directory:         # root series directory
-      series_file:              # series data file name
-      series_time_name:         # generated time field name; 'time' by default
+     # 'foam-series' specific
+      directory:                # series root directory
+      file:                     # series data file name
+      time_name:                # 'time' by default
+      format_spec:              # config for an input type reader, e.g., a 'csv'
+        type: csv
+        type_spec:
+          header:
+     # 'ram' specific
+      name:                     # name of the data which will be accessed
   process:
-    # some example processor specs, executed in order listed
+   # some example processor specs, executed in order listed
     - type: average-cycle
       type_spec:
         n_cycles:
@@ -43,10 +50,13 @@ const (
         expression:             # an arithmetic expression using constants and field names
         result:                 # name of the resulting field
   output:
-    - type:                     # 'csv' or 'ram'
-      type_spec:                # 'csv' spec; 'ram' doesn't require a spec
-        directory:              # output directory name, created if not present
+   # some example specs
+    - type: ram
+      type_spec:
+        name:                   # name of the data which will be stored
+    - type: csv
         file:                   # output file name
+        enforce_extension:      # force correct file extension; by default 'false'
   graph:
     type:                       # only 'tex' currently
     graphs:
