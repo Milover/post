@@ -3,7 +3,6 @@ package rw
 import (
 	"errors"
 	"io/fs"
-	"os"
 	"strconv"
 
 	"github.com/go-gota/gota/dataframe"
@@ -12,8 +11,8 @@ import (
 )
 
 var (
+	ErrBadFoamSeries   = errors.New("bad foam-series configuration")
 	ErrSeriesDirectory = errors.New("series directory not specified")
-	ErrSeriesFile      = errors.New("series file not specified")
 )
 
 // foamSeries contains data needed for parsing an OpenFOAM table series,
@@ -35,11 +34,11 @@ var (
 // Each series dataset is output into a different file, i.e., the data_0.csv
 // files contain one dataset, data_1.dat another one, and so on.
 type foamSeries struct {
+	archiveReader `yaml:",inline"`
+
 	// Directory is the top-level directory which contains all series files
 	// and time directories.
 	Directory string `yaml:"directory"`
-	// File is the file name of a specific data set within the series.
-	File string `yaml:"file"`
 	// TimeName is the name of the time field.
 	// If left empty it is set to 'time'.
 	TimeName string `yaml:"time_name"`
@@ -63,9 +62,6 @@ func NewFoamSeries(n *yaml.Node) (*foamSeries, error) {
 	if len(rw.Directory) == 0 {
 		return nil, ErrSeriesDirectory
 	}
-	if len(rw.File) == 0 {
-		return nil, ErrSeriesFile
-	}
 	return rw, nil
 }
 
@@ -81,10 +77,18 @@ type walkStruct struct {
 func (rw *foamSeries) Read() (*dataframe.DataFrame, error) {
 	var df *dataframe.DataFrame
 	var ws walkStruct
-	if _, err := os.Stat(rw.Directory); err != nil {
-		return nil, err
+	var fsys fs.FS
+	if err := rw.archiveReader.isValid(); err == nil { // archived file system
+		fsys = rw.archiveReader
+	} else if err := rw.archiveReader.fileReader.isValid(); err == nil { // regular file system
+		//		if _, err := os.Stat(rw.Directory); err != nil {
+		//			return nil, err
+		//		}
+		//		fsys = os.DirFS(rw.Directory)
+		fsys = rw.archiveReader.fileReader
+	} else {
+		return nil, ErrBadFoamSeries
 	}
-	fsys := os.DirFS(rw.Directory)
 	// FIXME: the dataframe.DataFrame operations are mysterious, so no idea
 	// where allocations happen or how many there are --- should check this
 	// at some point.
@@ -95,7 +99,7 @@ func (rw *foamSeries) Read() (*dataframe.DataFrame, error) {
 		}
 		// the directory name is the current time
 		if d.IsDir() {
-			if d.Name() == "." {
+			if path == rw.Directory {
 				return nil
 			}
 			ws.Time, err = strconv.ParseFloat(d.Name(), 64)
@@ -136,7 +140,7 @@ func (rw *foamSeries) Read() (*dataframe.DataFrame, error) {
 		*df = df.RBind(*temp)
 		return df.Error()
 	}
-	if err := fs.WalkDir(fsys, ".", walkFn); err != nil {
+	if err := fs.WalkDir(fsys, rw.Directory, walkFn); err != nil {
 		return nil, err
 	}
 	if df != nil {

@@ -16,7 +16,7 @@ const (
 )
 
 type csv struct {
-	fileReader `yaml:",inline"`
+	archiveReader `yaml:",inline"`
 
 	Header    bool   `yaml:"header"`
 	Delimiter string `yaml:"delimiter"`

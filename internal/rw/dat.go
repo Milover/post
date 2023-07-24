@@ -15,7 +15,7 @@ const (
 )
 
 type dat struct {
-	fileReader `yaml:",inline"`
+	archiveReader `yaml:",inline"`
 }
 
 func defaultDat() *dat {
