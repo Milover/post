@@ -174,9 +174,39 @@ format_spec:
 		Error:  nil,
 	},
 	{
-		Name: "good-csv-archive",
+		Name: "good-csv-zip",
+		Config: `
+archive: 'testdata/foam_series.good.zip'
+directory: 'foam_series.good'
+file: data.csv
+time_name: 'time'
+format_spec:
+  type: csv
+  type_spec:
+    header: true
+`,
+		Output: goodSeries,
+		Error:  nil,
+	},
+	{
+		Name: "good-csv-archive.tgz",
 		Config: `
 archive: 'testdata/archive.tgz'
+directory: 'archive/foam_series.good'
+file: data.csv
+time_name: 'time'
+format_spec:
+  type: csv
+  type_spec:
+    header: true
+`,
+		Output: goodSeries,
+		Error:  nil,
+	},
+	{
+		Name: "good-csv-archive.zip",
+		Config: `
+archive: 'testdata/archive.zip'
 directory: 'archive/foam_series.good'
 file: data.csv
 time_name: 'time'

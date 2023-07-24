@@ -2,6 +2,7 @@ package rw
 
 import (
 	"archive/tar"
+	"archive/zip"
 	"compress/bzip2"
 	"compress/gzip"
 	"errors"
@@ -58,6 +59,23 @@ func SetExt(path, ext string) string {
 		return path + ext
 	}
 	return strings.TrimSuffix(path, e) + ext
+}
+
+// because!
+type multiCloser struct {
+	cs []io.Closer
+}
+
+func (mc multiCloser) Close() error {
+	var err error
+	for i := range mc.cs {
+		err = errors.Join(mc.cs[i].Close())
+	}
+	return err
+}
+
+func (mc *multiCloser) Add(c io.Closer) {
+	mc.cs = append(mc.cs, c)
 }
 
 // fileHandle is a struct satisfying the requirements of fs.File.
@@ -165,17 +183,13 @@ func (ar archiveReader) openFile() (fs.File, error) {
 
 // Open opens a file from an archive for reading.
 // The caller is responsible for making sure that the ar is valid.
-func (ar archiveReader) Open(path string) (fs.File, error) {
-	if !fs.ValidPath(path) {
+func (ar archiveReader) Open(name string) (fs.File, error) {
+	if !fs.ValidPath(name) {
 		return nil, &fs.PathError{
 			Op:   "stat",
-			Path: path,
+			Path: name,
 			Err:  fs.ErrInvalid,
 		}
-	}
-	f, err := os.Open(ar.Archive)
-	if err != nil {
-		return nil, err
 	}
 	ext := filepath.Ext(ar.Archive)
 	// tar archives can have two extensions
@@ -183,14 +197,19 @@ func (ar archiveReader) Open(path string) (fs.File, error) {
 		ext = e + ext
 	}
 	switch ext {
-	case ".tar", ".tar.xz", ".txz", ".tar.gz", ".tgz", ".tar.bz2", ".tbz":
+	case ".tar", ".tar.xz", ".txz", ".tar.gz", ".tgz",
+		".tar.bz2", ".tb2", ".tbz", ".tbz2", ".tz2":
+		f, err := os.Open(ar.Archive)
+		if err != nil {
+			return nil, err
+		}
 		var reader io.Reader = f
 		switch ext {
 		case ".tar.xz", ".txz":
 			reader, err = xz.NewReader(reader)
 		case ".tar.gz", ".tgz":
 			reader, err = gzip.NewReader(reader)
-		case ".tar.bz2", ".tbz":
+		case ".tar.bz2", ".tb2", ".tbz", ".tbz2", ".tz2":
 			reader = bzip2.NewReader(reader)
 		}
 		if err != nil {
@@ -204,11 +223,11 @@ func (ar archiveReader) Open(path string) (fs.File, error) {
 			if err != nil {
 				return nil, &fs.PathError{
 					Op:   "open",
-					Path: filepath.Join(ar.Archive, path),
+					Path: filepath.Join(ar.Archive, name),
 					Err:  err,
 				}
 			}
-			if filepath.Clean(hdr.Name) == path {
+			if filepath.Clean(hdr.Name) == name {
 				break
 			}
 		}
@@ -217,9 +236,36 @@ func (ar archiveReader) Open(path string) (fs.File, error) {
 			r: tr,
 			c: f,
 		}, nil
+	case ".zip":
+		r, err := zip.OpenReader(ar.Archive)
+		if err != nil {
+			return nil, err
+		}
+		var mc multiCloser
+		mc.Add(r)
+		for _, f := range r.File {
+			path := filepath.Clean(f.Name)
+			if path == name {
+				f, err := r.Open(name)
+				if err != nil {
+					return nil, err
+				}
+				mc.Add(f)
+				return &fileHandle{
+					s: func() (fs.FileInfo, error) { return f.Stat() },
+					r: f,
+					c: mc,
+				}, nil
+			}
+		}
+		return nil, &fs.PathError{
+			Op:   "open",
+			Path: filepath.Join(ar.Archive),
+			Err:  fs.ErrNotExist,
+		}
 	}
 	return nil, &fs.PathError{
-		Op:   "open",
+		Op:   "stat",
 		Path: filepath.Join(ar.Archive),
 		Err:  fmt.Errorf("%w: %v", ErrBadFormat, ext),
 	}
@@ -235,24 +281,25 @@ func (ar archiveReader) ReadDir(name string) ([]fs.DirEntry, error) {
 		}
 	}
 	entries := make([]fs.DirEntry, 0, 10) // guesstimate
-	f, err := os.Open(ar.Archive)
-	if err != nil {
-		return entries, err
-	}
 	ext := filepath.Ext(ar.Archive)
 	// tar archives can have two extensions
 	if e := filepath.Ext(strings.TrimSuffix(ar.Archive, ext)); e == ".tar" {
 		ext = e + ext
 	}
 	switch ext {
-	case ".tar", ".tar.xz", ".txz", ".tar.gz", ".tgz", ".tar.bz2", ".tbz":
+	case ".tar", ".tar.xz", ".txz", ".tar.gz", ".tgz",
+		".tar.bz2", ".tb2", ".tbz", ".tbz2", ".tz2":
+		f, err := os.Open(ar.Archive)
+		if err != nil {
+			return entries, err
+		}
 		var reader io.Reader = f
 		switch ext {
 		case ".tar.xz", ".txz":
 			reader, err = xz.NewReader(reader)
 		case ".tar.gz", ".tgz":
 			reader, err = gzip.NewReader(reader)
-		case ".tar.bz2", ".tbz":
+		case ".tar.bz2", ".tb2", ".tbz", ".tbz2", ".tz2":
 			reader = bzip2.NewReader(reader)
 		}
 		if err != nil {
@@ -281,9 +328,24 @@ func (ar archiveReader) ReadDir(name string) ([]fs.DirEntry, error) {
 			}
 		}
 		return entries, nil
+	case ".zip":
+		r, err := zip.OpenReader(ar.Archive)
+		if err != nil {
+			return nil, err
+		}
+		defer r.Close()
+		for _, f := range r.File {
+			path := filepath.Clean(f.Name)
+			if filepath.Dir(path) == name &&
+				len(filepath.Base(path)) != 0 &&
+				filepath.Dir(path) != filepath.Base(path) {
+				entries = append(entries, fs.FileInfoToDirEntry(f.FileInfo()))
+			}
+		}
+		return entries, nil
 	}
 	return entries, &fs.PathError{
-		Op:   "readdir",
+		Op:   "stat",
 		Path: filepath.Join(ar.Archive),
 		Err:  fmt.Errorf("%w: %v", ErrBadFormat, ext),
 	}

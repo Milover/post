@@ -194,9 +194,27 @@ file: 'data.csv'
 		Error:  nil,
 	},
 	{
-		Name: "good-archive",
+		Name: "good-zip",
+		Config: `
+archive: 'testdata/data.csv.zip'
+file: 'data.csv'
+`,
+		Output: expected,
+		Error:  nil,
+	},
+	{
+		Name: "good-archive.tgz",
 		Config: `
 archive: 'testdata/archive.tgz'
+file: 'archive/data.csv'
+`,
+		Output: expected,
+		Error:  nil,
+	},
+	{
+		Name: "good-archive.zip",
+		Config: `
+archive: 'testdata/archive.zip'
 file: 'archive/data.csv'
 `,
 		Output: expected,
