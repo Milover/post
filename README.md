@@ -108,9 +108,10 @@ Utilities for post-processing OpenFOAM function object data.
         - would be handy
         - [x] compressed archives
         - [x] compressed individual files
+        - **dumb implementation, refactor at some point**
     - [ ] support binary input
         - not super important
-- [ ] better error messages
+- [ ] error handling cleanup and better error messages
 - [ ] purge `logrus` and use the standard `log`
     - `logrus` is totally unnecessary, and propagating the logger is just annoying
 - [ ] resampling support
