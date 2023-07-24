@@ -20,6 +20,21 @@ type foamSeriesTest struct {
 	Error       error
 }
 
+var goodSeries = dataframe.New(
+	series.New([]float64{
+		0.1, 0.1, 0.1, 0.1, 0.1, 0.1,
+		0.2, 0.2, 0.2, 0.2, 0.2, 0.2,
+		0.3, 0.3, 0.3, 0.3, 0.3, 0.3}, series.Float, "time"),
+	series.New([]int{
+		0, 1, 2, 3, 4, 5,
+		0, 1, 2, 3, 4, 5,
+		0, 1, 2, 3, 4, 5}, series.Int, "x"),
+	series.New([]int{
+		0, 1, 2, 2, 1, 0,
+		0, 1, 2, 2, 1, 0,
+		0, 1, 2, 2, 1, 0}, series.Int, "y"),
+)
+
 var foamSeriesReadTests = []foamSeriesTest{
 	{
 		Name: "good-csv",
@@ -32,21 +47,8 @@ format_spec:
   type_spec:
     header: true
 `,
-		Output: dataframe.New(
-			series.New([]float64{
-				0.1, 0.1, 0.1, 0.1, 0.1, 0.1,
-				0.2, 0.2, 0.2, 0.2, 0.2, 0.2,
-				0.3, 0.3, 0.3, 0.3, 0.3, 0.3}, series.Float, "time"),
-			series.New([]int{
-				0, 1, 2, 3, 4, 5,
-				0, 1, 2, 3, 4, 5,
-				0, 1, 2, 3, 4, 5}, series.Int, "x"),
-			series.New([]int{
-				0, 1, 2, 2, 1, 0,
-				0, 1, 2, 2, 1, 0,
-				0, 1, 2, 2, 1, 0}, series.Int, "y"),
-		),
-		Error: nil,
+		Output: goodSeries,
+		Error:  nil,
 	},
 	{
 		Name: "good-dat",
@@ -155,6 +157,36 @@ format_spec:
 		Output:      dataframe.DataFrame{},
 		SkipCompare: true,
 		Error:       nil,
+	},
+	{
+		Name: "good-csv-tar.xz",
+		Config: `
+archive: 'testdata/foam_series.good.tar.xz'
+directory: 'foam_series.good'
+file: data.csv
+time_name: 'time'
+format_spec:
+  type: csv
+  type_spec:
+    header: true
+`,
+		Output: goodSeries,
+		Error:  nil,
+	},
+	{
+		Name: "good-csv-archive",
+		Config: `
+archive: 'testdata/archive.tgz'
+directory: 'archive/foam_series.good'
+file: data.csv
+time_name: 'time'
+format_spec:
+  type: csv
+  type_spec:
+    header: true
+`,
+		Output: goodSeries,
+		Error:  nil,
 	},
 	{
 		Name: "bad-unequal-rows",

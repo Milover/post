@@ -104,10 +104,10 @@ Utilities for post-processing OpenFOAM function object data.
 	- [x] support combining multiple input files in to one
         - not sure if this is super necessary; also this probably isn't that
           useful until resampling is implemented
-    - [ ] support compressed input
+    - [x] support compressed input
         - would be handy
-        - [ ] compressed archives
-        - [ ] compressed individual files
+        - [x] compressed archives
+        - [x] compressed individual files
     - [ ] support binary input
         - not super important
 - [ ] better error messages
