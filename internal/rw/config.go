@@ -129,13 +129,14 @@ func (fr fileReader) isValid() error {
 // Open opens a file for reading.
 // The caller is responsible for making sure that the fr is valid.
 func (fr fileReader) Open(path string) (fs.File, error) {
-	if !fs.ValidPath(path) {
-		return nil, &fs.PathError{
-			Op:   "open",
-			Path: path,
-			Err:  fs.ErrInvalid,
-		}
-	}
+	// FIXME: disabled until refactor
+	//if !fs.ValidPath(path) {
+	//	return nil, &fs.PathError{
+	//		Op:   "stat",
+	//		Path: path,
+	//		Err:  fs.ErrInvalid,
+	//	}
+	//}
 	f, err := os.Open(path)
 	if err != nil {
 		return nil, err
