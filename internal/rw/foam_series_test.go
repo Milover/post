@@ -354,10 +354,9 @@ func BenchmarkFoamSeriesRead(b *testing.B) {
 		}
 	} else {
 		benchNBySize = map[int][]int{
-			10:    {1024, 10240, 102400},
-			100:   {1024, 10240, 102400},
-			1000:  {1024, 10240, 102400},
-			10000: {1024, 10240, 102400},
+			10:   {1024, 10240},
+			100:  {1024, 10240},
+			1000: {1024, 10240},
 		}
 	}
 	// create the benchmark test structures
@@ -367,7 +366,7 @@ func BenchmarkFoamSeriesRead(b *testing.B) {
 		for nfiles, fsizes := range benchNBySize {
 			for _, s := range fsizes {
 				b := tmpl
-				b.Name += "-" + strconv.Itoa(nfiles) + "x" + strconv.Itoa(s)
+				b.Name += "-" + strconv.Itoa(nfiles) + "x" + strconv.Itoa(s) + "B"
 				b.NFiles = nfiles
 				b.FileSize = s
 
