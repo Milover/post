@@ -15,7 +15,7 @@ const (
 )
 
 type dat struct {
-	archiveReader `yaml:",inline"`
+	FileHandler `yaml:",inline"`
 }
 
 func defaultDat() *dat {
@@ -31,7 +31,7 @@ func NewDat(n *yaml.Node) (*dat, error) {
 }
 
 func (rw *dat) Read() (*dataframe.DataFrame, error) {
-	f, err := rw.openFile()
+	f, err := rw.Open()
 	if err != nil {
 		return nil, err
 	}

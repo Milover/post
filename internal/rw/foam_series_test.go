@@ -354,9 +354,9 @@ func BenchmarkFoamSeriesRead(b *testing.B) {
 		}
 	} else {
 		benchNBySize = map[int][]int{
-			10:   {1024, 10240},
-			100:  {1024, 10240},
-			1000: {1024, 10240},
+			10:   {1024, 10240, 102400},
+			100:  {1024, 10240, 102400},
+			1000: {1024, 10240, 102400},
 		}
 	}
 	// create the benchmark test structures

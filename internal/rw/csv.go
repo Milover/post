@@ -16,7 +16,7 @@ const (
 )
 
 type csv struct {
-	archiveReader `yaml:",inline"`
+	FileHandler `yaml:",inline"`
 
 	Header    bool   `yaml:"header"`
 	Delimiter string `yaml:"delimiter"`
@@ -40,7 +40,7 @@ func NewCsv(n *yaml.Node) (*csv, error) {
 }
 
 func (rw *csv) Read() (*dataframe.DataFrame, error) {
-	f, err := rw.openFile()
+	f, err := rw.Open()
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +70,7 @@ func (rw *csv) Write(df *dataframe.DataFrame) error {
 		return err
 	}
 	// LaTeX needs a 'proper' extension to determine the format
-	path := rw.enforceExt(CSVExt)
+	path := rw.EnforceExt(CSVExt)
 	//	o.Log.WithFields(logrus.Fields{
 	//		"file": csv,
 	//	}).Debug("writing csv")
