@@ -1,4 +1,4 @@
-module github.com/Milover/foam-postprocess
+module github.com/Milover/post
 
 go 1.20
 

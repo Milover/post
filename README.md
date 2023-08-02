@@ -1,6 +1,6 @@
-# foam-postprocess
+# post
 
-Utilities for post-processing OpenFOAM function object data.
+A program for processing structured data files in bulk.
 
 ### TODO
 

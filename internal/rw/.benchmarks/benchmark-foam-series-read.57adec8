@@ -1,6 +1,6 @@
 goos: linux
 goarch: amd64
-pkg: github.com/Milover/foam-postprocess/internal/rw
+pkg: github.com/Milover/post/internal/rw
 cpu: Intel(R) Xeon(R) Silver 4214R CPU @ 2.40GHz
 BenchmarkFoamSeriesRead/regular-100x1024B-48         	      56	  18587730 ns/op
 BenchmarkFoamSeriesRead/regular-100x1024B-48         	      60	  18822793 ns/op
@@ -363,4 +363,4 @@ BenchmarkFoamSeriesRead/zip-1000x102400B-48          	       1	177833183407 ns/o
 BenchmarkFoamSeriesRead/zip-1000x102400B-48          	       1	179070512512 ns/op
 BenchmarkFoamSeriesRead/zip-1000x102400B-48          	       1	175114095563 ns/op
 PASS
-ok  	github.com/Milover/foam-postprocess/internal/rw	13933.716s
+ok  	github.com/Milover/post/internal/rw	13933.716s

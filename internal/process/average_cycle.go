@@ -3,7 +3,7 @@ package process
 import (
 	"errors"
 
-	"github.com/Milover/foam-postprocess/internal/numeric"
+	"github.com/Milover/post/internal/numeric"
 	"github.com/go-gota/gota/dataframe"
 	"github.com/go-gota/gota/series"
 	"github.com/sirupsen/logrus"

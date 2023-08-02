@@ -1,12 +1,18 @@
 # Makefile
 
-TARGET		:= fp
+MODULE		:= $(shell go list -m)
+TARGET		:= $(shell basename $(MODULE))
 
 build:
-	go build -o $(TARGET) main.go
+	go build -o bin/$(TARGET) main.go
+
+publish:
+	GOARCH=amd64 GOOS=linux   go build -o bin/$(TARGET)-linux   main.go
+	GOARCH=amd64 GOOS=windows go build -o bin/$(TARGET)-windows main.go
+	GOARCH=arm64 GOOS=darwin  go build -o bin/$(TARGET)-darwin  main.go
 
 run:
-	./$(TARGET)
+	go run ./...
 
 test:
 	go test ./...
@@ -22,4 +28,4 @@ lint:
 
 clean:
 	go clean
-	rm -f $(TARGET)
+	rm -rf bin

@@ -3,7 +3,7 @@ package rw
 import (
 	"io"
 
-	datenc "github.com/Milover/foam-postprocess/internal/encoding/dat"
+	datenc "github.com/Milover/post/internal/encoding/dat"
 	"github.com/go-gota/gota/dataframe"
 	"github.com/go-gota/gota/series"
 	"gopkg.in/yaml.v3"

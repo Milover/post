@@ -6,9 +6,9 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/Milover/foam-postprocess/internal/graph"
-	"github.com/Milover/foam-postprocess/internal/process"
-	"github.com/Milover/foam-postprocess/internal/rw"
+	"github.com/Milover/post/internal/graph"
+	"github.com/Milover/post/internal/process"
+	"github.com/Milover/post/internal/rw"
 	"github.com/go-gota/gota/dataframe"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"

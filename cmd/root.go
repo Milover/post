@@ -11,7 +11,7 @@ import (
 var (
 	// configFile is the default file name of the config file, it is used
 	// if no config file is supplied as a command line argument.
-	configFile string = "fp_config.yaml"
+	configFile string = "post_config.yaml"
 
 	logLevel logrus.Level
 )
@@ -19,9 +19,11 @@ var (
 var (
 	// rootCmd represents the base command when called without any subcommands
 	rootCmd = &cobra.Command{
-		Use:   "fp [run file]",
-		Short: "A program for working with  OpenFOAM functionObject output files",
-		Long:  `A program for working with  OpenFOAM functionObject output files`,
+		Use:           "post [run file]",
+		Short:         "A program for processing structured data files in bulk",
+		Long:          `A program for processing structured data files in bulk`,
+		SilenceUsage:  true,
+		SilenceErrors: true,
 		Args: cobra.MatchAll(
 			cobra.MaximumNArgs(1),
 		),
@@ -52,7 +54,7 @@ func init() {
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
 
-	// rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.foam-postprocess.yaml)")
+	// rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.post.yaml)")
 	rootCmd.PersistentFlags().CountVarP(
 		(*int)(unsafe.Pointer(&logLevel)), // XXX: unsafe, logLevel = uint32
 		"verbose",
