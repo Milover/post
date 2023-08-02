@@ -23,7 +23,7 @@ Utilities for post-processing OpenFOAM function object data.
 - [x] output LaTeX graphs
 	- should use templates
 
-### Fairly important additional stuff
+### Important additions
 
 - processing
 	- *add more processors*
@@ -31,8 +31,9 @@ Utilities for post-processing OpenFOAM function object data.
 	- [x] arithmetic expressions
 		- support arbitrary arithmetic expressions with fields/constants
 - input
-	- [ ] (?) combine multiple files into single dataframe
-        - what exactly are we trying to combine?
+	- [x] (?) combine multiple files into single dataframe
+        - ~~what exactly are we trying to combine?~~
+        - see the io refactor bullet under [Sec. 'Quality of life'](#quality-of-life) 
 	- [x] support OpenFOAM time series type inputs:
 		```
 		.
@@ -69,7 +70,7 @@ Utilities for post-processing OpenFOAM function object data.
 		  config and a `dataframe.DataFrame`, as inputs
 		- moved all execution controls to `cmd` package
 
-### Quality of life stuff
+### Quality of life
 
 - [x] add option to skip reading the input
 - [ ] ~~specifying `input.fields` should be optional~~
@@ -78,20 +79,42 @@ Utilities for post-processing OpenFOAM function object data.
 - [ ] better control over TeX graphs
 	- either custom templates, or support raw TeX in config file
 	- [x] support for custom templates
-	- [ ] add cli command for generating default templates
+	- [ ] add cli command for generating/outputting default templates
 	- [ ] (?) support for raw TeX in config file
-- [ ] input/output
-	- [ ] support output to memory
-		- instead of writing data to disk, store the dataframe, and make
-		  it available to other pipelines
-	- [ ] support combining multiple input files in to one
-	- [ ] support generating multiple outputs in one pipeline
-		- **add better explanation and an example use case**
-		- usefull when working with series type input
-    - [ ] support compressed input
+- [ ] io refactor and improvements
+    - [x] merge config and io class implementation
+        - separating the config from the implementation is impractical, just
+          make the io thing a standalone class that can read its config
+          and do the work
+        - watch out how we handle multiple io, because we have to preserve the
+          individual configs
+    - [x] remove the `directory` field from the output config
+        - this should be implied when specifying the output file name, we
+          should simply create the path if it doesn't exist, there's should
+          be no need to specify the output directory explicitly
+        - keeping the io configs the same also simplifies the implementation,
+          since the class structure can remain the same
+	- [x] support output to memory
+		- instead of writing data to disk, store the dataframe on a 'registry'
+          and make it available to other pipelines
+	- [x] support generating multiple outputs in one pipeline
+		- ~~add better explanation and an example use case~~
+		- useful when working with series type input
+        - also separated 'graphing' and 'output' into different sections
+	- [x] support combining multiple input files in to one
+        - not sure if this is super necessary; also this probably isn't that
+          useful until resampling is implemented
+    - [x] support compressed input
+        - would be handy
+        - [x] compressed archives
+        - [x] compressed individual files
+        - **dumb implementation, refactor at some point**
     - [ ] support binary input
-- [ ] better error messages
-- [ ] re-sampling support
+        - not super important
+- [ ] error handling cleanup and better error messages
+- [ ] purge `logrus` and use the standard `log`
+    - `logrus` is totally unnecessary, and propagating the logger is just annoying
+- [ ] resampling support
 - [ ] (?) parallelism/concurrency (at least some parts)
 - [ ] the config file template generation should be automated
     - not happening any time soon

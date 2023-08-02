@@ -1,13 +1,15 @@
 # run file template
 - input: # Salon, et al. 2007, fig 21
-    file: "flat_plate.stuff/salon_ac.stokes.2007/fig_21/raw/tau_w.csv"
+    file: "data/salon_ac.stokes.2007/fig_21/raw/tau_w.csv"
     fields: [phase, tauWBar]
     format: dat
   output:
-    directory: outdir
-    table_file: dns_salon_2007_tau_w_bar
+    - type: csv
+      type_spec:
+        directory: outdir
+        file: dns_salon_2007_tau_w_bar.csv
 - input: # cycle average tauWBar at probe location
-    file: "flat_plate.stuff/postProcessing.LES/cont.probes/0/tauWBar"
+    file: "data/postProcessing.LES/cont.probes/0/tauWBar"
     fields: [time, tauWBar]
     format: dat
   process:
@@ -20,7 +22,7 @@
             value: 19.999999999999
     - type: average-cycle
       type_spec:
-        n_cycles: 10
+        n_cycles: 20
         time_field: time
         time_precision: 1e-10
     - type: expression
@@ -28,10 +30,22 @@
         expression: '180*time'
         result: phase
   output:
-    directory: outdir
-    table_file: wale_tau_w_bar_avg
+#    - type: ram
+#      type_spec:
+#        name: wale_tau_w_bar_avg
+    - type: csv
+      type_spec:
+        directory: outdir
+        file: wale_tau_w_bar_avg.csv
+  graph:
+    type: tex
     graphs:
-      - name: tau_w_bar_avg
+      - name: tau_w_bar_avg.tex
+        template_dir:
+        template_main:
+        template_delims: ['__{','}__']
+        directory: outdir
+        table_file: 'outdir/wale_tau_w_bar_avg.csv'
         axes:
           - x:
               min: 0

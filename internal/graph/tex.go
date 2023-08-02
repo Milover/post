@@ -1,4 +1,4 @@
-package output
+package graph
 
 import (
 	"embed"
@@ -32,18 +32,23 @@ var (
 )
 
 type TeXGrapher struct {
-	Name           string    `yaml:"name"`
+	Name string `yaml:"name"`
+	// Directory is an output directory for all files. If it is an empty string,
+	// the current working directory is used. The path is created recursively
+	// if it does not exist.
+	Directory      string    `yaml:"directory"`
 	Axes           []TexAxis `yaml:"axes"`
 	TableFile      string    `yaml:"table_file"`
 	TemplateDir    string    `yaml:"template_file"`
 	TemplateMain   string    `yaml:"template_main"`
 	TemplateDelims []string  `yaml:"template_delims"`
 
-	Templates fs.FS      `yaml:"-"`
-	Spec      *yaml.Node `yaml:"-"`
+	Templates fs.FS          `yaml:"-"`
+	Spec      *yaml.Node     `yaml:"-"`
+	Log       *logrus.Logger `yaml:"-"`
 }
 
-func NewTeXGrapher(spec *yaml.Node) (Grapher, error) {
+func newTeXGrapher(spec *yaml.Node, config *Config) (Grapher, error) {
 	g := &TeXGrapher{
 		TemplateDir:    DfltTexTemplateDir,
 		TemplateMain:   DfltTexTemplateMain,
@@ -53,6 +58,15 @@ func NewTeXGrapher(spec *yaml.Node) (Grapher, error) {
 	if err := spec.Decode(g); err != nil {
 		return nil, err
 	}
+	if len(g.Name) == 0 {
+		return nil, ErrTeXGraphName
+	}
+	if len(g.Directory) != 0 {
+		if err := os.MkdirAll(filepath.Clean(g.Directory), 0755); err != nil {
+			return nil, err
+		}
+	}
+	g.Log = config.Log
 	return g, nil
 }
 
@@ -75,23 +89,9 @@ type TeXTable struct {
 	TableFile   string `yaml:"table_file"`
 }
 
-func (g *TeXGrapher) filepath(config *Config) (string, error) {
-	if len(g.Name) == 0 {
-		return "", ErrTeXGraphName
-	}
-	outDir, err := OutDir(config)
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(outDir, g.Name), nil
-}
-
-func (g *TeXGrapher) Write(config *Config) error {
-	path, err := g.filepath(config)
-	if err != nil {
-		return err
-	}
-	config.Log.WithFields(logrus.Fields{
+func (g *TeXGrapher) Write() error {
+	path := filepath.Join(g.Directory, g.Name)
+	g.Log.WithFields(logrus.Fields{
 		"file": path,
 	}).Trace("writing TeX graph file")
 	w, err := os.Create(path)
@@ -100,7 +100,7 @@ func (g *TeXGrapher) Write(config *Config) error {
 	}
 	defer w.Close()
 
-	if err := g.propagateTableFile(config); err != nil {
+	if err := g.propagateTableFile(); err != nil {
 		return err
 	}
 	if g.TemplateDir != DfltTexTemplateDir {
@@ -116,22 +116,18 @@ func (g *TeXGrapher) Write(config *Config) error {
 		Execute(w, g)
 }
 
-func (g *TeXGrapher) Generate(config *Config) error {
-	path, err := g.filepath(config)
-	if err != nil {
-		return err
-	}
+func (g *TeXGrapher) Generate() error {
+	path := filepath.Join(g.Directory, g.Name)
 	if _, err := os.Stat(path); err != nil {
 		return err
 	}
-	outDir, _ := OutDir(config)
-	config.Log.WithFields(logrus.Fields{
+	g.Log.WithFields(logrus.Fields{
 		"file": path,
 	}).Trace("generating TeX graph")
 	return exec.Command("pdflatex",
 		"-halt-on-error",
 		"-interaction=nonstopmode",
-		"-output-directory="+outDir,
+		"-output-directory="+g.Directory,
 		path,
 	).Run()
 }
@@ -140,14 +136,7 @@ func (g *TeXGrapher) Generate(config *Config) error {
 // to each TeXTable present in the graph.
 // The TeXTable.TableFile is set only if it is undefined, i.e., if it was not
 // specified in the run file.
-func (g *TeXGrapher) propagateTableFile(config *Config) error {
-	outDir, err := OutDir(config)
-	if err != nil {
-		return err
-	}
-	if len(g.TableFile) == 0 {
-		g.TableFile = filepath.Join(outDir, config.TableFile)
-	}
+func (g *TeXGrapher) propagateTableFile() error {
 	for aID := range g.Axes {
 		a := &g.Axes[aID]
 		for tID := range a.Tables {

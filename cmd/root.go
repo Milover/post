@@ -89,20 +89,26 @@ func init() {
 		"don't process data",
 	)
 	rootCmd.Flags().BoolVar(
-		&noWriteCSV,
-		"no-write-csv",
+		&noOutput,
+		"no-output",
 		false,
-		"don't write data to csv",
+		"don't output data",
 	)
 	rootCmd.Flags().BoolVar(
-		&noWriteGraphs,
-		"no-write-graphs",
+		&noGraph,
+		"no-graph",
+		false,
+		"don't write or generate graphs",
+	)
+	rootCmd.Flags().BoolVar(
+		&noGraphWrite,
+		"no-graph-write",
 		false,
 		"don't write graph files",
 	)
 	rootCmd.Flags().BoolVar(
-		&noGenerateGraphs,
-		"no-generate-graphs",
+		&noGraphGenerate,
+		"no-graph-generate",
 		false,
 		"don't generate graphs",
 	)
