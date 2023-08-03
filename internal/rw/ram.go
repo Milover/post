@@ -55,14 +55,15 @@ func (rw *ram) Write(df *dataframe.DataFrame) error {
 	return nil
 }
 
-// Read reads a *dataframe.DataFrame, stored under the key w.Name (read from
-// the run time config), from w.
+// Read returns a copy of a dataframe.DataFrame, stored under the key rw.Name
+// (read from the run time config), from rw.
 func (rw *ram) Read() (*dataframe.DataFrame, error) {
 	v, ok := rw.s[rw.Name]
 	if !ok {
 		return nil, ErrNoExist
 	}
-	return v, nil
+	temp := v.Copy()
+	return &temp, nil
 }
 
 func (rw *ram) Clear() {
