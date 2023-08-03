@@ -18,14 +18,14 @@ var (
 		Short: "Generate a run file stub",
 		Long:  `Generate a run file stub`,
 		Args: cobra.MatchAll(
-			cobra.ExactArgs(0),
+			cobra.MaximumNArgs(1),
 		),
 		RunE: writeConfigTemplate,
 	}
 )
 
 func init() {
-	writeGraphTemplateCmd.Flags().StringVar(
+	writeConfigTemplateCmd.Flags().StringVar(
 		&outFile,
 		"outfile",
 		configFile,
