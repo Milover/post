@@ -1,43 +1,52 @@
 # run file template
 # Salon et al. (2007) DNS results
 - input:
-    file: 'data/salon_ac.stokes.2007/fig_23/raw/deg_15.csv'
+    type: dat
     fields: [ubar,zbar]
-    format: dat
+    type_spec:
+      file: 'data/salon_ac.stokes.2007/fig_23/raw/deg_15.csv'
   output:
-    directory: outdir
-    table_file: dns_u_bar_profile_15deg.csv
+    - type: csv
+      type_spec:
+        file: 'outdir/dns_u_bar_profile_15deg.csv'
 - input:
-    file: 'data/salon_ac.stokes.2007/fig_23/raw/deg_75.csv'
+    type: dat
     fields: [ubar,zbar]
-    format: dat
+    type_spec:
+      file: 'data/salon_ac.stokes.2007/fig_23/raw/deg_75.csv'
   output:
-    directory: outdir
-    table_file: dns_u_bar_profile_75deg.csv
+    - type: csv
+      type_spec:
+        file: 'outdir/dns_u_bar_profile_75deg.csv'
 - input:
-    file: 'data/salon_ac.stokes.2007/fig_23/raw/deg_105.csv'
+    type: dat
     fields: [ubar,zbar]
-    format: dat
+    type_spec:
+      file: 'data/salon_ac.stokes.2007/fig_23/raw/deg_105.csv'
   output:
-    directory: outdir
-    table_file: dns_u_bar_profile_105deg.csv
+    - type: csv
+      type_spec:
+        file: 'outdir/dns_u_bar_profile_105deg.csv'
 - input:
-    file: 'data/salon_ac.stokes.2007/fig_23/raw/deg_135.csv'
+    type: dat
     fields: [ubar,zbar]
-    format: dat
+    type_spec:
+      file: 'data/salon_ac.stokes.2007/fig_23/raw/deg_135.csv'
   output:
-    directory: outdir
-    table_file: dns_u_bar_profile_135deg.csv
+    - type: csv
+      type_spec:
+        file: 'outdir/dns_u_bar_profile_135deg.csv'
+
 # LES data
 - input: # XXX: cycle average uBar graphs
-    fields: [z,RCmp,kBar,k,U_0,U_1,U_2,UBar_0,UBar_1,UBar_2]
-    format: csv
-    format_spec:
-      has_header: true
-    series_spec:
-      series_directory: 'data/postProcessing.LES/single_graph'
-      series_file: 'axis_RComponent_kBar_turbulenceProperties:k_U_UBar.csv'
-      series_time_name: 'time'
+    type: foam-series
+    fields: [time, z,RCmp,kBar,k,U_0,U_1,U_2,UBar_0,UBar_1,UBar_2]
+    type_spec:
+      archive: 'data/postProcessing.LES/single_graph.tar.xz'
+      directory: 'single_graph'
+      file: 'axis_RComponent_kBar_turbulenceProperties:k_U_UBar.csv'
+      format_spec:
+        type: csv
   process:
     - type: filter
       type_spec:
@@ -59,15 +68,20 @@
         expression: 'z/0.000602389633252' # z/delta_S
         result: zBar
   output:
-    directory: outdir
-    table_file: wale_u_bar_profile.csv
+    - type: ram
+      type_spec:
+        name: 'wale_u_bar_profile'
+    - type: csv
+      type_spec:
+        file: 'outdir/wale_u_bar_series.csv'
+
+# Select profiles at required times from the series
 - input:
-    file: 'outdir/wale_u_bar_profile.csv'
+    type: ram
     # FIXME: it's super easy to get these mixed up and annoying to find
     #fields: [z,RCmp,kBar,k,U_0,U_1,U_2,UBar_0,UBar_1,UBar_2,time,phase,zBar]
-    format: csv
-    format_spec:
-      has_header: true
+    type_spec:
+      name: 'wale_u_bar_profile'
   process:
     - type: filter
       type_spec:
@@ -79,15 +93,17 @@
           - field: phase
             op: '<'
             value: 15.01
+    - type: select
+      type_spec:
+        fields: [UBar_0, zBar]
   output:
-    directory: outdir
-    table_file: wale_u_bar_profile_15deg.csv
+    - type: ram
+      type_spec:
+        name: 'wale_u_bar_profile_15deg'
 - input:
-    file: 'outdir/wale_u_bar_profile.csv'
-    #fields: [z,RCmp,kBar,k,U_0,U_1,U_2,UBar_0,UBar_1,UBar_2,time,phase,zBar]
-    format: csv
-    format_spec:
-      has_header: true
+    type: ram
+    type_spec:
+      name: 'wale_u_bar_profile'
   process:
     - type: filter
       type_spec:
@@ -103,15 +119,17 @@
       type_spec:
         expression: 'UBar_0 + 1'
         result: UBar_0
+    - type: select
+      type_spec:
+        fields: [UBar_0, zBar]
   output:
-    directory: outdir
-    table_file: wale_u_bar_profile_75deg.csv
+    - type: ram
+      type_spec:
+        name: 'wale_u_bar_profile_75deg'
 - input:
-    file: 'outdir/wale_u_bar_profile.csv'
-    #fields: [z,RCmp,kBar,k,U_0,U_1,U_2,UBar_0,UBar_1,UBar_2,time,phase,zBar]
-    format: csv
-    format_spec:
-      has_header: true
+    type: ram
+    type_spec:
+      name: 'wale_u_bar_profile'
   process:
     - type: filter
       type_spec:
@@ -127,15 +145,17 @@
       type_spec:
         expression: 'UBar_0 + 2'
         result: UBar_0
+    - type: select
+      type_spec:
+        fields: [UBar_0, zBar]
   output:
-    directory: outdir
-    table_file: wale_u_bar_profile_105deg.csv
+    - type: ram
+      type_spec:
+        name: 'wale_u_bar_profile_105deg'
 - input:
-    file: 'outdir/wale_u_bar_profile.csv'
-    #fields: [z,RCmp,kBar,k,U_0,U_1,U_2,UBar_0,UBar_1,UBar_2,time,phase,zBar]
-    format: csv
-    format_spec:
-      has_header: true
+    type: ram
+    type_spec:
+      name: 'wale_u_bar_profile'
   process:
     - type: filter
       type_spec:
@@ -151,14 +171,45 @@
       type_spec:
         expression: 'UBar_0 + 3'
         result: UBar_0
+    - type: select
+      type_spec:
+        fields: [UBar_0, zBar]
   output:
-    directory: outdir
-    table_file: wale_u_bar_profile_135deg.csv
-    grapher: tex
+    - type: ram
+      type_spec:
+        name: 'wale_u_bar_profile_135deg'
+
+# Merge profiles into single file and generate graph
+- input:
+    type: multiple
+    type_spec:
+      format_specs: # FIXME: this is dumb
+      - type: ram
+        fields: [UBar_15, zBar_15]
+        type_spec:
+          name: 'wale_u_bar_profile_15deg'
+      - type: ram
+        fields: [UBar_75, zBar_75]
+        type_spec:
+          name: 'wale_u_bar_profile_75deg'
+      - type: ram
+        fields: [UBar_105, zBar_105]
+        type_spec:
+          name: 'wale_u_bar_profile_105deg'
+      - type: ram
+        fields: [UBar_135, zBar_135]
+        type_spec:
+          name: 'wale_u_bar_profile_135deg'
+  output:
+    - type: csv
+      type_spec:
+        file: 'outdir/wale_u_bar_profile.csv'
+  graph:
+    type: tex
     graphs:
       - name: u_bar_profile.tex
-        template_dir:
-        template_main:
+        directory: outdir
+        table_file: 'outdir/wale_u_bar_profile.csv'
         axes:
           - x:
               min: 0
@@ -169,35 +220,31 @@
               max: 25
               label: '$z / \delta_\text{S}$'
             tables:
-              # Salon et al. (2007) DNS results
               - x_field: ubar
                 y_field: zbar
                 legend_entry: 'DNS $15\si{\degree}$'
                 table_file: 'outdir/dns_u_bar_profile_15deg.csv'
-              - x_field: UBar_0
-                y_field: zBar
+              - x_field: UBar_15
+                y_field: zBar_15
                 legend_entry: 'WALE $15\si{\degree}$'
-                table_file: 'outdir/wale_u_bar_profile_15deg.csv'
               - x_field: ubar
                 y_field: zbar
                 legend_entry: 'DNS $75\si{\degree}$'
                 table_file: 'outdir/dns_u_bar_profile_75deg.csv'
-              - x_field: UBar_0
-                y_field: zBar
+              - x_field: UBar_75
+                y_field: zBar_75
                 legend_entry: 'WALE $75\si{\degree}$'
-                table_file: 'outdir/wale_u_bar_profile_75deg.csv'
               - x_field: ubar
                 y_field: zbar
                 legend_entry: 'DNS $105\si{\degree}$'
                 table_file: 'outdir/dns_u_bar_profile_105deg.csv'
-              - x_field: UBar_0
-                y_field: zBar
+              - x_field: UBar_105
+                y_field: zBar_105
                 legend_entry: 'WALE $105\si{\degree}$'
-                table_file: 'outdir/wale_u_bar_profile_105deg.csv'
               - x_field: ubar
                 y_field: zbar
                 legend_entry: 'DNS $135\si{\degree}$'
                 table_file: 'outdir/dns_u_bar_profile_135deg.csv'
-              - x_field: UBar_0
-                y_field: zBar
+              - x_field: UBar_135
+                y_field: zBar_135
                 legend_entry: 'WALE $135\si{\degree}$'

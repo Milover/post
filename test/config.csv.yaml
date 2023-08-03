@@ -1,17 +1,19 @@
 # run file template
 - input: # Salon, et al. 2007, fig 21
-    file: "data/salon_ac.stokes.2007/fig_21/raw/tau_w.csv"
+    type: dat
     fields: [phase, tauWBar]
-    format: dat
+    type_spec:
+      file: "data/salon_ac.stokes.2007/fig_21/raw/tau_w.csv"
   output:
     - type: csv
       type_spec:
-        directory: outdir
-        file: dns_salon_2007_tau_w_bar.csv
+        file: 'outdir/dns_salon_2007_tau_w_bar.csv'
 - input: # cycle average tauWBar at probe location
-    file: "data/postProcessing.LES/cont.probes/0/tauWBar"
+    type: dat
     fields: [time, tauWBar]
-    format: dat
+    type_spec:
+      archive: "data/postProcessing.LES.tar.xz"
+      file: "postProcessing.LES/cont.probes/0/tauWBar"
   process:
     - type: filter
       type_spec:
@@ -30,13 +32,9 @@
         expression: '180*time'
         result: phase
   output:
-#    - type: ram
-#      type_spec:
-#        name: wale_tau_w_bar_avg
     - type: csv
       type_spec:
-        directory: outdir
-        file: wale_tau_w_bar_avg.csv
+        file: 'outdir/wale_tau_w_bar_avg.csv'
   graph:
     type: tex
     graphs:
