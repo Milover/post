@@ -7,6 +7,32 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+var (
+	// file name for the config template
+	outFile string
+)
+
+var (
+	writeConfigTemplateCmd = &cobra.Command{
+		Use:   "runfile",
+		Short: "Generate a run file stub",
+		Long:  `Generate a run file stub`,
+		Args: cobra.MatchAll(
+			cobra.ExactArgs(0),
+		),
+		RunE: writeConfigTemplate,
+	}
+)
+
+func init() {
+	writeGraphTemplateCmd.Flags().StringVar(
+		&outFile,
+		"outfile",
+		configFile,
+		"set the run file stub name",
+	)
+}
+
 const (
 	// FIXME: this should probably be automatically assembled
 	showcaseConfig string = `# run file template
@@ -55,6 +81,7 @@ const (
       type_spec:
         name:                   # name of the data which will be stored
     - type: csv
+      type_spec:
         file:                   # output file name
         enforce_extension:      # force correct file extension; by default 'false'
   graph:
@@ -89,7 +116,7 @@ func writeConfigTemplate(cmd *cobra.Command, args []string) error {
 	if err := yaml.Unmarshal([]byte(showcaseConfig), &configs); err != nil {
 		panic(err)
 	}
-	conf, err := os.Create(configFile)
+	conf, err := os.Create(outFile)
 	if err != nil {
 		return err
 	}

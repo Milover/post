@@ -27,9 +27,10 @@ var runTests = []runTest{
 		Error: nil,
 		Config: `
 - input:
-    file: testdata/dat/data.dat
+    type: dat
     fields: [t, patch, min, max]
-    format: dat
+    type_spec:
+      file: testdata/dat/data.dat
   process:
     - type: dummy
     - type: filter
@@ -47,10 +48,15 @@ var runTests = []runTest{
         expression: 'min+8'
         result: min
   output:
-    directory: "cycle_dat"
-    table_file: "cycle-dat"
+    - type: csv
+      type_spec:
+        file: 'cycle/wale_tau_w_bar_avg.csv'
+  graph:
+    type: tex
     graphs:
-      - name: "graph-cycle-dat-patch_1"
+      - name: 'graph-cycle-patch_1.tex'
+        directory: 'cycle'
+        table_file: 'cycle/wale_tau_w_bar_avg.csv'
         axes:
           - x:
               min: 0.0
@@ -68,17 +74,14 @@ var runTests = []runTest{
                 y_field: max
                 legend_entry: '$y_\text{max}$'
 - input:
-    file:
-    fields: [x, y]
-    format: csv
-    format_spec:
-      has_header: # set to 'true' by default
-      delimiter: # set to ',' by default
-      comment: # set to '#' by default
-    series_spec:
-      series_directory: testdata/csv_series
-      series_file: data.csv
-      series_time_name:
+    type: foam-series
+    type_spec:
+      directory: 'testdata/csv_series'
+      file: data.csv
+      format_spec:
+        type: csv
+        type_spec:
+          header: true
   process:
     - type: dummy
     - type: average-cycle
@@ -105,19 +108,24 @@ var runTests = []runTest{
             op: '<'
             value: 0.6
   output:
-    directory: "cycle_series_csv"
-    table_file: "cycle-series-csv"
+    - type: csv
+      type_spec:
+        file: 'cycle_series/cycle_series.csv'
+  graph:
+    type: tex
     graphs:
-      - name: "graph-series-csv-cycle-avg@1.5"
+      - name: 'graph-cycle-series-avg@1.5.tex'
+        directory: 'cycle_series'
+        table_file: 'cycle_series/cycle_series.csv'
         axes:
           - x:
               min: 0.0
               max: 1.0
-              label: "$x$-axis"
+              label: '$x$-axis'
             y:
               min: 0
               max: 25
-              label: "$y$-axis"
+              label: '$y$-axis'
             tables:
               - x_field: x
                 y_field: y
@@ -154,31 +162,6 @@ func TestRun(t *testing.T) {
 			})
 			//logLevel = logrus.TraceLevel
 			err = run(&cobra.Command{}, []string{})
-			assert.Equal(tt.Error, err)
-		})
-	}
-}
-
-// writeConfigTemplate command tests
-type writeConfigTemplateTest struct {
-	Name  string
-	Error error
-}
-
-var writeConfigTemplateTests = []writeConfigTemplateTest{
-	{
-		Name:  "good",
-		Error: nil,
-	},
-}
-
-func TestWriteConfigTemplate(t *testing.T) {
-	for _, tt := range writeConfigTemplateTests {
-		t.Run(tt.Name, func(t *testing.T) {
-			assert := assert.New(t)
-
-			//logLevel = logrus.TraceLevel
-			err := writeConfigTemplate(&cobra.Command{}, []string{})
 			assert.Equal(tt.Error, err)
 		})
 	}

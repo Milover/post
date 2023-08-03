@@ -14,7 +14,7 @@ import (
 )
 
 //go:embed tmpl
-var dfltTeXTemplates embed.FS
+var DfltTeXTemplates embed.FS
 
 var (
 	ErrTeXGraphSpec      = errors.New("output: TeX: graph spec == nil")
@@ -53,7 +53,7 @@ func newTeXGrapher(spec *yaml.Node, config *Config) (Grapher, error) {
 		TemplateDir:    DfltTexTemplateDir,
 		TemplateMain:   DfltTexTemplateMain,
 		TemplateDelims: DfltTeXTemplateDelims,
-		Templates:      dfltTeXTemplates,
+		Templates:      DfltTeXTemplates,
 	}
 	if err := spec.Decode(g); err != nil {
 		return nil, err
