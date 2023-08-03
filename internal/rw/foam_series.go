@@ -2,6 +2,7 @@ package rw
 
 import (
 	"errors"
+	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -131,9 +132,10 @@ func (rw *foamSeries) Read() (*dataframe.DataFrame, error) {
 			return err
 		}
 		defer f.Close()
+
 		temp, err := ReadOutOf(f, &rw.FormatSpec)
 		if err != nil {
-			return err
+			return fmt.Errorf("%w: in file: %v", err, path)
 		}
 		// all files should have the same number of rows, so we allocate
 		// only once, hence we can error if this is not the case
@@ -146,7 +148,7 @@ func (rw *foamSeries) Read() (*dataframe.DataFrame, error) {
 		*temp = dataframe.New(series.New(
 			ws.Rows, series.Float, rw.TimeName)).CBind(*temp)
 		if temp.Error() != nil {
-			return temp.Error()
+			return fmt.Errorf("%w: in file: %v", temp.Error(), path)
 		}
 		// concatonate the new dataframe
 		if df == nil {
@@ -154,7 +156,10 @@ func (rw *foamSeries) Read() (*dataframe.DataFrame, error) {
 			return nil
 		}
 		*df = df.RBind(*temp)
-		return df.Error()
+		if df.Error() != nil {
+			return fmt.Errorf("%w: in file: %v", df.Error(), path)
+		}
+		return nil
 	}
 	if err := fs.WalkDir(fsys, ".", walkFn); err != nil {
 		return nil, err

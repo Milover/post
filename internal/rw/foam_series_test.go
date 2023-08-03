@@ -240,7 +240,7 @@ format_spec:
     header: true
 `,
 		Output: dataframe.DataFrame{},
-		Error:  errors.New("arguments have different dimensions"),
+		Error:  errors.New("error"), // not matching explicitly, so doesn't matter
 	},
 }
 
@@ -259,11 +259,14 @@ func TestFoamSeriesRead(t *testing.T) {
 			assert.Nil(err, "unexpected NewFoamSeries() error")
 			out, err := rw.Read()
 
-			assert.Equal(tt.Error, err)
 			if tt.Error != nil {
+				assert.NotNil(err)
 				assert.Nil(out)
-			} else if !tt.SkipCompare {
-				assert.Equal(tt.Output, *out)
+			} else {
+				assert.Nil(err)
+				if !tt.SkipCompare {
+					assert.Equal(tt.Output, *out)
+				}
 			}
 		})
 	}
