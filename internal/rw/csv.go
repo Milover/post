@@ -1,6 +1,7 @@
 package rw
 
 import (
+	"fmt"
 	"io"
 	"os"
 
@@ -66,6 +67,9 @@ func (rw *csv) ReadOutOf(in io.Reader) (*dataframe.DataFrame, error) {
 // FIXME: LaTeX has an upper size limit for CSV files that it can handle
 // so the output should be decimated down to this size if it's too large.
 func (rw *csv) Write(df *dataframe.DataFrame) error {
+	if rw.File == "" {
+		return fmt.Errorf("%w: file", ErrUnset)
+	}
 	if err := OutDir(rw.File); err != nil {
 		return err
 	}
