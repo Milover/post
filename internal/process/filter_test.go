@@ -249,7 +249,7 @@ type_spec:
 	//	},
 }
 
-// TestFilterProcessor tests weather filters are applied correctly, as
+// TestFilterProcessor tests whether filters are applied correctly, as
 // defined in the config, to a dataframe.DataFrame.
 func TestFilterProcessor(t *testing.T) {
 	for _, tt := range filterTests {
