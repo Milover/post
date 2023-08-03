@@ -41,17 +41,18 @@ type fileEntry struct {
 	Files fileList
 
 	root *fileEntry
+	r    *bytes.Reader
 }
 
 func (f *fileEntry) Stat() (fs.FileInfo, error) { return f.Info, nil }
 func (f *fileEntry) Close() error               { return nil }
 func (f *fileEntry) Read(p []byte) (int, error) {
-	n, err := bytes.NewReader(f.Body).Read(p)
-	if err == nil {
-		err = io.EOF
+	if f.r == nil {
+		f.r = bytes.NewReader(f.Body)
 	}
-	return n, err
+	return f.r.Read(p)
 }
+func (f *fileEntry) ResetReader() { f.r.Reset(f.Body) }
 
 type fileInfo struct {
 	name    string
