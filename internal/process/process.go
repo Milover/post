@@ -22,10 +22,11 @@ type Processor func(*dataframe.DataFrame, *Config) error
 
 // ProcessorTypes maps Processor type tags to Processors.
 var ProcessorTypes = map[string]Processor{
-	"dummy":         dummyProcessor,
-	"filter":        filterProcessor,
 	"average-cycle": averageCycleProcessor,
+	"dummy":         dummyProcessor,
 	"expression":    expressionProcessor,
+	"filter":        filterProcessor,
+	"select":        selectProcessor,
 }
 
 // validType represents the supported series.Series types (a dataframe.DataFrame
