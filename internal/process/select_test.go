@@ -44,6 +44,26 @@ type_spec:
 		Error: nil,
 	},
 	{
+		Name: "good-reorder",
+		Config: Config{
+			Type: "select",
+		},
+		TypeSpec: `
+type_spec:
+  fields: [y, x]
+`,
+		Input: dataframe.New(
+			series.New([]int{0, 1}, series.Int, "x"),
+			series.New([]int{0, 1}, series.Int, "y"),
+			series.New([]int{0, 1}, series.Int, "z"),
+		),
+		Output: dataframe.New(
+			series.New([]int{0, 1}, series.Int, "y"),
+			series.New([]int{0, 1}, series.Int, "x"),
+		),
+		Error: nil,
+	},
+	{
 		Name: "good-empty",
 		Config: Config{
 			Type: "select",
