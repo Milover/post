@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 
+	"github.com/Milover/post/internal/common"
 	"github.com/go-gota/gota/dataframe"
 	"github.com/go-gota/gota/series"
 	"gopkg.in/yaml.v3"
@@ -43,7 +44,7 @@ func NewCsv(n *yaml.Node) (*csv, error) {
 func (rw *csv) Read() (*dataframe.DataFrame, error) {
 	f, err := rw.Open()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("csv: %w", err)
 	}
 	defer f.Close()
 	return rw.ReadOutOf(f)
@@ -68,7 +69,7 @@ func (rw *csv) ReadOutOf(in io.Reader) (*dataframe.DataFrame, error) {
 // so the output should be decimated down to this size if it's too large.
 func (rw *csv) Write(df *dataframe.DataFrame) error {
 	if rw.File == "" {
-		return fmt.Errorf("%w: file", ErrUnset)
+		return fmt.Errorf("csv: %w: %v", common.ErrUnsetField, "file")
 	}
 	if err := OutDir(rw.File); err != nil {
 		return err
