@@ -2,9 +2,8 @@ package cmd
 
 import (
 	"log"
-	"unsafe"
 
-	"github.com/sirupsen/logrus"
+	"github.com/Milover/post/internal/common"
 	"github.com/spf13/cobra"
 )
 
@@ -12,8 +11,6 @@ var (
 	// configFile is the default file name of the config file, it is used
 	// if no config file is supplied as a command line argument.
 	configFile string = "post_config.yaml"
-
-	logLevel logrus.Level
 )
 
 var (
@@ -37,13 +34,13 @@ func init() {
 	// will be global for your application.
 
 	// rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.post.yaml)")
-	rootCmd.PersistentFlags().CountVarP(
-		(*int)(unsafe.Pointer(&logLevel)), // XXX: unsafe, logLevel = uint32
+	rootCmd.PersistentFlags().BoolVarP(
+		&common.Verbose,
 		"verbose",
 		"v",
+		false,
 		"verbose log output",
 	)
-	logLevel = logrus.WarnLevel
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.

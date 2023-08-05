@@ -8,8 +8,6 @@ import (
 	"github.com/Milover/post/internal/common"
 	"github.com/go-gota/gota/dataframe"
 	"github.com/go-gota/gota/series"
-	"github.com/sirupsen/logrus"
-	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/yaml.v3"
 )
@@ -207,8 +205,6 @@ func TestFilterProcessor(t *testing.T) {
 	for _, tt := range filterTests {
 		t.Run(tt.Name, func(t *testing.T) {
 			assert := assert.New(t)
-			tt.Config.Log, _ = test.NewNullLogger()
-			tt.Config.Log.SetLevel(logrus.DebugLevel)
 
 			// read spec
 			raw, err := io.ReadAll(strings.NewReader(tt.TypeSpec))

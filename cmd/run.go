@@ -3,14 +3,15 @@ package cmd
 import (
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"strconv"
 
+	"github.com/Milover/post/internal/common"
 	"github.com/Milover/post/internal/graph"
 	"github.com/Milover/post/internal/process"
 	"github.com/Milover/post/internal/rw"
 	"github.com/go-gota/gota/dataframe"
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"golang.org/x/exp/slices"
 	"gopkg.in/yaml.v3"
@@ -34,29 +35,9 @@ type Config struct {
 	Process []process.Config `yaml:"process"`
 	Output  []rw.Config      `yaml:"output"`
 	Graph   graph.Config     `yaml:"graph"`
-
-	Log *logrus.Logger `yaml:"-"`
-}
-
-func (c *Config) propagateLogger(log *logrus.Logger) {
-	c.Log = log
-	for i := range c.Process {
-		c.Process[i].Log = log
-	}
-	c.Graph.Log = log
-}
-
-func (c *Config) logError(err error) error {
-	if err != nil {
-		c.Log.Error(err)
-	}
-	return err
 }
 
 func run(cmd *cobra.Command, args []string) error {
-	logger := logrus.StandardLogger()
-	logger.SetLevel(logLevel)
-
 	// read in configs
 	var configs []Config
 	if len(args) != 0 {
@@ -81,14 +62,13 @@ func run(cmd *cobra.Command, args []string) error {
 	// work
 	for i := range configs {
 		c := &configs[i]
-		c.propagateLogger(logger)
 		if len(c.ID) == 0 {
 			c.ID = strconv.Itoa(i)
 		}
 		if slices.Contains(skipIDs, c.ID) {
-			c.Log.WithFields(logrus.Fields{
-				"id": c.ID,
-			}).Info("skipping pipeline")
+			if common.Verbose {
+				log.Printf("skipping pipeline: %v", c.ID)
+			}
 			continue
 		}
 
@@ -96,28 +76,28 @@ func run(cmd *cobra.Command, args []string) error {
 		if !onlyGraphs {
 			df, err = rw.Read(&c.Input)
 			if err != nil {
-				return c.logError(fmt.Errorf("error creating data frame: %w", err))
+				return fmt.Errorf("error creating data frame: %w", err)
 			}
 			if !noProcess {
 				if err = process.Process(df, c.Process); err != nil {
-					return c.logError(fmt.Errorf("error processing data frame: %w", err))
+					return fmt.Errorf("error processing data frame: %w", err)
 				}
 			}
 			if !noOutput {
 				if err = rw.Write(df, c.Output); err != nil {
-					return c.logError(fmt.Errorf("output error: %w", err))
+					return fmt.Errorf("output error: %w", err)
 				}
 			}
 		}
 		if !noGraph {
 			if !noGraphWrite {
 				if err := graph.Write(df, &c.Graph); err != nil {
-					return c.logError(fmt.Errorf("error writing graphs: %w", err))
+					return fmt.Errorf("error writing graphs: %w", err)
 				}
 			}
 			if !noGraphGenerate {
 				if err := graph.Generate(df, &c.Graph); err != nil {
-					return c.logError(fmt.Errorf("error generating graphs: %w", err))
+					return fmt.Errorf("error generating graphs: %w", err)
 				}
 			}
 		}

@@ -6,15 +6,12 @@ import (
 
 	"github.com/Milover/post/internal/common"
 	"github.com/go-gota/gota/dataframe"
-	"github.com/sirupsen/logrus"
 	"golang.org/x/exp/slices"
 )
 
 // selectSpec contains data needed for defining a select Processor.
 type selectSpec struct {
 	Fields []string `yaml:"fields"`
-
-	Log *logrus.Logger `yaml:"-"`
 }
 
 // DefaultSelectSpec returns a selectSpec with 'sensible' default values.
@@ -26,7 +23,6 @@ func DefaultSelectSpec() selectSpec {
 // specified in the config.
 func selectProcessor(df *dataframe.DataFrame, config *Config) error {
 	spec := DefaultSelectSpec()
-	spec.Log = config.Log
 	if err := config.TypeSpec.Decode(&spec); err != nil {
 		return err
 	}
@@ -42,8 +38,6 @@ func selectProcessor(df *dataframe.DataFrame, config *Config) error {
 		}
 		ids[i] = id
 	}
-	spec.Log.WithFields(logrus.Fields{"fields": spec.Fields}).
-		Debug("selecting fields")
 	temp := df.Select(ids)
 	err := errors.Join(df.Error(), temp.Error()) // which one errors?
 	*df = temp

@@ -3,13 +3,13 @@ package process
 import (
 	"errors"
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
 
 	"github.com/Milover/post/internal/common"
 	"github.com/go-gota/gota/dataframe"
 	"github.com/go-gota/gota/series"
-	"github.com/sirupsen/logrus"
 	"golang.org/x/exp/maps"
 	"golang.org/x/exp/slices"
 )
@@ -29,8 +29,6 @@ var filterAggregations = map[string]dataframe.Aggregation{
 type filterSetSpec struct {
 	Aggregation string       `yaml:"aggregation"`
 	Filters     []filterSpec `yaml:"filters"`
-
-	Log *logrus.Logger `yaml:"-"`
 }
 
 // filterSpec contains data needed for defining a filter Processor.
@@ -38,8 +36,6 @@ type filterSpec struct {
 	Field string            `yaml:"field"`
 	Op    series.Comparator `yaml:"op"`
 	Value string            `yaml:"value"`
-
-	Log *logrus.Logger `yaml:"-"`
 }
 
 // DefaultFilterSetSpec returns a filterSetSpec with 'sensible' default values.
@@ -50,12 +46,10 @@ func DefaultFilterSetSpec() filterSetSpec {
 // createFilter creates a dataframe.F from an input filterSpec
 // and a filter (comparison) value.
 func createFilter[T validType](spec *filterSpec, val T) dataframe.F {
-	spec.Log.WithFields(logrus.Fields{
-		"type":  fmt.Sprintf("%T", val),
-		"field": spec.Field,
-		"op":    spec.Op,
-		"value": val,
-	}).Debug("creating filter")
+	if common.Verbose {
+		log.Printf("filter: creating: %q : %q : %v",
+			spec.Field, spec.Op, val)
+	}
 	return dataframe.F{
 		Colname:    spec.Field,
 		Comparator: spec.Op,
@@ -76,7 +70,6 @@ func createFilter[T validType](spec *filterSpec, val T) dataframe.F {
 // The 'or' mode is the default if the 'aggregation' field is unset.
 func filterProcessor(df *dataframe.DataFrame, config *Config) error {
 	spec := DefaultFilterSetSpec()
-	spec.Log = config.Log
 	if err := config.TypeSpec.Decode(&spec); err != nil {
 		return err
 	}
@@ -91,7 +84,6 @@ func filterProcessor(df *dataframe.DataFrame, config *Config) error {
 	filters := make([]dataframe.F, len(spec.Filters))
 	for i := range spec.Filters {
 		fs := &spec.Filters[i]
-		fs.Log = config.Log
 		if !slices.Contains(df.Names(), fs.Field) {
 			return fmt.Errorf("filter: %w: %v", common.ErrBadField, fs.Field)
 		}
@@ -125,8 +117,9 @@ func filterProcessor(df *dataframe.DataFrame, config *Config) error {
 		}
 	}
 
-	spec.Log.WithFields(logrus.Fields{"aggregation": aggr}).
-		Debug("applying filters")
+	if common.Verbose {
+		log.Printf("filter: applying with aggregation: %q", aggr)
+	}
 	temp := df.FilterAggregation(aggr, filters...)
 	err := errors.Join(df.Error(), temp.Error()) // which one errors?
 	*df = temp

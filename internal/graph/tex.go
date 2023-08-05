@@ -4,13 +4,13 @@ import (
 	"embed"
 	"fmt"
 	"io/fs"
+	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"text/template"
 
 	"github.com/Milover/post/internal/common"
-	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 )
 
@@ -38,9 +38,8 @@ type TeXGrapher struct {
 	TemplateMain   string    `yaml:"template_main"`
 	TemplateDelims []string  `yaml:"template_delims"`
 
-	Templates fs.FS          `yaml:"-"`
-	Spec      *yaml.Node     `yaml:"-"`
-	Log       *logrus.Logger `yaml:"-"`
+	Templates fs.FS      `yaml:"-"`
+	Spec      *yaml.Node `yaml:"-"`
 }
 
 func newTeXGrapher(spec *yaml.Node, config *Config) (Grapher, error) {
@@ -61,7 +60,6 @@ func newTeXGrapher(spec *yaml.Node, config *Config) (Grapher, error) {
 			return nil, err
 		}
 	}
-	g.Log = config.Log
 	return g, nil
 }
 
@@ -86,9 +84,9 @@ type TeXTable struct {
 
 func (g *TeXGrapher) Write() error {
 	path := filepath.Join(g.Directory, g.Name)
-	g.Log.WithFields(logrus.Fields{
-		"file": path,
-	}).Trace("writing TeX graph file")
+	if common.Verbose {
+		log.Printf("tex: writing graph file: %v", path)
+	}
 	w, err := os.Create(path)
 	if err != nil {
 		return err
@@ -116,9 +114,9 @@ func (g *TeXGrapher) Generate() error {
 	if _, err := os.Stat(path); err != nil {
 		return err
 	}
-	g.Log.WithFields(logrus.Fields{
-		"file": path,
-	}).Trace("generating TeX graph")
+	if common.Verbose {
+		log.Printf("tex: generating graph: %v", path)
+	}
 	return exec.Command("pdflatex",
 		"-halt-on-error",
 		"-interaction=nonstopmode",

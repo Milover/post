@@ -76,9 +76,6 @@ func (rw *csv) Write(df *dataframe.DataFrame) error {
 	}
 	// LaTeX needs a 'proper' extension to determine the format
 	path := rw.EnforceExt(CSVExt)
-	//	o.Log.WithFields(logrus.Fields{
-	//		"file": csv,
-	//	}).Debug("writing csv")
 	f, err := os.Create(path)
 	if err != nil {
 		return err

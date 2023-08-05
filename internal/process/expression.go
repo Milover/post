@@ -10,7 +10,6 @@ import (
 	"github.com/PaesslerAG/gval"
 	"github.com/go-gota/gota/dataframe"
 	"github.com/go-gota/gota/series"
-	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -116,8 +115,6 @@ func SliceArithmetic() gval.Language {
 type expressionSpec struct {
 	Expression string `yaml:"expression"`
 	Result     string `yaml:"result"`
-
-	Log *logrus.Logger `yaml:"-"`
 }
 
 // DefaultExpressionSetSpec returns a expressionSetSpec with 'sensible' default values.
@@ -127,7 +124,6 @@ func DefaultExpressionSpec() expressionSpec {
 
 func expressionProcessor(df *dataframe.DataFrame, config *Config) error {
 	spec := DefaultExpressionSpec()
-	spec.Log = config.Log
 	if err := config.TypeSpec.Decode(&spec); err != nil {
 		return err
 	}
@@ -152,10 +148,6 @@ func expressionProcessor(df *dataframe.DataFrame, config *Config) error {
 		SliceArithmetic(),
 	)
 
-	spec.Log.WithFields(logrus.Fields{
-		"expression": spec.Expression,
-		"result":     spec.Result}).
-		Debug("applying expression")
 	r, err := lang.Evaluate(spec.Expression, env)
 	if err != nil {
 		return err

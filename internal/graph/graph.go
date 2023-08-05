@@ -3,10 +3,11 @@ package graph
 import (
 	"errors"
 	"fmt"
+	"log"
 	"strings"
 
+	"github.com/Milover/post/internal/common"
 	"github.com/go-gota/gota/dataframe"
-	"github.com/sirupsen/logrus"
 	"golang.org/x/exp/maps"
 	"gopkg.in/yaml.v3"
 )
@@ -47,9 +48,9 @@ func graphExecute(config *Config, exec func(Grapher) error, action string) error
 	if !found {
 		return ErrInvalidGrapher
 	}
-	config.Log.WithFields(logrus.Fields{
-		"grapher": config.GrapherType,
-	}).Debug(action + " graph")
+	if common.Verbose {
+		log.Printf("%v: %v graph", strings.ToLower(config.GrapherType), action)
+	}
 	var err error
 	for i := range config.Graphs {
 		c := &config.Graphs[i]

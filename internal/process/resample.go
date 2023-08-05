@@ -7,7 +7,6 @@ import (
 	"github.com/Milover/post/internal/common"
 	"github.com/go-gota/gota/dataframe"
 	"github.com/go-gota/gota/series"
-	"github.com/sirupsen/logrus"
 	"golang.org/x/exp/slices"
 )
 
@@ -15,8 +14,6 @@ import (
 type resampleSpec struct {
 	NPoints int    `yaml:"n_points"`
 	X       string `yaml:"x_field"`
-
-	Log *logrus.Logger `yaml:"-"`
 }
 
 // DefaultResampleSpec returns a selectSpec with 'sensible' default values.
@@ -31,7 +28,6 @@ func DefaultResampleSpec() resampleSpec {
 // the values of each field were given at a uniformly distributed x ∈ [0,1].
 func resampleProcessor(df *dataframe.DataFrame, config *Config) error {
 	spec := DefaultResampleSpec()
-	spec.Log = config.Log
 	if err := config.TypeSpec.Decode(&spec); err != nil {
 		return err
 	}

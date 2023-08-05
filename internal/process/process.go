@@ -2,11 +2,12 @@ package process
 
 import (
 	"fmt"
+	"log"
 	"strings"
 
+	"github.com/Milover/post/internal/common"
 	"github.com/go-gota/gota/dataframe"
 	"github.com/go-gota/gota/series"
-	"github.com/sirupsen/logrus"
 	"golang.org/x/exp/maps"
 )
 
@@ -60,18 +61,16 @@ func process(df *dataframe.DataFrame, config *Config) error {
 	if !found {
 		return ErrInvalidType
 	}
-	config.Log.WithFields(logrus.Fields{
-		"processor": strings.ToLower(config.Type),
-	}).Debug("applying processor")
-	config.Log.WithFields(logrus.Fields{
-		"fields": df.Names(),
-	}).Trace("starting")
+	if common.Verbose {
+		log.Printf("applying processor: %q", strings.ToLower(config.Type))
+		log.Printf("fields before: %v", df.Names())
+	}
 	if err := p(df, config); err != nil {
 		return err
 	}
-	config.Log.WithFields(logrus.Fields{
-		"fields": df.Names(),
-	}).Trace("done")
+	if common.Verbose {
+		log.Printf("fields after: %v", df.Names())
+	}
 	return nil
 }
 

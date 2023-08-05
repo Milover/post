@@ -3,12 +3,12 @@ package process
 import (
 	"errors"
 	"fmt"
+	"log"
 
 	"github.com/Milover/post/internal/common"
 	"github.com/Milover/post/internal/numeric"
 	"github.com/go-gota/gota/dataframe"
 	"github.com/go-gota/gota/series"
-	"github.com/sirupsen/logrus"
 	"golang.org/x/exp/slices"
 )
 
@@ -22,8 +22,6 @@ type averageCycleSpec struct {
 	NCycles       int     `yaml:"n_cycles"`
 	TimeField     string  `yaml:"time_field"`
 	TimePrecision float64 `yaml:"time_precision"`
-
-	Log *logrus.Logger `yaml:"-"`
 }
 
 // DefaultAverageCycleSpec returns a averageCycleSpec
@@ -110,10 +108,10 @@ func averageCycle(df *dataframe.DataFrame, spec *averageCycleSpec) error {
 	if len(spec.TimeField) == 0 {
 		spec.TimeField = "time"
 	} else {
-		spec.Log.WithFields(logrus.Fields{
-			"time-field":     spec.TimeField,
-			"time-precision": spec.TimePrecision,
-		}).Debug("matching times")
+		if common.Verbose {
+			log.Printf("average-cycle: matching times: %q : %v",
+				spec.TimeField, spec.TimePrecision)
+		}
 		readT := df.Col(spec.TimeField).Float() // XXX: does this allocate?
 		deltaT := readT[nPerTime] - readT[0]
 		cycleT := deltaT + readT[period-1] - readT[0]
@@ -178,7 +176,6 @@ func averageCycle(df *dataframe.DataFrame, spec *averageCycleSpec) error {
 // If an error occurs, the state of df is unknown.
 func averageCycleProcessor(df *dataframe.DataFrame, config *Config) error {
 	spec := DefaultAverageCycleSpec()
-	spec.Log = config.Log
 	if err := config.TypeSpec.Decode(&spec); err != nil {
 		return err
 	}
@@ -200,7 +197,5 @@ func averageCycleProcessor(df *dataframe.DataFrame, config *Config) error {
 	if err := intsToFloats(df); err != nil {
 		return fmt.Errorf("average-cycle: %w", err)
 	}
-	spec.Log.WithFields(logrus.Fields{"cycles": spec.NCycles}).
-		Debug("averaging cycle")
 	return averageCycle(df, &spec)
 }
