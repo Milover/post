@@ -9,3 +9,8 @@ var (
 	ErrBadFieldType  = errors.New("bad field type")
 	ErrBadFieldValue = errors.New("bad field value")
 )
+
+const (
+	// Verbose controls log output.
+	Verbose bool = false
+)
