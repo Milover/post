@@ -5,10 +5,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/Milover/post/internal/common"
 	"github.com/go-gota/gota/dataframe"
 	"github.com/go-gota/gota/series"
-	"github.com/sirupsen/logrus"
-	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/yaml.v3"
 )
@@ -97,7 +96,7 @@ type_spec:
 			series.New([]int{0, 1}, series.Int, "x"),
 			series.New([]int{1, 2}, series.Int, "y"),
 		),
-		Error: ErrSelectField,
+		Error: common.ErrBadField,
 	},
 }
 
@@ -107,8 +106,6 @@ func TestSelectProcessor(t *testing.T) {
 	for _, tt := range selectTests {
 		t.Run(tt.Name, func(t *testing.T) {
 			assert := assert.New(t)
-			tt.Config.Log, _ = test.NewNullLogger()
-			tt.Config.Log.SetLevel(logrus.DebugLevel)
 
 			// read spec
 			raw, err := io.ReadAll(strings.NewReader(tt.TypeSpec))

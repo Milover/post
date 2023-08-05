@@ -17,6 +17,9 @@ run:
 test:
 	go test ./...
 
+testv:
+	go test -v ./...
+
 test-integration:
 	go test -tags=integration ./...
 
@@ -29,3 +32,5 @@ lint:
 clean:
 	go clean
 	rm -rf bin
+
+.PHONY: run test testv test-integration vet lint clean

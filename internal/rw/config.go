@@ -2,18 +2,14 @@ package rw
 
 import (
 	"errors"
+	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/Milover/post/internal/common"
 	"gopkg.in/yaml.v3"
-)
-
-var (
-	ErrUnset          = errors.New("field unset")
-	ErrBadFileHandler = errors.New("bad file handler definition")
-	ErrBadFSHandler   = errors.New("bad filesystem handler definition")
 )
 
 type Config struct {
@@ -82,5 +78,5 @@ func (f FileHandler) Open() (fs.File, error) {
 	} else if isFile {
 		return os.Open(f.File)
 	}
-	return nil, ErrBadFileHandler
+	return nil, fmt.Errorf("%w: %v", common.ErrUnsetField, "file")
 }

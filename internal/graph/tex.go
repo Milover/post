@@ -2,25 +2,20 @@ package graph
 
 import (
 	"embed"
-	"errors"
+	"fmt"
 	"io/fs"
+	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"text/template"
 
-	"github.com/sirupsen/logrus"
+	"github.com/Milover/post/internal/common"
 	"gopkg.in/yaml.v3"
 )
 
 //go:embed tmpl
 var DfltTeXTemplates embed.FS
-
-var (
-	ErrTeXGraphSpec      = errors.New("output: TeX: graph spec == nil")
-	ErrTeXGraphName      = errors.New("output: TeX: graph name not specified")
-	ErrTeXGraphTableFile = errors.New("output: TeX: graph table file not specified")
-)
 
 const (
 	DfltTexTemplateDir  string = "tmpl/*.tmpl"
@@ -43,9 +38,8 @@ type TeXGrapher struct {
 	TemplateMain   string    `yaml:"template_main"`
 	TemplateDelims []string  `yaml:"template_delims"`
 
-	Templates fs.FS          `yaml:"-"`
-	Spec      *yaml.Node     `yaml:"-"`
-	Log       *logrus.Logger `yaml:"-"`
+	Templates fs.FS      `yaml:"-"`
+	Spec      *yaml.Node `yaml:"-"`
 }
 
 func newTeXGrapher(spec *yaml.Node, config *Config) (Grapher, error) {
@@ -58,15 +52,14 @@ func newTeXGrapher(spec *yaml.Node, config *Config) (Grapher, error) {
 	if err := spec.Decode(g); err != nil {
 		return nil, err
 	}
-	if len(g.Name) == 0 {
-		return nil, ErrTeXGraphName
+	if g.Name == "" {
+		return nil, fmt.Errorf("tex: %w: %v", common.ErrUnsetField, "name")
 	}
 	if len(g.Directory) != 0 {
 		if err := os.MkdirAll(filepath.Clean(g.Directory), 0755); err != nil {
 			return nil, err
 		}
 	}
-	g.Log = config.Log
 	return g, nil
 }
 
@@ -91,9 +84,9 @@ type TeXTable struct {
 
 func (g *TeXGrapher) Write() error {
 	path := filepath.Join(g.Directory, g.Name)
-	g.Log.WithFields(logrus.Fields{
-		"file": path,
-	}).Trace("writing TeX graph file")
+	if common.Verbose {
+		log.Printf("tex: writing graph file: %v", path)
+	}
 	w, err := os.Create(path)
 	if err != nil {
 		return err
@@ -101,7 +94,7 @@ func (g *TeXGrapher) Write() error {
 	defer w.Close()
 
 	if err := g.propagateTableFile(); err != nil {
-		return err
+		return fmt.Errorf("tex: %w", err)
 	}
 	if g.TemplateDir != DfltTexTemplateDir {
 		if _, err := os.Stat(g.TemplateDir); err != nil {
@@ -121,9 +114,9 @@ func (g *TeXGrapher) Generate() error {
 	if _, err := os.Stat(path); err != nil {
 		return err
 	}
-	g.Log.WithFields(logrus.Fields{
-		"file": path,
-	}).Trace("generating TeX graph")
+	if common.Verbose {
+		log.Printf("tex: generating graph: %v", path)
+	}
 	return exec.Command("pdflatex",
 		"-halt-on-error",
 		"-interaction=nonstopmode",
@@ -143,8 +136,8 @@ func (g *TeXGrapher) propagateTableFile() error {
 			if len(a.Tables[tID].TableFile) == 0 {
 				a.Tables[tID].TableFile = g.TableFile
 			}
-			if len(a.Tables[tID].TableFile) == 0 {
-				return ErrTeXGraphTableFile
+			if a.Tables[tID].TableFile == "" {
+				return fmt.Errorf("%w: %v", common.ErrUnsetField, "table_file")
 			}
 		}
 	}

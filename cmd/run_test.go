@@ -160,7 +160,6 @@ func TestRun(t *testing.T) {
 				err = os.RemoveAll(conf.Name())
 				assert.Nil(err, "unexpected os.RemoveAll() error")
 			})
-			//logLevel = logrus.TraceLevel
 			err = run(&cobra.Command{}, []string{})
 			assert.Equal(tt.Error, err)
 		})

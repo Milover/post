@@ -1,7 +1,6 @@
 package rw
 
 import (
-	"errors"
 	"fmt"
 	"io/fs"
 	"os"
@@ -9,15 +8,10 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/Milover/post/internal/common"
 	"github.com/go-gota/gota/dataframe"
 	"github.com/go-gota/gota/series"
 	"gopkg.in/yaml.v3"
-)
-
-var (
-	ErrBadFoamSeries   = errors.New("bad foam-series configuration")
-	ErrSeriesFile      = errors.New("foam-series file not specified")
-	ErrSeriesDirectory = errors.New("foam-series directory not specified")
 )
 
 // foamSeries contains data needed for parsing an OpenFOAM table series,
@@ -67,10 +61,10 @@ func NewFoamSeries(n *yaml.Node) (*foamSeries, error) {
 		return nil, err
 	}
 	if len(rw.File) == 0 {
-		return nil, ErrSeriesFile
+		return nil, fmt.Errorf("foam-series: %w: %v", common.ErrUnsetField, "file")
 	}
 	if len(rw.Directory) == 0 {
-		return nil, ErrSeriesDirectory
+		return nil, fmt.Errorf("foam-series: %w: %v", common.ErrUnsetField, "directory")
 	}
 	return rw, nil
 }
@@ -162,12 +156,12 @@ func (rw *foamSeries) Read() (*dataframe.DataFrame, error) {
 		return nil
 	}
 	if err := fs.WalkDir(fsys, ".", walkFn); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("foam-series: %w", err)
 	}
 	if df != nil {
 		*df = df.Arrange(dataframe.Sort(rw.TimeName))
 		if df.Error() != nil {
-			return nil, df.Error()
+			return nil, fmt.Errorf("foam-series: %w", df.Error())
 		}
 	}
 	return df, nil

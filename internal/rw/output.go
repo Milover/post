@@ -43,9 +43,6 @@ func write(df *dataframe.DataFrame, config *Config) error {
 	if !found {
 		return ErrBadOutputType
 	}
-	//	config.Log.WithFields(logrus.Fields{
-	//		"type": strings.ToLower(config.Type),
-	//	}).Debug("outputting")
 	w, err := factory(&config.TypeSpec)
 	if err != nil {
 		return err

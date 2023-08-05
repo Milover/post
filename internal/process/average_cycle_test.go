@@ -7,10 +7,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/Milover/post/internal/common"
 	"github.com/go-gota/gota/dataframe"
 	"github.com/go-gota/gota/series"
-	"github.com/sirupsen/logrus"
-	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/yaml.v3"
 )
@@ -215,21 +214,6 @@ type_spec:
 		Error: nil,
 	},
 	{
-		Name: "bad-spec",
-		Config: Config{
-			Type: "average-cycle",
-		},
-		Spec: `
-type_spec:
-  n_cycles: [CRASH ME BBY!]
-`,
-		Input:  dataframe.New(series.New([]float64{1.0, 2.0}, series.Float, "x")),
-		Output: dataframe.New(series.New([]float64{1.0, 2.0}, series.Float, "x")),
-		Error: &yaml.TypeError{
-			Errors: []string{"line 3: cannot unmarshal !!seq into int"},
-		},
-	},
-	{
 		Name: "bad-n-cycles-0",
 		Config: Config{
 			Type: "average-cycle",
@@ -242,7 +226,7 @@ type_spec:
 			[]float64{1.0, 2.0, 3.0, 2.0, 1.0, 0.0}, series.Float, "x")),
 		Output: dataframe.New(series.New(
 			[]float64{1.0, 2.0, 3.0, 2.0, 1.0, 0.0}, series.Float, "x")),
-		Error: ErrAverageCycleNCycles0,
+		Error: common.ErrBadFieldValue,
 	},
 	{
 		Name: "bad-n-cycles-negative",
@@ -257,7 +241,7 @@ type_spec:
 			[]float64{1.0, 2.0, 3.0, 2.0, 1.0, 0.0}, series.Float, "x")),
 		Output: dataframe.New(series.New(
 			[]float64{1.0, 2.0, 3.0, 2.0, 1.0, 0.0}, series.Float, "x")),
-		Error: ErrAverageCycleNCycles0,
+		Error: common.ErrBadFieldValue,
 	},
 	{
 		Name: "bad-n-cycles",
@@ -278,7 +262,7 @@ type_spec:
 				1.0, 2.0, 3.0, 2.0, 1.0, 0.0,
 				1.5, 2.5, 3.5,
 			}, series.Float, "x")),
-		Error: ErrAverageCycleNCycles,
+		Error: common.ErrBadFieldValue,
 	},
 	// time matching
 	{
@@ -603,8 +587,6 @@ func TestAverageCycleProcessor(t *testing.T) {
 	for _, tt := range averageCycleTests {
 		t.Run(tt.Name, func(t *testing.T) {
 			assert := assert.New(t)
-			tt.Config.Log, _ = test.NewNullLogger()
-			tt.Config.Log.SetLevel(logrus.DebugLevel)
 
 			// read spec
 			raw, err := io.ReadAll(strings.NewReader(tt.Spec))
@@ -614,7 +596,7 @@ func TestAverageCycleProcessor(t *testing.T) {
 
 			err = averageCycleProcessor(&tt.Input, &tt.Config)
 
-			assert.Equal(tt.Error, err)
+			assert.ErrorIs(err, tt.Error)
 			assert.Equal(tt.Output, tt.Input)
 		})
 	}

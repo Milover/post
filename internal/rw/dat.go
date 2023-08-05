@@ -1,6 +1,7 @@
 package rw
 
 import (
+	"fmt"
 	"io"
 
 	datenc "github.com/Milover/post/internal/encoding/dat"
@@ -33,7 +34,7 @@ func NewDat(n *yaml.Node) (*dat, error) {
 func (rw *dat) Read() (*dataframe.DataFrame, error) {
 	f, err := rw.Open()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("dat: %w", err)
 	}
 	defer f.Close()
 	return rw.ReadOutOf(f)

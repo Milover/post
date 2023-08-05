@@ -2,13 +2,14 @@ package rw
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/go-gota/gota/dataframe"
 	"gopkg.in/yaml.v3"
 )
 
 var (
-	ErrMultipleEmpty = errors.New("multple must define at least one input type")
+	ErrMultipleEmpty = errors.New("multple: no inputs defined")
 )
 
 type multiple struct {
@@ -44,7 +45,7 @@ func (rw *multiple) Read() (*dataframe.DataFrame, error) {
 		} else {
 			*df = df.CBind(*temp)
 			if df.Error() != nil {
-				return nil, df.Error()
+				return nil, fmt.Errorf("multiple: %w", df.Error())
 			}
 		}
 	}

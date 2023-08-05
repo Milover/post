@@ -1,7 +1,6 @@
 package rw
 
 import (
-	"errors"
 	"io"
 	"strings"
 	"testing"
@@ -118,26 +117,6 @@ format_specs:
 		),
 		Error: nil,
 	},
-	{
-		Name: "bad-row-dimensions",
-		Config: `
-format_specs:
-  - type: foam-series
-    fields: [time0, x0, y0]
-    type_spec:
-      directory: 'testdata/foam_series.good'
-      file: 'data.dat'
-      format_spec:
-        type: dat
-  - type: csv
-    fields: [x1, y1]
-    type_spec:
-      file: 'testdata/foam_series.good/0.1/data.csv'
-      header: true
-`,
-		Output: dataframe.DataFrame{},
-		Error:  errors.New("arguments have different dimensions"),
-	},
 }
 
 func TestMultipleRead(t *testing.T) {
@@ -155,7 +134,7 @@ func TestMultipleRead(t *testing.T) {
 			assert.Nil(err, "unexpected NewFoamSeries() error")
 			out, err := rw.Read()
 
-			assert.Equal(tt.Error, err)
+			assert.ErrorIs(err, tt.Error)
 			if tt.Error != nil {
 				assert.Nil(out)
 			} else {

@@ -5,8 +5,6 @@ import (
 
 	"github.com/go-gota/gota/dataframe"
 	"github.com/go-gota/gota/series"
-	"github.com/sirupsen/logrus"
-	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -51,12 +49,10 @@ func TestProcess(t *testing.T) {
 	for _, tt := range processorTests {
 		t.Run(tt.Name, func(t *testing.T) {
 			assert := assert.New(t)
-			tt.Config.Log, _ = test.NewNullLogger()
-			tt.Config.Log.SetLevel(logrus.DebugLevel)
 
 			err := process(&tt.Input, &tt.Config)
 
-			assert.ErrorIs(tt.Error, err)
+			assert.ErrorIs(err, tt.Error)
 			assert.Equal(tt.Output, tt.Input)
 		})
 	}
