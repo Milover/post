@@ -27,6 +27,7 @@ var ProcessorTypes = map[string]Processor{
 	"expression":    expressionProcessor,
 	"filter":        filterProcessor,
 	"select":        selectProcessor,
+	"resample":      resampleProcessor,
 }
 
 // validType represents the supported series.Series types (a dataframe.DataFrame
