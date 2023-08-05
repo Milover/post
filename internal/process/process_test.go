@@ -56,7 +56,7 @@ func TestProcess(t *testing.T) {
 
 			err := process(&tt.Input, &tt.Config)
 
-			assert.ErrorIs(tt.Error, err)
+			assert.ErrorIs(err, tt.Error)
 			assert.Equal(tt.Output, tt.Input)
 		})
 	}

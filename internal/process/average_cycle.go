@@ -2,7 +2,9 @@ package process
 
 import (
 	"errors"
+	"fmt"
 
+	"github.com/Milover/post/internal/common"
 	"github.com/Milover/post/internal/numeric"
 	"github.com/go-gota/gota/dataframe"
 	"github.com/go-gota/gota/series"
@@ -11,14 +13,8 @@ import (
 )
 
 var (
-	ErrAverageCycleField         = errors.New("average-cycle: bad field")
-	ErrAverageCycleFieldType     = errors.New("average-cycle: bad field type, must be float64")
-	ErrAverageCycleNCycles       = errors.New("average-cycle: bad number of cycles")
-	ErrAverageCycleNCycles0      = errors.New("average-cycle: bad number of cycles, nCycles <= 0")
-	ErrAverageCycleNRowsPerTime  = errors.New("average-cycle: bad number of rows per time")
-	ErrAverageCycleTimeField     = errors.New("average-cycle: bad time field")
-	ErrAverageCycleTimePrecision = errors.New("average-cycle: bad time precision, must be >= 0")
-	ErrAverageCycleTimeMismatch  = errors.New("average-cycle: cycle time mismatch")
+	ErrAverageCycleNRowsPerTime = errors.New("average-cycle: bad number of rows per time")
+	ErrAverageCycleTimeMismatch = errors.New("average-cycle: cycle time mismatch")
 )
 
 // averageCycleSpec contains data needed for defining an averaging Processor.
@@ -67,7 +63,8 @@ func entriesPerTimeStep(df *dataframe.DataFrame, spec *averageCycleSpec) int {
 func averageCycle(df *dataframe.DataFrame, spec *averageCycleSpec) error {
 	nRows := df.Nrow()
 	if nRows%spec.NCycles != 0 {
-		return ErrAverageCycleNCycles
+		return fmt.Errorf("average-cycle: %w: %v = %v",
+			common.ErrBadFieldValue, "n_cycles", spec.NCycles)
 	}
 	period := nRows / spec.NCycles
 	nPerTime := entriesPerTimeStep(df, spec)
@@ -137,7 +134,10 @@ func averageCycle(df *dataframe.DataFrame, spec *averageCycleSpec) error {
 	ss = append(ss, series.New(vals, series.Float, spec.TimeField))
 
 	*df = dataframe.New(ss...)
-	return df.Error()
+	if df.Error() != nil {
+		return fmt.Errorf("average-cycle: %w", df.Error())
+	}
+	return nil
 }
 
 // averageCycleProcessor computes the enesemble average of a cycle
@@ -183,20 +183,22 @@ func averageCycleProcessor(df *dataframe.DataFrame, config *Config) error {
 		return err
 	}
 	if spec.NCycles <= 0 {
-		return ErrAverageCycleNCycles0
+		return fmt.Errorf("average-cycle: %w: %v = %v",
+			common.ErrBadFieldValue, "n_cycles", spec.NCycles)
 	}
 	if len(spec.TimeField) != 0 && !slices.Contains(df.Names(), spec.TimeField) {
-		return ErrAverageCycleTimeField
+		return fmt.Errorf("average-cycle: %w: %v", common.ErrBadField, "time_field")
 	}
 	if spec.TimePrecision < 0 {
-		return ErrAverageCycleTimePrecision
+		return fmt.Errorf("average-cycle: %w: %v = %v",
+			common.ErrBadFieldValue, "time_precision", spec.TimePrecision)
 	}
 	// prepare data for averaging
 	if err := selectNumFields(df); err != nil {
-		return err
+		return fmt.Errorf("average-cycle: %w", err)
 	}
 	if err := intsToFloats(df); err != nil {
-		return err
+		return fmt.Errorf("average-cycle: %w", err)
 	}
 	spec.Log.WithFields(logrus.Fields{"cycles": spec.NCycles}).
 		Debug("averaging cycle")

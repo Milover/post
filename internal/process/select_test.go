@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/Milover/post/internal/common"
 	"github.com/go-gota/gota/dataframe"
 	"github.com/go-gota/gota/series"
 	"github.com/sirupsen/logrus"
@@ -97,7 +98,7 @@ type_spec:
 			series.New([]int{0, 1}, series.Int, "x"),
 			series.New([]int{1, 2}, series.Int, "y"),
 		),
-		Error: ErrSelectField,
+		Error: common.ErrBadField,
 	},
 }
 

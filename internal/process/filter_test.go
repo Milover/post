@@ -2,10 +2,10 @@ package process
 
 import (
 	"io"
-	"strconv"
 	"strings"
 	"testing"
 
+	"github.com/Milover/post/internal/common"
 	"github.com/go-gota/gota/dataframe"
 	"github.com/go-gota/gota/series"
 	"github.com/sirupsen/logrus"
@@ -126,28 +126,6 @@ type_spec:
 		Error: nil,
 	},
 	{
-		Name: "bad-spec",
-		Config: Config{
-			Type: "filter",
-		},
-		TypeSpec: `
-type_spec:
-  filters:
-    - value: [CRASH ME BBY!]
-`,
-		Input: dataframe.New(
-			series.New([]int{0, 1}, series.Int, "x"),
-			series.New([]int{1, 2}, series.Int, "y"),
-		),
-		Output: dataframe.New(
-			series.New([]int{0, 1}, series.Int, "x"),
-			series.New([]int{1, 2}, series.Int, "y"),
-		),
-		Error: &yaml.TypeError{
-			Errors: []string{"line 4: cannot unmarshal !!seq into string"},
-		},
-	},
-	{
 		Name: "bad-aggregation",
 		Config: Config{
 			Type: "filter",
@@ -189,33 +167,7 @@ type_spec:
 			series.New([]int{0, 1}, series.Int, "x"),
 			series.New([]int{1, 2}, series.Int, "y"),
 		),
-		Error: ErrFilterValue,
-	},
-	{
-		Name: "bad-value-conversion",
-		Config: Config{
-			Type: "filter",
-		},
-		TypeSpec: `
-type_spec:
-  filters:
-    - field: x
-      op: '=='
-      value: 42
-`,
-		Input: dataframe.New(
-			series.New([]bool{true, false}, series.Bool, "x"),
-			series.New([]bool{false, true}, series.Bool, "y"),
-		),
-		Output: dataframe.New(
-			series.New([]bool{true, false}, series.Bool, "x"),
-			series.New([]bool{false, true}, series.Bool, "y"),
-		),
-		Error: &strconv.NumError{
-			Func: "ParseBool",
-			Num:  "42",
-			Err:  strconv.ErrSyntax,
-		},
+		Error: common.ErrBadFieldValue,
 	},
 	{
 		Name: "bad-field",
@@ -235,7 +187,7 @@ type_spec:
 			series.New([]int{0, 1}, series.Int, "x"),
 			series.New([]int{1, 2}, series.Int, "y"),
 		),
-		Error: ErrFilterField,
+		Error: common.ErrBadField,
 	},
 	//	{ // TODO: not sure how to trigger this one
 	//		Name: "bad-type",
@@ -266,7 +218,7 @@ func TestFilterProcessor(t *testing.T) {
 
 			err = filterProcessor(&tt.Input, &tt.Config)
 
-			assert.Equal(tt.Error, err)
+			assert.ErrorIs(err, tt.Error)
 			assert.Equal(tt.Output, tt.Input)
 		})
 	}

@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/Milover/post/internal/common"
 	"github.com/go-gota/gota/dataframe"
 	"github.com/go-gota/gota/series"
 	"github.com/sirupsen/logrus"
@@ -403,7 +404,7 @@ type_spec:
 		Output: dataframe.New(
 			series.New([]float64{1, 2}, series.Float, "x"),
 		),
-		Error: ErrExpression,
+		Error: common.ErrUnsetField,
 	},
 	{
 		Name: "bad-expression-undefined",
@@ -420,7 +421,7 @@ type_spec:
 		Output: dataframe.New(
 			series.New([]float64{1, 2}, series.Float, "x"),
 		),
-		Error: ErrResult,
+		Error: common.ErrUnsetField,
 	},
 }
 
@@ -441,7 +442,7 @@ func TestExpressionProcessor(t *testing.T) {
 
 			err = expressionProcessor(&tt.Input, &tt.Config)
 
-			assert.Equal(tt.Error, err)
+			assert.ErrorIs(err, tt.Error)
 			assert.Equal(tt.Output, tt.Input)
 		})
 	}

@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/Milover/post/internal/common"
 	"github.com/go-gota/gota/dataframe"
 	"github.com/go-gota/gota/series"
 	"github.com/sirupsen/logrus"
@@ -14,9 +15,6 @@ import (
 )
 
 var (
-	ErrFilterField       = errors.New("filter: field does not exist")
-	ErrFilterValue       = errors.New("filter: value undefined")
-	ErrFilterFieldType   = errors.New("filter: field value type mismatch")
 	ErrFilterAggregation = fmt.Errorf(
 		"filter: bad aggregation mode, available modes are: %q",
 		maps.Keys(filterAggregations))
@@ -95,34 +93,35 @@ func filterProcessor(df *dataframe.DataFrame, config *Config) error {
 		fs := &spec.Filters[i]
 		fs.Log = config.Log
 		if !slices.Contains(df.Names(), fs.Field) {
-			return ErrFilterField
+			return fmt.Errorf("filter: %w: %v", common.ErrBadField, fs.Field)
 		}
 		if len(fs.Value) == 0 {
-			return ErrFilterValue
+			return fmt.Errorf("filter: %w: %v = %v",
+				common.ErrBadFieldValue, "value", fs.Value)
 		}
-		switch df.Select(fs.Field).Types()[0] {
+		switch typ := df.Select(fs.Field).Types()[0]; typ {
 		case series.String:
 			filters[i] = createFilter(fs, fs.Value)
 		case series.Int:
 			val, err := strconv.Atoi(fs.Value)
 			if err != nil {
-				return err
+				return fmt.Errorf("filter: %w", err)
 			}
 			filters[i] = createFilter(fs, val)
 		case series.Float:
 			val, err := strconv.ParseFloat(fs.Value, 64)
 			if err != nil {
-				return err
+				return fmt.Errorf("filter: %w", err)
 			}
 			filters[i] = createFilter(fs, val)
 		case series.Bool:
 			val, err := strconv.ParseBool(fs.Value)
 			if err != nil {
-				return err
+				return fmt.Errorf("filter: %w", err)
 			}
 			filters[i] = createFilter(fs, val)
 		default:
-			return ErrFilterFieldType
+			return fmt.Errorf("filter: %w: %v", common.ErrBadFieldType, typ)
 		}
 	}
 
@@ -131,5 +130,8 @@ func filterProcessor(df *dataframe.DataFrame, config *Config) error {
 	temp := df.FilterAggregation(aggr, filters...)
 	err := errors.Join(df.Error(), temp.Error()) // which one errors?
 	*df = temp
-	return err
+	if err != nil {
+		return fmt.Errorf("filter: %w", err)
+	}
+	return nil
 }

@@ -36,9 +36,13 @@ func resampleProcessor(df *dataframe.DataFrame, config *Config) error {
 		return err
 	}
 	if spec.NPoints <= 0 {
-		return fmt.Errorf("resample: %w: %v", common.ErrUnsetField, "n_points")
+		return fmt.Errorf("resample: %w: %v = %v",
+			common.ErrBadFieldValue, "n_points", spec.NPoints)
 	}
 	if err := selectNumFields(df); err != nil {
+		return fmt.Errorf("resample: %w", err)
+	}
+	if err := intsToFloats(df); err != nil {
 		return fmt.Errorf("resample: %w", err)
 	}
 	ss := make([]series.Series, 0, len(df.Names()))

@@ -3,8 +3,10 @@ package process
 
 import (
 	"errors"
+	"fmt"
 	"math"
 
+	"github.com/Milover/post/internal/common"
 	"github.com/PaesslerAG/gval"
 	"github.com/go-gota/gota/dataframe"
 	"github.com/go-gota/gota/series"
@@ -12,10 +14,7 @@ import (
 )
 
 var (
-	ErrExpressionType       = errors.New("expression: bad type in expression")
-	ErrExpressionVectorSize = errors.New("expression: vector size mismatch")
-	ErrResult               = errors.New("expression: result field empty")
-	ErrExpression           = errors.New("expression: expression field empty")
+	ErrExpressionFieldSize = errors.New("expression: field size mismatch")
 )
 
 type opFunc func(_, _ interface{}) (interface{}, error)
@@ -47,10 +46,10 @@ func makeVectorOp(op func(float64, float64) float64) opFunc {
 		case []float64:
 			switch b.(type) {
 			case []float64:
-				x := a.([]float64) // XXX
-				y := b.([]float64) // XXX
-				if len(x) != len(y) {
-					return nil, ErrExpressionVectorSize
+				x := a.([]float64)    // XXX
+				y := b.([]float64)    // XXX
+				if len(x) != len(y) { // unreachable, should fail sooner
+					return nil, ErrExpressionFieldSize
 				}
 				for i := range x {
 					r[i] = op(x[i], y[i])
@@ -64,7 +63,7 @@ func makeVectorOp(op func(float64, float64) float64) opFunc {
 				}
 				return r, nil
 			default:
-				return nil, ErrExpressionType
+				return nil, fmt.Errorf("expression: %w", common.ErrBadField)
 			}
 		case float64:
 			switch b.(type) {
@@ -76,10 +75,10 @@ func makeVectorOp(op func(float64, float64) float64) opFunc {
 				}
 				return r, nil
 			default:
-				return nil, ErrExpressionType
+				return nil, fmt.Errorf("expression: %w", common.ErrBadField)
 			}
 		default:
-			return nil, ErrExpressionType
+			return nil, fmt.Errorf("expression: %w", common.ErrBadField)
 		}
 	}
 }
@@ -133,10 +132,10 @@ func expressionProcessor(df *dataframe.DataFrame, config *Config) error {
 		return err
 	}
 	if len(spec.Expression) == 0 {
-		return ErrExpression
+		return fmt.Errorf("expression: %w: %v", common.ErrUnsetField, "expression")
 	}
 	if len(spec.Result) == 0 {
-		return ErrResult
+		return fmt.Errorf("expression: %w: %v", common.ErrUnsetField, "result")
 	}
 	// map field names to columns
 	names := df.Names()
@@ -144,7 +143,7 @@ func expressionProcessor(df *dataframe.DataFrame, config *Config) error {
 	for n := range names {
 		env[names[n]] = df.Col(names[n]).Float()
 		if df.Error() != nil {
-			return df.Error()
+			return fmt.Errorf("expression: %w", df.Error())
 		}
 	}
 	// remap operations to work on slices/series.Series
@@ -162,5 +161,8 @@ func expressionProcessor(df *dataframe.DataFrame, config *Config) error {
 		return err
 	}
 	*df = df.Mutate(series.New(r, series.Float, spec.Result))
-	return df.Error()
+	if df.Error() != nil {
+		return fmt.Errorf("expression: %w", df.Error())
+	}
+	return nil
 }
