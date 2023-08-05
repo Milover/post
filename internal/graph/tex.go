@@ -2,25 +2,20 @@ package graph
 
 import (
 	"embed"
-	"errors"
+	"fmt"
 	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"text/template"
 
+	"github.com/Milover/post/internal/common"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 )
 
 //go:embed tmpl
 var DfltTeXTemplates embed.FS
-
-var (
-	ErrTeXGraphSpec      = errors.New("output: TeX: graph spec == nil")
-	ErrTeXGraphName      = errors.New("output: TeX: graph name not specified")
-	ErrTeXGraphTableFile = errors.New("output: TeX: graph table file not specified")
-)
 
 const (
 	DfltTexTemplateDir  string = "tmpl/*.tmpl"
@@ -58,8 +53,8 @@ func newTeXGrapher(spec *yaml.Node, config *Config) (Grapher, error) {
 	if err := spec.Decode(g); err != nil {
 		return nil, err
 	}
-	if len(g.Name) == 0 {
-		return nil, ErrTeXGraphName
+	if g.Name == "" {
+		return nil, fmt.Errorf("tex: %w: %v", common.ErrUnsetField, "name")
 	}
 	if len(g.Directory) != 0 {
 		if err := os.MkdirAll(filepath.Clean(g.Directory), 0755); err != nil {
@@ -101,7 +96,7 @@ func (g *TeXGrapher) Write() error {
 	defer w.Close()
 
 	if err := g.propagateTableFile(); err != nil {
-		return err
+		return fmt.Errorf("tex: %w", err)
 	}
 	if g.TemplateDir != DfltTexTemplateDir {
 		if _, err := os.Stat(g.TemplateDir); err != nil {
@@ -143,8 +138,8 @@ func (g *TeXGrapher) propagateTableFile() error {
 			if len(a.Tables[tID].TableFile) == 0 {
 				a.Tables[tID].TableFile = g.TableFile
 			}
-			if len(a.Tables[tID].TableFile) == 0 {
-				return ErrTeXGraphTableFile
+			if a.Tables[tID].TableFile == "" {
+				return fmt.Errorf("%w: %v", common.ErrUnsetField, "table_file")
 			}
 		}
 	}
