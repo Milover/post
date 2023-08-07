@@ -2,40 +2,81 @@
 # Salon et al. (2007) DNS results
 - input:
     type: dat
-    fields: [ubar,zbar]
+    fields: [ubar_15,zbar_15]
     type_spec:
       file: 'data/salon_ac.stokes.2007/fig_23/raw/deg_15.csv'
-  output:
-    - type: csv
+  process:
+    - type: resample
       type_spec:
-        file: 'outdir/dns_u_bar_profile_15deg.csv'
+        x_field: zbar_15
+        n_points: 50
+  output:
+    - type: ram
+      type_spec:
+        name: 'dns_u_bar_profile_15deg'
 - input:
     type: dat
-    fields: [ubar,zbar]
+    fields: [ubar_75,zbar_75]
     type_spec:
       file: 'data/salon_ac.stokes.2007/fig_23/raw/deg_75.csv'
-  output:
-    - type: csv
+  process:
+    - type: resample
       type_spec:
-        file: 'outdir/dns_u_bar_profile_75deg.csv'
+        x_field: zbar_75
+        n_points: 50
+  output:
+    - type: ram
+      type_spec:
+        name: 'dns_u_bar_profile_75deg'
 - input:
     type: dat
-    fields: [ubar,zbar]
+    fields: [ubar_105,zbar_105]
     type_spec:
       file: 'data/salon_ac.stokes.2007/fig_23/raw/deg_105.csv'
-  output:
-    - type: csv
+  process:
+    - type: resample
       type_spec:
-        file: 'outdir/dns_u_bar_profile_105deg.csv'
+        x_field: zbar_105
+        n_points: 50
+  output:
+    - type: ram
+      type_spec:
+        name: 'dns_u_bar_profile_105deg'
 - input:
     type: dat
-    fields: [ubar,zbar]
+    fields: [ubar_135,zbar_135]
     type_spec:
       file: 'data/salon_ac.stokes.2007/fig_23/raw/deg_135.csv'
+  process:
+    - type: resample
+      type_spec:
+        x_field: zbar_135
+        n_points: 50
+  output:
+    - type: ram
+      type_spec:
+        name: 'dns_u_bar_profile_135deg'
+# Merge DNS profiles into single file
+- input:
+    type: multiple
+    type_spec:
+      format_specs:
+      - type: ram
+        type_spec:
+          name: 'dns_u_bar_profile_15deg'
+      - type: ram
+        type_spec:
+          name: 'dns_u_bar_profile_75deg'
+      - type: ram
+        type_spec:
+          name: 'dns_u_bar_profile_105deg'
+      - type: ram
+        type_spec:
+          name: 'dns_u_bar_profile_135deg'
   output:
     - type: csv
       type_spec:
-        file: 'outdir/dns_u_bar_profile_135deg.csv'
+        file: 'outdir/dns_u_bar_profile.csv'
 
 # LES data
 - input: # XXX: cycle average uBar graphs
@@ -178,8 +219,7 @@
     - type: ram
       type_spec:
         name: 'wale_u_bar_profile_135deg'
-
-# Merge profiles into single file and generate graph
+# Merge WALE profiles into single file and generate graph
 - input:
     type: multiple
     type_spec:
@@ -210,6 +250,7 @@
       - name: u_bar_profile.tex
         directory: outdir
         table_file: 'outdir/wale_u_bar_profile.csv'
+        template_directory: 'outdir/tmpl'
         axes:
           - x:
               min: 0
@@ -220,31 +261,31 @@
               max: 25
               label: '$z / \delta_\text{S}$'
             tables:
-              - x_field: ubar
-                y_field: zbar
+              - x_field: ubar_15
+                y_field: zbar_15
                 legend_entry: 'DNS $15\si{\degree}$'
-                table_file: 'outdir/dns_u_bar_profile_15deg.csv'
+                table_file: 'outdir/dns_u_bar_profile.csv'
               - x_field: UBar_15
                 y_field: zBar_15
                 legend_entry: 'WALE $15\si{\degree}$'
-              - x_field: ubar
-                y_field: zbar
+              - x_field: ubar_75
+                y_field: zbar_75
                 legend_entry: 'DNS $75\si{\degree}$'
-                table_file: 'outdir/dns_u_bar_profile_75deg.csv'
+                table_file: 'outdir/dns_u_bar_profile.csv'
               - x_field: UBar_75
                 y_field: zBar_75
                 legend_entry: 'WALE $75\si{\degree}$'
-              - x_field: ubar
-                y_field: zbar
+              - x_field: ubar_105
+                y_field: zbar_105
                 legend_entry: 'DNS $105\si{\degree}$'
-                table_file: 'outdir/dns_u_bar_profile_105deg.csv'
+                table_file: 'outdir/dns_u_bar_profile.csv'
               - x_field: UBar_105
                 y_field: zBar_105
                 legend_entry: 'WALE $105\si{\degree}$'
-              - x_field: ubar
-                y_field: zbar
+              - x_field: ubar_135
+                y_field: zbar_135
                 legend_entry: 'DNS $135\si{\degree}$'
-                table_file: 'outdir/dns_u_bar_profile_135deg.csv'
+                table_file: 'outdir/dns_u_bar_profile.csv'
               - x_field: UBar_135
                 y_field: zBar_135
                 legend_entry: 'WALE $135\si{\degree}$'
