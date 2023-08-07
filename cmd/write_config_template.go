@@ -89,7 +89,7 @@ const (
     graphs:
       - name:                   # used as a basename for all graph related files
         directory:              # output directory name, created if not present
-        template_dir:           # template directory; optional
+        template_directory:     # template directory; optional
         template_main:          # root template file name; optional
         template_delims:        # go template delimiters; ['__{','}__'] by default; optional
         table_file:             # optional; needed if 'tables.table_file' is undefined

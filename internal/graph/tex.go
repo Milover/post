@@ -18,7 +18,8 @@ import (
 var DfltTeXTemplates embed.FS
 
 const (
-	DfltTexTemplateDir  string = "tmpl/*.tmpl"
+	DfltTexTemplateExt  string = ".tmpl"
+	DfltTexTemplateDir  string = "tmpl"
 	DfltTexTemplateMain string = "master.tmpl"
 )
 
@@ -34,20 +35,22 @@ type TeXGrapher struct {
 	Directory      string    `yaml:"directory"`
 	Axes           []TexAxis `yaml:"axes"`
 	TableFile      string    `yaml:"table_file"`
-	TemplateDir    string    `yaml:"template_file"`
+	TemplateDir    string    `yaml:"template_directory"`
 	TemplateMain   string    `yaml:"template_main"`
 	TemplateDelims []string  `yaml:"template_delims"`
 
-	Templates fs.FS      `yaml:"-"`
-	Spec      *yaml.Node `yaml:"-"`
+	TemplatePattern string     `yaml:"-"`
+	Templates       fs.FS      `yaml:"-"`
+	Spec            *yaml.Node `yaml:"-"`
 }
 
 func newTeXGrapher(spec *yaml.Node, config *Config) (Grapher, error) {
 	g := &TeXGrapher{
-		TemplateDir:    DfltTexTemplateDir,
-		TemplateMain:   DfltTexTemplateMain,
-		TemplateDelims: DfltTeXTemplateDelims,
-		Templates:      DfltTeXTemplates,
+		TemplateDir:     DfltTexTemplateDir,
+		TemplateMain:    DfltTexTemplateMain,
+		TemplateDelims:  DfltTeXTemplateDelims,
+		TemplatePattern: filepath.Join(DfltTexTemplateDir, "*"+DfltTexTemplateExt),
+		Templates:       DfltTeXTemplates,
 	}
 	if err := spec.Decode(g); err != nil {
 		return nil, err
@@ -55,7 +58,7 @@ func newTeXGrapher(spec *yaml.Node, config *Config) (Grapher, error) {
 	if g.Name == "" {
 		return nil, fmt.Errorf("tex: %w: %v", common.ErrUnsetField, "name")
 	}
-	if len(g.Directory) != 0 {
+	if g.Directory == "" {
 		if err := os.MkdirAll(filepath.Clean(g.Directory), 0755); err != nil {
 			return nil, err
 		}
@@ -101,11 +104,12 @@ func (g *TeXGrapher) Write() error {
 			return err
 		}
 		g.Templates = os.DirFS(g.TemplateDir)
+		g.TemplatePattern = "*" + DfltTexTemplateExt
 	}
 	return template.Must(template.
 		New(g.TemplateMain).
 		Delims(g.TemplateDelims[0], g.TemplateDelims[1]).
-		ParseFS(g.Templates, g.TemplateDir)).
+		ParseFS(g.Templates, g.TemplatePattern)).
 		Execute(w, g)
 }
 
