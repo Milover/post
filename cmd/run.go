@@ -5,7 +5,6 @@ import (
 	"io"
 	"log"
 	"os"
-	"strconv"
 
 	"github.com/Milover/post/internal/common"
 	"github.com/Milover/post/internal/graph"
@@ -62,9 +61,6 @@ func run(cmd *cobra.Command, args []string) error {
 	// work
 	for i := range configs {
 		c := &configs[i]
-		if len(c.ID) == 0 {
-			c.ID = strconv.Itoa(i)
-		}
 		if slices.Contains(skipIDs, c.ID) {
 			if common.Verbose {
 				log.Printf("skipping pipeline: %v", c.ID)
