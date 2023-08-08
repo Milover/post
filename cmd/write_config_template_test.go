@@ -27,7 +27,7 @@ func TestWriteConfigTemplate(t *testing.T) {
 			assert := assert.New(t)
 
 			tmp := t.TempDir()
-			outFile = filepath.Join(tmp, configFile)
+			outFile = filepath.Join(tmp, "post.yaml")
 
 			err := writeConfigTemplate(&cobra.Command{}, []string{})
 			assert.Equal(tt.Error, err)

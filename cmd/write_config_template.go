@@ -28,7 +28,7 @@ func init() {
 	writeConfigTemplateCmd.Flags().StringVar(
 		&outFile,
 		"outfile",
-		configFile,
+		"post.yaml",
 		"set the run file stub name",
 	)
 }

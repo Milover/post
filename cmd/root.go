@@ -8,12 +8,6 @@ import (
 )
 
 var (
-	// configFile is the default file name of the config file, it is used
-	// if no config file is supplied as a command line argument.
-	configFile string = "post_config.yaml"
-)
-
-var (
 	// rootCmd represents the base command when called without any subcommands
 	rootCmd = &cobra.Command{
 		Use:           "post [run file]",
@@ -22,7 +16,7 @@ var (
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		Args: cobra.MatchAll(
-			cobra.MaximumNArgs(1),
+			cobra.MinimumNArgs(1),
 		),
 		RunE: run,
 	}

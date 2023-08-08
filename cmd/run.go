@@ -37,17 +37,17 @@ type Config struct {
 }
 
 func run(cmd *cobra.Command, args []string) error {
-	// read in configs
 	var configs []Config
-	if len(args) != 0 {
-		configFile = args[0]
+	readers := make([]io.Reader, len(args))
+	for i, arg := range args {
+		f, err := os.Open(arg)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+		readers[i] = f
 	}
-	f, err := os.Open(configFile)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-	raw, err := io.ReadAll(f)
+	raw, err := io.ReadAll(io.MultiReader(readers...))
 	if err != nil {
 		return err
 	}

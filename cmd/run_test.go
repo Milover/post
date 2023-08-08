@@ -150,7 +150,7 @@ func TestRun(t *testing.T) {
 			assert.Nil(err, "unexpected yaml.Unmarshal() error")
 
 			// write config file
-			conf, err := os.Create(configFile)
+			conf, err := os.Create("post.yaml")
 			assert.Nil(err, "unexpected os.Create() error")
 			_, err = conf.WriteString(tt.Config)
 			assert.Nil(err, "unexpected os.File.Write() error")
@@ -160,7 +160,7 @@ func TestRun(t *testing.T) {
 				err = os.RemoveAll(conf.Name())
 				assert.Nil(err, "unexpected os.RemoveAll() error")
 			})
-			err = run(&cobra.Command{}, []string{})
+			err = run(&cobra.Command{}, []string{"post.yaml"})
 			assert.Equal(tt.Error, err)
 		})
 	}
