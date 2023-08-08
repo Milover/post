@@ -1,7 +1,6 @@
 package rw
 
 import (
-	"errors"
 	"io"
 	"strings"
 	"testing"
@@ -34,13 +33,6 @@ var datReadTests = []datTest{
 		),
 		Error: nil,
 	},
-	{
-		Name:   "empty-dat",
-		Config: "",
-		Input:  "",
-		Output: dataframe.DataFrame{},
-		Error:  errors.New("load records: empty DataFrame"),
-	},
 	//	{ // TODO: not sure how to trigger this one
 	//		Name: "bad-dat-read",
 	//		Config: `
@@ -54,7 +46,7 @@ var datReadTests = []datTest{
 	//	},
 }
 
-func TestDatReadOutOf(t *testing.T) {
+func TestDatRead(t *testing.T) {
 	for _, tt := range datReadTests {
 		t.Run(tt.Name, func(t *testing.T) {
 			assert := assert.New(t)
@@ -67,7 +59,7 @@ func TestDatReadOutOf(t *testing.T) {
 
 			rw, err := NewDat(&config)
 			assert.Nil(err, "unexpected NewDat() error")
-			out, err := rw.ReadOutOf(strings.NewReader(tt.Input))
+			out, err := rw.read(strings.NewReader(tt.Input))
 
 			assert.Equal(tt.Error, err)
 			if tt.Error != nil {

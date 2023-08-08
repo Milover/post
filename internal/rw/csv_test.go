@@ -19,7 +19,7 @@ type csvTest struct {
 	Error  error
 }
 
-var csvReadOutOfTests = []csvTest{
+var csvReadTests = []csvTest{
 	{
 		Name:   "good-default",
 		Config: "",
@@ -90,138 +90,6 @@ comment: "§"
 	},
 }
 
-func TestCsvReadOutOf(t *testing.T) {
-	for _, tt := range csvReadOutOfTests {
-		t.Run(tt.Name, func(t *testing.T) {
-			assert := assert.New(t)
-
-			raw, err := io.ReadAll(strings.NewReader(tt.Config))
-			assert.Nil(err, "unexpected io.ReadAll() error")
-			var config yaml.Node
-			err = yaml.Unmarshal(raw, &config)
-			assert.Nil(err, "unexpected yaml.Unmarshal() error")
-
-			rw, err := NewCsv(&config)
-			assert.Nil(err, "unexpected NewCsv() error")
-			out, err := rw.ReadOutOf(strings.NewReader(tt.Input))
-
-			assert.Equal(tt.Error, err)
-			if tt.Error != nil {
-				assert.Nil(out)
-			} else {
-				assert.Equal(tt.Output, *out)
-			}
-		})
-	}
-}
-
-// Test reading from a CSV file/archive.
-var expected = dataframe.New(
-	series.New([]int{0, 1, 2, 3, 4, 5}, series.Int, "x"),
-	series.New([]int{0, 1, 2, 2, 1, 0}, series.Int, "y"),
-)
-
-var csvReadTests = []csvTest{
-	{
-		Name: "good-file",
-		Config: `
-file: 'testdata/data.csv'
-`,
-		Output: expected,
-		Error:  nil,
-	},
-	{
-		Name: "good-tar",
-		Config: `
-archive: 'testdata/data.csv.tar'
-file: 'data.csv'
-`,
-		Output: expected,
-		Error:  nil,
-	},
-	{
-		Name: "good-tar.xz",
-		Config: `
-archive: 'testdata/data.csv.tar'
-file: 'data.csv'
-`,
-		Output: expected,
-		Error:  nil,
-	},
-	{
-		Name: "good-txz",
-		Config: `
-archive: 'testdata/data.csv.txz'
-file: 'data.csv'
-`,
-		Output: expected,
-		Error:  nil,
-	},
-	{
-		Name: "good-tar.gz",
-		Config: `
-archive: 'testdata/data.csv.tar.gz'
-file: 'data.csv'
-`,
-		Output: expected,
-		Error:  nil,
-	},
-	{
-		Name: "good-tgz",
-		Config: `
-archive: 'testdata/data.csv.tgz'
-file: 'data.csv'
-`,
-		Output: expected,
-		Error:  nil,
-	},
-	{
-		Name: "good-tar.bzip2",
-		Config: `
-archive: 'testdata/data.csv.tar.bz2'
-file: 'data.csv'
-`,
-		Output: expected,
-		Error:  nil,
-	},
-	{
-		Name: "good-tbz",
-		Config: `
-archive: 'testdata/data.csv.tbz'
-file: 'data.csv'
-`,
-		Output: expected,
-		Error:  nil,
-	},
-	{
-		Name: "good-zip",
-		Config: `
-archive: 'testdata/data.csv.zip'
-file: 'data.csv'
-`,
-		Output: expected,
-		Error:  nil,
-	},
-	{
-		Name: "good-archive.tgz",
-		Config: `
-archive: 'testdata/archive.tgz'
-file: 'archive/data.csv'
-`,
-		Output: expected,
-		Error:  nil,
-	},
-	{
-		Name: "good-archive.zip",
-		Config: `
-archive: 'testdata/archive.zip'
-file: 'archive/data.csv'
-`,
-		Output: expected,
-		Error:  nil,
-	},
-}
-
 func TestCsvRead(t *testing.T) {
 	for _, tt := range csvReadTests {
 		t.Run(tt.Name, func(t *testing.T) {
@@ -235,7 +103,7 @@ func TestCsvRead(t *testing.T) {
 
 			rw, err := NewCsv(&config)
 			assert.Nil(err, "unexpected NewCsv() error")
-			out, err := rw.Read()
+			out, err := rw.read(strings.NewReader(tt.Input))
 
 			assert.Equal(tt.Error, err)
 			if tt.Error != nil {

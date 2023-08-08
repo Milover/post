@@ -30,21 +30,6 @@ type foamSeriesTest struct {
 	Error       error
 }
 
-var goodSeries = dataframe.New(
-	series.New([]float64{
-		0.1, 0.1, 0.1, 0.1, 0.1, 0.1,
-		0.2, 0.2, 0.2, 0.2, 0.2, 0.2,
-		0.3, 0.3, 0.3, 0.3, 0.3, 0.3}, series.Float, "time"),
-	series.New([]int{
-		0, 1, 2, 3, 4, 5,
-		0, 1, 2, 3, 4, 5,
-		0, 1, 2, 3, 4, 5}, series.Int, "x"),
-	series.New([]int{
-		0, 1, 2, 2, 1, 0,
-		0, 1, 2, 2, 1, 0,
-		0, 1, 2, 2, 1, 0}, series.Int, "y"),
-)
-
 var foamSeriesReadTests = []foamSeriesTest{
 	{
 		Name: "good-csv",
@@ -57,8 +42,21 @@ format_spec:
   type_spec:
     header: true
 `,
-		Output: goodSeries,
-		Error:  nil,
+		Output: dataframe.New(
+			series.New([]float64{
+				0.1, 0.1, 0.1, 0.1, 0.1, 0.1,
+				0.2, 0.2, 0.2, 0.2, 0.2, 0.2,
+				0.3, 0.3, 0.3, 0.3, 0.3, 0.3}, series.Float, "time"),
+			series.New([]int{
+				0, 1, 2, 3, 4, 5,
+				0, 1, 2, 3, 4, 5,
+				0, 1, 2, 3, 4, 5}, series.Int, "x"),
+			series.New([]int{
+				0, 1, 2, 2, 1, 0,
+				0, 1, 2, 2, 1, 0,
+				0, 1, 2, 2, 1, 0}, series.Int, "y"),
+		),
+		Error: nil,
 	},
 	{
 		Name: "good-dat",
@@ -169,66 +167,6 @@ format_spec:
 		Error:       nil,
 	},
 	{
-		Name: "good-csv-tar.xz",
-		Config: `
-archive: 'testdata/foam_series.good.tar.xz'
-directory: 'foam_series.good'
-file: data.csv
-time_name: 'time'
-format_spec:
-  type: csv
-  type_spec:
-    header: true
-`,
-		Output: goodSeries,
-		Error:  nil,
-	},
-	{
-		Name: "good-csv-zip",
-		Config: `
-archive: 'testdata/foam_series.good.zip'
-directory: 'foam_series.good'
-file: data.csv
-time_name: 'time'
-format_spec:
-  type: csv
-  type_spec:
-    header: true
-`,
-		Output: goodSeries,
-		Error:  nil,
-	},
-	{
-		Name: "good-csv-archive.tgz",
-		Config: `
-archive: 'testdata/archive.tgz'
-directory: 'archive/foam_series.good'
-file: data.csv
-time_name: 'time'
-format_spec:
-  type: csv
-  type_spec:
-    header: true
-`,
-		Output: goodSeries,
-		Error:  nil,
-	},
-	{
-		Name: "good-csv-archive.zip",
-		Config: `
-archive: 'testdata/archive.zip'
-directory: 'archive/foam_series.good'
-file: data.csv
-time_name: 'time'
-format_spec:
-  type: csv
-  type_spec:
-    header: true
-`,
-		Output: goodSeries,
-		Error:  nil,
-	},
-	{
 		Name: "bad-unequal-rows",
 		Config: `
 directory: 'testdata/foam_series.bad_unequal_rows'
@@ -272,6 +210,7 @@ func TestFoamSeriesRead(t *testing.T) {
 	}
 }
 
+// TODO: refactor this to work with 'archive' input type
 // Benchmarks for reading a foam-series in various configurations.
 // The benchmark reads floats from CSV file into a foam-series,
 // since this is the most common use case.

@@ -9,11 +9,14 @@
       type_spec:
         file: 'outdir/dns_salon_2007_tau_w_bar.csv'
 - input: # cycle average tauWBar at probe location
-    type: dat
-    fields: [time, tauWBar]
+    type: archive
     type_spec:
-      archive: "data/postProcessing.LES.tar.xz"
-      file: "postProcessing.LES/cont.probes/0/tauWBar"
+      file: 'data/postProcessing.LES.tar.xz'
+      format_spec:
+        type: dat
+        fields: [time, tauWBar]
+        type_spec:
+          file: "postProcessing.LES/cont.probes/0/tauWBar"
   process:
     - type: filter
       type_spec:

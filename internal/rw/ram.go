@@ -1,15 +1,13 @@
 package rw
 
 import (
-	"errors"
+	"fmt"
+	"log"
 
+	"github.com/Milover/post/internal/common"
 	"github.com/go-gota/gota/dataframe"
+	"golang.org/x/exp/maps"
 	"gopkg.in/yaml.v3"
-)
-
-var (
-	ErrNameUnset = errors.New("output name not set")
-	ErrNoExist   = errors.New("no data under given name")
 )
 
 var (
@@ -19,18 +17,16 @@ var (
 	RAM *ram
 )
 
-type storage map[string]*dataframe.DataFrame
-
 type ram struct {
 	// Name is the key under which the *dataframe.DataFrame will be stored.
 	Name string `yaml:"name"`
 
-	s storage
+	s map[string]*dataframe.DataFrame
 }
 
 func defaultRam() *ram {
 	return &ram{
-		s: make(storage, 10),
+		s: make(map[string]*dataframe.DataFrame, 10),
 	}
 }
 
@@ -38,13 +34,16 @@ func defaultRam() *ram {
 // and marshals the run time config into it.
 func NewRam(n *yaml.Node) (*ram, error) {
 	if RAM == nil {
+		if common.Verbose {
+			log.Printf("ram: initializing")
+		}
 		RAM = defaultRam()
 	}
 	if err := n.Decode(RAM); err != nil {
 		return nil, err
 	}
 	if len(RAM.Name) == 0 {
-		return nil, ErrNameUnset
+		return nil, fmt.Errorf("ram: %w: %v", common.ErrUnsetField, "name")
 	}
 	return RAM, nil
 }
@@ -60,7 +59,8 @@ func (rw *ram) Write(df *dataframe.DataFrame) error {
 func (rw *ram) Read() (*dataframe.DataFrame, error) {
 	v, ok := rw.s[rw.Name]
 	if !ok {
-		return nil, ErrNoExist
+		return nil, fmt.Errorf("no data under %q, available names are: %q",
+			rw.Name, maps.Keys(rw.s))
 	}
 	temp := v.Copy()
 	return &temp, nil

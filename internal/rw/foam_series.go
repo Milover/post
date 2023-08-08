@@ -2,11 +2,10 @@ package rw
 
 import (
 	"fmt"
+	"io"
 	"io/fs"
 	"os"
-	"path/filepath"
 	"strconv"
-	"strings"
 
 	"github.com/Milover/post/internal/common"
 	"github.com/go-gota/gota/dataframe"
@@ -35,9 +34,6 @@ import (
 type foamSeries struct {
 	// File is the file name of the CSV-formatted data files.
 	File string `yaml:"file"`
-	// Archive is the path to the archive file which is
-	// the root of the archived filesystem.
-	Archive string `yaml:"archive"`
 	// Directory is the root directory of the foam-series.
 	Directory string `yaml:"directory"`
 	// TimeName is the name of the time field.
@@ -79,27 +75,33 @@ type walkStruct struct {
 }
 
 func (rw *foamSeries) Read() (*dataframe.DataFrame, error) {
+	if _, err := os.Stat(rw.Directory); err != nil {
+		return nil, fmt.Errorf("foam-series: %w", err)
+	}
+	fsys := os.DirFS(rw.Directory)
+	return rw.read(fsys)
+}
+
+func (rw *foamSeries) ReadFromFn(fn ReaderFunc) (*dataframe.DataFrame, error) {
+	in, err := fn(rw.Directory)
+	if err != nil {
+		return nil, fmt.Errorf("foam-series: %w", err)
+	}
+	fsys, ok := in.(fs.FS)
+	if !ok {
+		return nil, fmt.Errorf("foam-series: %w to 'fs.FS'", common.ErrBadCast)
+	}
+	return rw.read(fsys)
+}
+
+func (rw *foamSeries) read(fsys fs.FS) (*dataframe.DataFrame, error) {
 	var df *dataframe.DataFrame
 	var ws walkStruct
-	var fsys fs.FS
-	if rw.Archive != "" {
-		var err error
-		fsys, err = NewArchiveFS(rw.Archive)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		if _, err := os.Stat(rw.Directory); err != nil {
-			return nil, err
-		}
-		fsys = os.DirFS(rw.Directory)
-	}
 	// FIXME: the dataframe.DataFrame operations are mysterious, so no idea
 	// where allocations happen or how many there are --- should check this
 	// at some point.
 	// OPTIMIZE: we should skip directories (return fs.SkipDir) which are not
 	// on the correct path to the foam-series root directory.
-	targetPrefix := filepath.Clean(rw.Directory) + string(os.PathSeparator)
 	walkFn := func(path string, d fs.DirEntry, err error) error {
 		// stop walking on any error, since there shouldn't be any
 		if err != nil {
@@ -107,9 +109,7 @@ func (rw *foamSeries) Read() (*dataframe.DataFrame, error) {
 		}
 		// regular FSs need to skip the root directory ("."),
 		// archiveFSs also need to skip until the foam-series root directory
-		if path == "." {
-			return nil
-		} else if rw.Archive != "" && !strings.HasPrefix(path, targetPrefix) {
+		if path == "." || path == rw.Directory {
 			return nil
 		}
 		// the directory name is the current time
@@ -121,13 +121,11 @@ func (rw *foamSeries) Read() (*dataframe.DataFrame, error) {
 		if d.Name() != rw.File {
 			return nil
 		}
-		f, err := fsys.Open(path)
-		if err != nil {
-			return err
-		}
-		defer f.Close()
 
-		temp, err := ReadOutOf(f, &rw.FormatSpec)
+		fn := func(_ string) (io.ReadCloser, error) {
+			return fsys.Open(path)
+		}
+		temp, err := ReadFromFn(fn, &rw.FormatSpec)
 		if err != nil {
 			return fmt.Errorf("%w: in file: %v", err, path)
 		}

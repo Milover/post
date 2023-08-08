@@ -10,18 +10,44 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/ulikunitz/xz"
 	"golang.org/x/exp/slices"
 )
 
-// TODO:
-// - read the entire archive into memory
-// - while reading construct the file list and store FileInfos and bodies
-// - determine what datastrcture to use for storing the files:
-//   some kind of tree would make sense for ReadDir, although this
-//	 somewhat complicates Open (since we would need to build up the path?)
+type ArchiveFormat int
+
+const (
+	A_UNKNOWN ArchiveFormat = iota
+	A_TAR
+	A_TXZ
+	A_TGZ
+	A_TBZ
+	A_ZIP
+)
+
+func MatchFormat(name string) ArchiveFormat {
+	ext := filepath.Ext(name)
+	// tar archives can have two extensions
+	if e := filepath.Ext(strings.TrimSuffix(name, ext)); e == ".tar" {
+		ext = e + ext
+	}
+	switch ext {
+	case ".tar":
+		return A_TAR
+	case ".tar.xz", ".txz":
+		return A_TXZ
+	case ".tar.gz", ".tgz":
+		return A_TGZ
+	case ".tar.bz2", ".tb2", ".tbz", ".tbz2", ".tz2":
+		return A_TBZ
+	case ".zip":
+		return A_ZIP
+	}
+	return A_UNKNOWN
+}
 
 type fileList []*fileEntry
 
@@ -40,8 +66,7 @@ type fileEntry struct {
 	Body  []byte
 	Files fileList
 
-	root *fileEntry
-	r    *bytes.Reader
+	r *bytes.Reader
 }
 
 func (f *fileEntry) Stat() (fs.FileInfo, error) { return f.Info, nil }
@@ -83,7 +108,6 @@ func NewArchiveFS(name string) (fs.FS, error) {
 		modTime: info.ModTime(),
 		isDir:   true,
 	}
-	fe.root = &fe
 
 	format := MatchFormat(name)
 	switch format {
@@ -115,9 +139,8 @@ func NewArchiveFS(name string) (fs.FS, error) {
 			if err != nil {
 				return nil, filepath.Clean(hdr.Name), err
 			}
-			return &fileEntry{Info: hdr.FileInfo(),
-				Body: body,
-				root: &fe}, filepath.Clean(hdr.Name), nil
+			return &fileEntry{Info: hdr.FileInfo(), Body: body},
+				filepath.Clean(hdr.Name), nil
 		}
 		// walk the archive and build the filesystem
 		tr := tar.NewReader(reader)
@@ -177,11 +200,13 @@ func NewArchiveFS(name string) (fs.FS, error) {
 				currentDir = &parent.Files
 			}
 			*currentDir = append(*currentDir,
-				&fileEntry{Info: file.FileInfo(), Body: body, root: &fe})
+				&fileEntry{Info: file.FileInfo(), Body: body})
 			if err := f.Close(); err != nil {
 				return nil, err
 			}
 		}
+	default:
+		return nil, &fs.PathError{Op: "stat", Path: name, Err: os.ErrInvalid}
 	}
 	fe.Files.sort()
 	return fe, nil
@@ -189,8 +214,8 @@ func NewArchiveFS(name string) (fs.FS, error) {
 
 // Find an entry within an ArchiveFS from a path.
 func (fe fileEntry) Find(path string) (*fileEntry, error) {
-	if path == "." {
-		return fe.root, nil
+	if path == "." { // FIXME: only directories should return themselves?
+		return &fe, nil
 	}
 	components := make([]string, 0, 10) // guesstimate to reduce allocations
 	p := path
@@ -242,7 +267,7 @@ func (fe fileEntry) ReadDir(name string) ([]fs.DirEntry, error) {
 	}
 	dir, err := fe.Find(name)
 	if err != nil {
-		return nil, nil
+		return nil, err
 	}
 	entries := make([]fs.DirEntry, len(dir.Files))
 	for i, file := range dir.Files {

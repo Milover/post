@@ -80,14 +80,17 @@
 
 # LES data
 - input: # XXX: cycle average uBar graphs
-    type: foam-series
-    fields: [time, z,RCmp,kBar,k,U_0,U_1,U_2,UBar_0,UBar_1,UBar_2]
+    type: archive
     type_spec:
-      archive: 'data/postProcessing.LES/single_graph.tar.xz'
-      directory: 'single_graph'
-      file: 'axis_RComponent_kBar_turbulenceProperties:k_U_UBar.csv'
+      file: 'data/postProcessing.LES.tar.xz'
       format_spec:
-        type: csv
+        type: foam-series
+        fields: [time, z,RCmp,kBar,k,U_0,U_1,U_2,UBar_0,UBar_1,UBar_2]
+        type_spec:
+          directory: 'postProcessing.LES/single_graph'
+          file: 'axis_RComponent_kBar_turbulenceProperties:k_U_UBar.csv'
+          format_spec:
+            type: csv
   process:
     - type: filter
       type_spec:
@@ -250,7 +253,7 @@
       - name: u_bar_profile.tex
         directory: outdir
         table_file: 'outdir/wale_u_bar_profile.csv'
-        template_directory: 'outdir/tmpl'
+        template_directory: 'u_bar_profile.tmpl'
         axes:
           - x:
               min: 0

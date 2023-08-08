@@ -18,7 +18,11 @@ const (
 )
 
 type csv struct {
-	FileHandler `yaml:",inline"`
+	// File is the name of the file from which data is read or written to.
+	File string `yaml:"file"`
+	// EnforceExtension determines whether a file name extension will be
+	// enforced on the output file name.
+	EnforceExtension bool `yaml:"enforce_extension"`
 
 	Header    bool   `yaml:"header"`
 	Delimiter string `yaml:"delimiter"`
@@ -42,15 +46,28 @@ func NewCsv(n *yaml.Node) (*csv, error) {
 }
 
 func (rw *csv) Read() (*dataframe.DataFrame, error) {
-	f, err := rw.Open()
+	fn := func(name string) (io.ReadCloser, error) {
+		return os.Open(name)
+	}
+	return rw.ReadFromFn(fn)
+}
+
+func (rw *csv) ReadFromFn(fn ReaderFunc) (*dataframe.DataFrame, error) {
+	var rc io.ReadCloser
+	var err error
+	if rw.File == "" { // yolo
+		rc, err = fn("")
+	} else {
+		rc, err = fn(rw.File)
+	}
 	if err != nil {
 		return nil, fmt.Errorf("csv: %w", err)
 	}
-	defer f.Close()
-	return rw.ReadOutOf(f)
+	defer rc.Close()
+	return rw.read(rc)
 }
 
-func (rw *csv) ReadOutOf(in io.Reader) (*dataframe.DataFrame, error) {
+func (rw *csv) read(in io.Reader) (*dataframe.DataFrame, error) {
 	df := dataframe.ReadCSV(
 		in,
 		dataframe.HasHeader(rw.Header),
@@ -59,7 +76,7 @@ func (rw *csv) ReadOutOf(in io.Reader) (*dataframe.DataFrame, error) {
 		dataframe.DefaultType(series.Float),
 	)
 	if df.Error() != nil {
-		return nil, df.Error()
+		return nil, fmt.Errorf("csv: %w", df.Error())
 	}
 	return &df, nil
 }
@@ -75,7 +92,10 @@ func (rw *csv) Write(df *dataframe.DataFrame) error {
 		return err
 	}
 	// LaTeX needs a 'proper' extension to determine the format
-	path := rw.EnforceExt(CSVExt)
+	path := rw.File
+	if rw.EnforceExtension {
+		path = SetExt(path, CSVExt)
+	}
 	f, err := os.Create(path)
 	if err != nil {
 		return err

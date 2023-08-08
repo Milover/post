@@ -2,13 +2,11 @@ package rw
 
 import (
 	"errors"
-	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
 
-	"github.com/Milover/post/internal/common"
 	"gopkg.in/yaml.v3"
 )
 
@@ -47,36 +45,4 @@ func OutDir(path string) error {
 		}
 	}
 	return nil
-}
-
-type FileHandler struct {
-	// Archive is the file path to the archive file.
-	Archive string `yaml:"archive"`
-	// File is the file in which the CSV-fromatted dataframe.DataFrame
-	// will be written.
-	File string `yaml:"file"`
-	// EnforceExtension determines whether a file name extension will be
-	// enforced on the output file name.
-	// FIXME: rename the struct or move this somewhere else, why would a file
-	// reader care about output file names.
-	EnforceExtension bool `yaml:"enforce_extension"`
-}
-
-func (f FileHandler) EnforceExt(ext string) string {
-	if f.EnforceExtension {
-		return SetExt(f.File, ext)
-	}
-	return f.File
-}
-
-func (f FileHandler) Open() (fs.File, error) {
-	isArch := len(f.Archive) != 0
-	isFile := len(f.File) != 0
-	if isArch && isFile {
-		ar := archiveReader(f.Archive)
-		return ar.Open(f.File)
-	} else if isFile {
-		return os.Open(f.File)
-	}
-	return nil, fmt.Errorf("%w: %v", common.ErrUnsetField, "file")
 }

@@ -58,8 +58,8 @@ func TestDecodeRuneOrDefault(t *testing.T) {
 	}
 }
 
-// Test whether ReadOutOf works correctly.
-type readOutOfTest struct {
+// Test whether ReadFromFn works correctly.
+type readFromFnTest struct {
 	Name   string
 	Config string
 	Input  string
@@ -67,7 +67,7 @@ type readOutOfTest struct {
 	Error  error
 }
 
-var readOutOfTests = []readOutOfTest{
+var readFromFnTests = []readFromFnTest{
 	{
 		Name: "good-dat",
 		Config: `
@@ -106,24 +106,6 @@ type: 'CRASH_ME_BBY!'
 		Error:  ErrBadReaderOutOf,
 	},
 	{
-		Name: "bad-dat",
-		Config: `
-type: dat
-`,
-		Input:  "",
-		Output: dataframe.DataFrame{},
-		Error:  errors.New("load records: empty DataFrame"),
-	},
-	{
-		Name: "bad-csv",
-		Config: `
-type: csv
-`,
-		Input:  "",
-		Output: dataframe.DataFrame{},
-		Error:  errors.New("load records: empty DataFrame"),
-	},
-	{
 		Name: "bad-fields",
 		Config: `
 type: csv
@@ -135,8 +117,15 @@ fields: [a, b, c, d, e]
 	},
 }
 
-func TestReadOutOf(t *testing.T) {
-	for _, tt := range readOutOfTests {
+type readFakeCloser struct {
+	r io.Reader
+}
+
+func (r *readFakeCloser) Read(p []byte) (int, error) { return r.r.Read(p) }
+func (r *readFakeCloser) Close() error               { return nil }
+
+func TestReadFromFn(t *testing.T) {
+	for _, tt := range readFromFnTests {
 		t.Run(tt.Name, func(t *testing.T) {
 			assert := assert.New(t)
 
@@ -146,7 +135,10 @@ func TestReadOutOf(t *testing.T) {
 			err = yaml.Unmarshal(raw, &config)
 			assert.Nil(err, "unexpected yaml.Unmarshal() error")
 
-			out, err := ReadOutOf(strings.NewReader(tt.Input), &config)
+			fn := func(_ string) (io.ReadCloser, error) {
+				return &readFakeCloser{r: strings.NewReader(tt.Input)}, nil
+			}
+			out, err := ReadFromFn(fn, &config)
 
 			assert.Equal(tt.Error, err)
 			if tt.Error != nil {

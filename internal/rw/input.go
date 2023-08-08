@@ -17,11 +17,11 @@ var (
 		maps.Keys(Readers))
 	ErrBadReaderOutOf = fmt.Errorf(
 		"bad input type, available types are: %q",
-		maps.Keys(ReadersOutOf))
+		maps.Keys(ReadersFromFn))
 )
 
 type ReaderFactory func(*yaml.Node) (Reader, error)
-type ReaderOutOfFactory func(*yaml.Node) (ReaderOutOf, error)
+type ReaderOutOfFactory func(*yaml.Node) (ReaderFromFn, error)
 
 var Readers = map[string]ReaderFactory{
 	"csv":         func(n *yaml.Node) (Reader, error) { return NewCsv(n) },
@@ -29,18 +29,21 @@ var Readers = map[string]ReaderFactory{
 	"foam-series": func(n *yaml.Node) (Reader, error) { return NewFoamSeries(n) },
 	"ram":         func(n *yaml.Node) (Reader, error) { return NewRam(n) },
 	"multiple":    func(n *yaml.Node) (Reader, error) { return NewMultiple(n) },
+	"archive":     func(n *yaml.Node) (Reader, error) { return NewArchive(n) },
 }
-var ReadersOutOf = map[string]ReaderOutOfFactory{
-	"csv": func(n *yaml.Node) (ReaderOutOf, error) { return NewCsv(n) },
-	"dat": func(n *yaml.Node) (ReaderOutOf, error) { return NewDat(n) },
+var ReadersFromFn = map[string]ReaderOutOfFactory{
+	"csv":         func(n *yaml.Node) (ReaderFromFn, error) { return NewCsv(n) },
+	"dat":         func(n *yaml.Node) (ReaderFromFn, error) { return NewDat(n) },
+	"foam-series": func(n *yaml.Node) (ReaderFromFn, error) { return NewFoamSeries(n) },
 }
 
 type Reader interface {
 	Read() (*dataframe.DataFrame, error)
 }
 
-type ReaderOutOf interface {
-	ReadOutOf(io.Reader) (*dataframe.DataFrame, error)
+type ReaderFunc func(string) (io.ReadCloser, error)
+type ReaderFromFn interface {
+	ReadFromFn(ReaderFunc) (*dataframe.DataFrame, error)
 }
 
 // DecodeRuneOrDefault tries to decode a rune from a string and returns the
@@ -69,8 +72,8 @@ func Read(config *Config) (*dataframe.DataFrame, error) {
 	return SetNames(df, config.Fields)
 }
 
-func ReadOutOf(in io.Reader, config *Config) (*dataframe.DataFrame, error) {
-	factory, found := ReadersOutOf[strings.ToLower(config.Type)]
+func ReadFromFn(fn ReaderFunc, config *Config) (*dataframe.DataFrame, error) {
+	factory, found := ReadersFromFn[strings.ToLower(config.Type)]
 	if !found {
 		return nil, ErrBadReaderOutOf
 	}
@@ -78,7 +81,7 @@ func ReadOutOf(in io.Reader, config *Config) (*dataframe.DataFrame, error) {
 	if err != nil {
 		return nil, err
 	}
-	df, err := r.ReadOutOf(in)
+	df, err := r.ReadFromFn(fn)
 	if err != nil {
 		return nil, err
 	}
