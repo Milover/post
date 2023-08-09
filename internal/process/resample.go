@@ -3,11 +3,11 @@ package process
 import (
 	"fmt"
 	"math"
+	"slices"
 
 	"github.com/Milover/post/internal/common"
 	"github.com/go-gota/gota/dataframe"
 	"github.com/go-gota/gota/series"
-	"golang.org/x/exp/slices"
 )
 
 // resampleSpec contains data needed for defining a resample Processor.

@@ -8,14 +8,13 @@ import (
 
 	"github.com/Milover/post/internal/common"
 	"github.com/go-gota/gota/dataframe"
-	"golang.org/x/exp/maps"
 	"gopkg.in/yaml.v3"
 )
 
 var (
 	ErrInvalidGrapher = fmt.Errorf(
 		"bad input grapher, available graphers are: %q",
-		maps.Keys(GrapherFactories))
+		common.MapKeys(GrapherFactories))
 )
 
 type Grapher interface {

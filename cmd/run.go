@@ -5,6 +5,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"slices"
 
 	"github.com/Milover/post/internal/common"
 	"github.com/Milover/post/internal/graph"
@@ -12,7 +13,6 @@ import (
 	"github.com/Milover/post/internal/rw"
 	"github.com/go-gota/gota/dataframe"
 	"github.com/spf13/cobra"
-	"golang.org/x/exp/slices"
 	"gopkg.in/yaml.v3"
 )
 

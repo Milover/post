@@ -4,12 +4,12 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"slices"
 
 	"github.com/Milover/post/internal/common"
 	"github.com/Milover/post/internal/numeric"
 	"github.com/go-gota/gota/dataframe"
 	"github.com/go-gota/gota/series"
-	"golang.org/x/exp/slices"
 )
 
 var (

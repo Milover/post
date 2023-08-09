@@ -6,18 +6,18 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"github.com/Milover/post/internal/common"
 	"github.com/go-gota/gota/dataframe"
-	"golang.org/x/exp/maps"
 	"gopkg.in/yaml.v3"
 )
 
 var (
 	ErrBadReader = fmt.Errorf(
 		"bad input type, available types are: %q",
-		maps.Keys(Readers))
+		common.MapKeys(Readers))
 	ErrBadReaderOutOf = fmt.Errorf(
 		"bad input type, available types are: %q",
-		maps.Keys(ReadersFromFn))
+		common.MapKeys(ReadersFromFn))
 )
 
 type ReaderFactory func(*yaml.Node) (Reader, error)

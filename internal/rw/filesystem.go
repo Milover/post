@@ -4,17 +4,18 @@ import (
 	"archive/tar"
 	"archive/zip"
 	"bytes"
+	"cmp"
 	"compress/bzip2"
 	"compress/gzip"
 	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 
 	"github.com/ulikunitz/xz"
-	"golang.org/x/exp/slices"
 )
 
 type ArchiveFormat int
@@ -53,8 +54,8 @@ type fileList []*fileEntry
 
 // sort recursively sorts the fileList.
 func (l fileList) sort() {
-	slices.SortFunc(l, func(a, b *fileEntry) bool {
-		return a.Info.Name() < b.Info.Name()
+	slices.SortFunc(l, func(a, b *fileEntry) int {
+		return cmp.Compare(a.Info.Name(), b.Info.Name())
 	})
 	for _, e := range l {
 		e.Files.sort()

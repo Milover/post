@@ -5,15 +5,15 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/Milover/post/internal/common"
 	"github.com/go-gota/gota/dataframe"
-	"golang.org/x/exp/maps"
 	"gopkg.in/yaml.v3"
 )
 
 var (
 	ErrBadOutputType = fmt.Errorf(
 		"bad output type, available types are: %q",
-		maps.Keys(Writers))
+		common.MapKeys(Writers))
 )
 
 type WriterFactory func(*yaml.Node) (Writer, error)

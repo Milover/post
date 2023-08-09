@@ -3,10 +3,10 @@ package process
 import (
 	"errors"
 	"fmt"
+	"slices"
 
 	"github.com/Milover/post/internal/common"
 	"github.com/go-gota/gota/dataframe"
-	"golang.org/x/exp/slices"
 )
 
 // selectSpec contains data needed for defining a select Processor.

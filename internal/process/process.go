@@ -8,13 +8,12 @@ import (
 	"github.com/Milover/post/internal/common"
 	"github.com/go-gota/gota/dataframe"
 	"github.com/go-gota/gota/series"
-	"golang.org/x/exp/maps"
 )
 
 var (
 	ErrInvalidType = fmt.Errorf(
 		"bad process type, available types are: %q",
-		maps.Keys(ProcessorTypes))
+		common.MapKeys(ProcessorTypes))
 )
 
 // Processor is a function which applies processing on a dataframe.DataFrame

@@ -6,7 +6,6 @@ import (
 
 	"github.com/Milover/post/internal/common"
 	"github.com/go-gota/gota/dataframe"
-	"golang.org/x/exp/maps"
 	"gopkg.in/yaml.v3"
 )
 
@@ -60,7 +59,7 @@ func (rw *ram) Read() (*dataframe.DataFrame, error) {
 	v, ok := rw.s[rw.Name]
 	if !ok {
 		return nil, fmt.Errorf("no data under %q, available names are: %q",
-			rw.Name, maps.Keys(rw.s))
+			rw.Name, common.MapKeys(rw.s))
 	}
 	temp := v.Copy()
 	return &temp, nil

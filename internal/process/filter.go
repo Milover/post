@@ -4,20 +4,19 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"slices"
 	"strconv"
 	"strings"
 
 	"github.com/Milover/post/internal/common"
 	"github.com/go-gota/gota/dataframe"
 	"github.com/go-gota/gota/series"
-	"golang.org/x/exp/maps"
-	"golang.org/x/exp/slices"
 )
 
 var (
 	ErrFilterAggregation = fmt.Errorf(
 		"filter: bad aggregation mode, available modes are: %q",
-		maps.Keys(filterAggregations))
+		common.MapKeys(filterAggregations))
 )
 
 var filterAggregations = map[string]dataframe.Aggregation{
