@@ -84,7 +84,7 @@
     type_spec:
       file: 'data/postProcessing.LES.tar.xz'
       format_spec:
-        type: foam-series
+        type: time-series
         fields: [time, z,RCmp,kBar,k,U_0,U_1,U_2,UBar_0,UBar_1,UBar_2]
         type_spec:
           directory: 'postProcessing.LES/single_graph'

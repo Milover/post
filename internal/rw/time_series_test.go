@@ -22,7 +22,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-type foamSeriesTest struct {
+type timeSeriesTest struct {
 	Name        string
 	Config      string
 	Output      dataframe.DataFrame
@@ -30,7 +30,7 @@ type foamSeriesTest struct {
 	Error       error
 }
 
-var foamSeriesReadTests = []foamSeriesTest{
+var timeSeriesReadTests = []timeSeriesTest{
 	{
 		Name: "good-csv",
 		Config: `
@@ -182,8 +182,8 @@ format_spec:
 	},
 }
 
-func TestFoamSeriesRead(t *testing.T) {
-	for _, tt := range foamSeriesReadTests {
+func TestTimeSeriesRead(t *testing.T) {
+	for _, tt := range timeSeriesReadTests {
 		t.Run(tt.Name, func(t *testing.T) {
 			assert := assert.New(t)
 
@@ -193,8 +193,8 @@ func TestFoamSeriesRead(t *testing.T) {
 			err = yaml.Unmarshal(raw, &config)
 			assert.Nil(err, "unexpected yaml.Unmarshal() error")
 
-			rw, err := NewFoamSeries(&config)
-			assert.Nil(err, "unexpected NewFoamSeries() error")
+			rw, err := NewTimeSeries(&config)
+			assert.Nil(err, "unexpected NewTimeSeries() error")
 			out, err := rw.Read()
 
 			if tt.Error != nil {
@@ -210,21 +210,21 @@ func TestFoamSeriesRead(t *testing.T) {
 	}
 }
 
-// Benchmarks for reading a foam-series in various configurations.
-// The benchmark reads floats from CSV files into a foam-series,
+// Benchmarks for reading a time-series in various configurations.
+// The benchmark reads floats from CSV files into a time-series,
 // since this is the most common use case.
-type foamSeriesBench struct {
+type timeSeriesBench struct {
 	Name      string
-	Directory string // foam-series directory
+	Directory string // time-series directory
 	Archive   string // input archive file name
-	FormatTyp int    // foam-series input format type
+	FormatTyp int    // time-series input format type
 	NFiles    int    // the total number of files (time directories)
 	FileSize  int    // the approx. size in bytes of individual data files
 }
 
 const (
-	// benchDir is the name of the root directory of the foam-series.
-	benchDir string = "foam-series-read-bench"
+	// benchDir is the name of the root directory of the time-series.
+	benchDir string = "time-series-read-bench"
 	// benchCsv is the name of the CSV data file(s).
 	benchCsv string = "data.csv"
 	// benchRegConfigTmpl is the Config template used in benchmarks.
@@ -234,14 +234,14 @@ type: archive
 type_spec:
   file: '{{.Archive}}'
   format_spec:
-    type: foam-series
+    type: time-series
     type_spec:
       directory: '{{.Directory}}'
       file: data.csv
       format_spec:
         type: csv
 {{- else -}}
-type: foam-series
+type: time-series
 type_spec:
   directory: '{{.Directory}}'
   file: data.csv
@@ -249,14 +249,14 @@ type_spec:
     type: csv
 {{- end -}}
 `
-	// Constants for the various foam-series input types.
+	// Constants for the various time-series input types.
 	B_REG int = iota
 	B_TAR
 	B_TXZ
 	B_ZIP
 )
 
-var benchTemplates = []foamSeriesBench{
+var benchTemplates = []timeSeriesBench{
 	{
 		Name:      "regular",
 		FormatTyp: B_REG,
@@ -298,7 +298,7 @@ func csvBytes(n int) ([]byte, error) {
 	return b.Bytes(), err
 }
 
-func BenchmarkFoamSeriesRead(b *testing.B) {
+func BenchmarkTimeSeriesRead(b *testing.B) {
 	// A map of the ammount of files and file sizes used during benchmarking.
 	var benchNBySize map[int][]int
 	if testing.Short() { // debugging
@@ -314,7 +314,7 @@ func BenchmarkFoamSeriesRead(b *testing.B) {
 	}
 	// create the benchmark test structures
 	benchesCap := len(benchTemplates) * len(benchNBySize) * len(benchNBySize[10])
-	benches := make([]foamSeriesBench, 0, benchesCap)
+	benches := make([]timeSeriesBench, 0, benchesCap)
 	for _, tmpl := range benchTemplates {
 		for nfiles, fsizes := range benchNBySize {
 			for _, s := range fsizes {

@@ -39,7 +39,7 @@ const (
 - id:                           # pipeline identifier; optional
   input:
     fields: []                  # list of field names; optional
-    type:                       # one of 'dat', 'csv', 'foam-series', 'ram'
+    type:                       # one of 'dat', 'csv', 'time-series', 'ram'
    # some example type specs; there can only be 1 input type per pipeline
     type_spec:
       file:                     # input file name; usually required
@@ -47,7 +47,7 @@ const (
       header:                   # 'true' by default
       delimiter:                # ',' by default
       comment:                  # '#' by default
-     # 'foam-series' specific
+     # 'time-series' specific
       directory:                # series root directory
       file:                     # series data file name
       time_name:                # 'time' by default

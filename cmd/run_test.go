@@ -74,7 +74,7 @@ var runTests = []runTest{
                 y_field: max
                 legend_entry: '$y_\text{max}$'
 - input:
-    type: foam-series
+    type: time-series
     type_spec:
       directory: 'testdata/csv_series'
       file: data.csv

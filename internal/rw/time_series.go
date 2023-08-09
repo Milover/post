@@ -13,7 +13,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// foamSeries contains data needed for parsing an OpenFOAM table series,
+// timeSeries contains data needed for parsing an OpenFOAM table series,
 // which is of the following format:
 //
 //	.
@@ -31,10 +31,10 @@ import (
 // time specified by the directory name.
 // Each series dataset is output into a different file, i.e., the data_0.csv
 // files contain one dataset, data_1.dat another one, and so on.
-type foamSeries struct {
+type timeSeries struct {
 	// File is the file name of the CSV-formatted data files.
 	File string `yaml:"file"`
-	// Directory is the root directory of the foam-series.
+	// Directory is the root directory of the time-series.
 	Directory string `yaml:"directory"`
 	// TimeName is the name of the time field.
 	// If left empty it is set to 'time'.
@@ -45,22 +45,22 @@ type foamSeries struct {
 	FormatSpec Config `yaml:"format_spec"`
 }
 
-func defaultFoamSeries() *foamSeries {
-	return &foamSeries{
+func defaultTimeSeries() *timeSeries {
+	return &timeSeries{
 		TimeName: "time",
 	}
 }
 
-func NewFoamSeries(n *yaml.Node) (*foamSeries, error) {
-	rw := defaultFoamSeries()
+func NewTimeSeries(n *yaml.Node) (*timeSeries, error) {
+	rw := defaultTimeSeries()
 	if err := n.Decode(rw); err != nil {
 		return nil, err
 	}
 	if len(rw.File) == 0 {
-		return nil, fmt.Errorf("foam-series: %w: %v", common.ErrUnsetField, "file")
+		return nil, fmt.Errorf("time-series: %w: %v", common.ErrUnsetField, "file")
 	}
 	if len(rw.Directory) == 0 {
-		return nil, fmt.Errorf("foam-series: %w: %v", common.ErrUnsetField, "directory")
+		return nil, fmt.Errorf("time-series: %w: %v", common.ErrUnsetField, "directory")
 	}
 	return rw, nil
 }
@@ -74,41 +74,41 @@ type walkStruct struct {
 	Rows []float64
 }
 
-func (rw *foamSeries) Read() (*dataframe.DataFrame, error) {
+func (rw *timeSeries) Read() (*dataframe.DataFrame, error) {
 	if _, err := os.Stat(rw.Directory); err != nil {
-		return nil, fmt.Errorf("foam-series: %w", err)
+		return nil, fmt.Errorf("time-series: %w", err)
 	}
 	fsys := os.DirFS(rw.Directory)
 	return rw.read(fsys)
 }
 
-func (rw *foamSeries) ReadFromFn(fn ReaderFunc) (*dataframe.DataFrame, error) {
+func (rw *timeSeries) ReadFromFn(fn ReaderFunc) (*dataframe.DataFrame, error) {
 	in, err := fn(rw.Directory)
 	if err != nil {
-		return nil, fmt.Errorf("foam-series: %w", err)
+		return nil, fmt.Errorf("time-series: %w", err)
 	}
 	fsys, ok := in.(fs.FS)
 	if !ok {
-		return nil, fmt.Errorf("foam-series: %w to 'fs.FS'", common.ErrBadCast)
+		return nil, fmt.Errorf("time-series: %w to 'fs.FS'", common.ErrBadCast)
 	}
 	return rw.read(fsys)
 }
 
-func (rw *foamSeries) read(fsys fs.FS) (*dataframe.DataFrame, error) {
+func (rw *timeSeries) read(fsys fs.FS) (*dataframe.DataFrame, error) {
 	var df *dataframe.DataFrame
 	var ws walkStruct
 	// FIXME: the dataframe.DataFrame operations are mysterious, so no idea
 	// where allocations happen or how many there are --- should check this
 	// at some point.
 	// OPTIMIZE: we should skip directories (return fs.SkipDir) which are not
-	// on the correct path to the foam-series root directory.
+	// on the correct path to the time-series root directory.
 	walkFn := func(path string, d fs.DirEntry, err error) error {
 		// stop walking on any error, since there shouldn't be any
 		if err != nil {
 			return err
 		}
 		// regular FSs need to skip the root directory ("."),
-		// archiveFSs also need to skip until the foam-series root directory
+		// archiveFSs also need to skip until the time-series root directory
 		if path == "." || path == rw.Directory {
 			return nil
 		}
@@ -154,12 +154,12 @@ func (rw *foamSeries) read(fsys fs.FS) (*dataframe.DataFrame, error) {
 		return nil
 	}
 	if err := fs.WalkDir(fsys, ".", walkFn); err != nil {
-		return nil, fmt.Errorf("foam-series: %w", err)
+		return nil, fmt.Errorf("time-series: %w", err)
 	}
 	if df != nil {
 		*df = df.Arrange(dataframe.Sort(rw.TimeName))
 		if df.Error() != nil {
-			return nil, fmt.Errorf("foam-series: %w", df.Error())
+			return nil, fmt.Errorf("time-series: %w", df.Error())
 		}
 	}
 	return df, nil

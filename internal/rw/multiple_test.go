@@ -71,17 +71,17 @@ format_specs:
 		Error: nil,
 	},
 	{
-		Name: "good-foam-series",
+		Name: "good-time-series",
 		Config: `
 format_specs:
-  - type: foam-series
+  - type: time-series
     fields: [time0, x0, y0]
     type_spec:
       directory: 'testdata/foam_series.good'
       file: 'data.dat'
       format_spec:
         type: dat
-  - type: foam-series
+  - type: time-series
     fields: [time1, x1, y1]
     type_spec:
       directory: 'testdata/foam_series.good'
@@ -131,7 +131,7 @@ func TestMultipleRead(t *testing.T) {
 			assert.Nil(err, "unexpected yaml.Unmarshal() error")
 
 			rw, err := NewMultiple(&config)
-			assert.Nil(err, "unexpected NewFoamSeries() error")
+			assert.Nil(err, "unexpected NewTimeSeries() error")
 			out, err := rw.Read()
 
 			assert.ErrorIs(err, tt.Error)

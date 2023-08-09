@@ -160,13 +160,13 @@ format_spec:
 		Output: expected,
 		Error:  nil,
 	},
-	// foam-series
+	// time-series
 	{
 		Name: "good-series-tar.xz",
 		Config: `
 file: 'testdata/foam_series.good.tar.xz'
 format_spec:
-  type: foam-series
+  type: time-series
   type_spec:
     directory: 'foam_series.good'
     file: data.csv
@@ -182,7 +182,7 @@ format_spec:
 		Config: `
 file: 'testdata/foam_series.good.zip'
 format_spec:
-  type: foam-series
+  type: time-series
   type_spec:
     directory: 'foam_series.good'
     file: data.csv
@@ -198,7 +198,7 @@ format_spec:
 		Config: `
 file: 'testdata/archive.tgz'
 format_spec:
-  type: foam-series
+  type: time-series
   type_spec:
     directory: 'archive/foam_series.good'
     file: data.csv
@@ -214,7 +214,7 @@ format_spec:
 		Config: `
 file: 'testdata/archive.zip'
 format_spec:
-  type: foam-series
+  type: time-series
   type_spec:
     directory: 'archive/foam_series.good'
     file: data.csv

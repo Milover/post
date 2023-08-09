@@ -35,7 +35,7 @@ type ReaderOutOfFactory func(*yaml.Node) (ReaderFromFn, error)
 var Readers = map[string]ReaderFactory{
 	"csv":         func(n *yaml.Node) (Reader, error) { return NewCsv(n) },
 	"dat":         func(n *yaml.Node) (Reader, error) { return NewDat(n) },
-	"foam-series": func(n *yaml.Node) (Reader, error) { return NewFoamSeries(n) },
+	"time-series": func(n *yaml.Node) (Reader, error) { return NewTimeSeries(n) },
 	"ram":         func(n *yaml.Node) (Reader, error) { return NewRam(n) },
 	"multiple":    func(n *yaml.Node) (Reader, error) { return NewMultiple(n) },
 	"archive":     func(n *yaml.Node) (Reader, error) { return NewArchive(n) },
@@ -43,7 +43,7 @@ var Readers = map[string]ReaderFactory{
 var ReadersFromFn = map[string]ReaderOutOfFactory{
 	"csv":         func(n *yaml.Node) (ReaderFromFn, error) { return NewCsv(n) },
 	"dat":         func(n *yaml.Node) (ReaderFromFn, error) { return NewDat(n) },
-	"foam-series": func(n *yaml.Node) (ReaderFromFn, error) { return NewFoamSeries(n) },
+	"time-series": func(n *yaml.Node) (ReaderFromFn, error) { return NewTimeSeries(n) },
 }
 
 // DecodeRuneOrDefault tries to decode a rune from a string and returns the
