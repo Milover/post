@@ -16,7 +16,7 @@
         type: dat
         fields: [time, tauWBar]
         type_spec:
-          file: "postProcessing.LES/cont.probes/0/tauWBar"
+          file: 'postProcessing.LES/cont.probes/0/tauWBar'
   process:
     - type: filter
       type_spec:
@@ -56,11 +56,49 @@
               min: 0
               max: 2.5
               label: '$\tau_\text{w} / \rho U_0 (2\nu\omega)^{\frac{1}{2}}$'
+            width: '0.8\textwidth'
+            height: '0.65\textwidth'
+            legend_style: '{at={(0.5, 0.975)},
+                            anchor=north,
+                            cells={align=left},
+                            legend columns=2,
+                            font=\footnotesize}'
+             # an example of raw TeX for defining axis options,
+             # all other axis options (the ones above) are ignored in this case
+#          - raw_options: 'width=0.8\textwidth,
+#                          height=0.65\textwidth,
+#                          xmin=0, xmax=180,
+#                          ymin=0, ymax=2.5,
+#                          axis x line*=bottom,
+#                          axis y line*=left,
+#                          xlabel={$\phi$, (deg.)},
+#                          ylabel={$\tau_\text{w} / \rho U_0 (2\nu\omega)^{\frac{1}{2}}$},
+#                          x tick label style={
+#                              yshift=-0.5ex,
+#                              xshift=-0.5ex,
+#                          },
+#                          y tick label style={
+#                              xshift=-0.5ex,
+#                          },
+#                          scaled x ticks=false,
+#                          scaled y ticks=false,
+#                          xmajorgrids=true,
+#                          ymajorgrids=true,
+#                          major grid style={solid, line width=0.5pt, draw=gray!50},
+#                          legend cell align=left,
+#                          legend style={at={(0.975, 0.975)},
+#                                        anchor=north east,
+#                                        cells={align=left},
+#                                        legend columns=2,
+#                                        font=\footnotesize},
+#                          cycle list name=plain_list,
+#                          smooth'
             tables:
               - x_field: phase
                 y_field: tauWBar
                 legend_entry: 'WALE'
               - x_field: phase
                 y_field: tauWBar
+                col_sep: 'comma'
                 legend_entry: 'DNS'
                 table_file: 'outdir/dns_salon_2007_tau_w_bar.csv'
