@@ -1,6 +1,18 @@
+__{- /* See graph.TeXAxis for field descriptions. */ -}__
 \begin{axis}[
+__{- if .RawOptions -}__
+	__{.RawOptions}__
+__{- else}__
+	__{if .Width -}__
+	width=__{.Width}__,
+	__{- else}__
 	width=0.8\textwidth,
+	__{- end}__
+	__{if .Height -}__
+	height=__{.Height}__,
+	__{- else}__
 	height=0.65\textwidth,
+	__{- end}__
 	xmin=__{.X.Min}__, xmax=__{.X.Max}__,
 	ymin=__{.Y.Min}__, ymax=__{.Y.Max}__,
 	axis x line*=bottom,
@@ -30,14 +42,19 @@
 	ymajorgrids=true,
 	major grid style={solid, line width=0.5pt, draw=gray!50},
 	legend cell align=left,
+	__{if .LegendStyle -}__
+	legend style=__{.LegendStyle}__,
+	__{- else}__
 	legend style={at={(0.975, 0.975)},
 				  anchor=north east,
 				  cells={align=left},
 				  legend columns=2,
 				  font=\footnotesize
 				  },
+	__{- end}__
 	cycle list name=plain_list,
 	smooth
+__{end -}__
 ]
 __{range .Tables -}__
 __{template "table.tmpl" . -}__

@@ -102,10 +102,15 @@ const (
             y:
               min:
               max:
-              label:
+              label:            # raw TeX
+            width:              # optional; raw TeX, axis width option
+            height:             # optional; raw TeX, axis height option
+            legend_style:       # optional; raw TeX, axis legend style option
+            raw_options:        # optional; raw TeX, if defined all other options are ignored
             tables:
               - x_field:
                 y_field:
+                col_sep:        # optional; 'comma' by default
                 legend_entry:   # raw TeX
                 table_file:     # optional; needed if 'graphs.table_file' is undefined
 `

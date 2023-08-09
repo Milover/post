@@ -1,8 +1,13 @@
-%
+__{- /* See graph.TeXTable for field descriptions. */ -}__
 \addplot table [%
 	x=__{.XField}__,
 	y=__{.YField}__,
-	col sep=comma] {__{.TableFile}__};
+__{- if .ColSep}__
+	col sep=__{.ColSep}__
+__{- else}__
+	col sep=comma
+__{- end -}__
+	] {__{.TableFile}__};
 __{if .LegendEntry -}__
 __{template "legend.tmpl" .}__
 __{- end -}__

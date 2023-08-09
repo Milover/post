@@ -70,9 +70,13 @@ func newTeXGrapher(spec *yaml.Node, config *Config) (Grapher, error) {
 }
 
 type TexAxis struct {
-	X      AxisLine   `yaml:"x"`
-	Y      AxisLine   `yaml:"y"`
-	Tables []TeXTable `yaml:"tables"`
+	X           AxisLine   `yaml:"x"`
+	Y           AxisLine   `yaml:"y"`
+	Tables      []TeXTable `yaml:"tables"`
+	RawOptions  string     `yaml:"raw_options"`
+	Width       string     `yaml:"width"`
+	Height      string     `yaml:"height"`
+	LegendStyle string     `yaml:"legend_style"`
 }
 
 type AxisLine struct {
@@ -84,6 +88,7 @@ type AxisLine struct {
 type TeXTable struct {
 	XField      string `yaml:"x_field"`
 	YField      string `yaml:"y_field"`
+	ColSep      string `yaml:"col_sep"`
 	LegendEntry string `yaml:"legend_entry"`
 	TableFile   string `yaml:"table_file"`
 }
