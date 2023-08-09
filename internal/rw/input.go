@@ -20,6 +20,15 @@ var (
 		common.MapKeys(ReadersFromFn))
 )
 
+type Reader interface {
+	Read() (*dataframe.DataFrame, error)
+}
+
+type ReaderFunc func(string) (io.ReadCloser, error)
+type ReaderFromFn interface {
+	ReadFromFn(ReaderFunc) (*dataframe.DataFrame, error)
+}
+
 type ReaderFactory func(*yaml.Node) (Reader, error)
 type ReaderOutOfFactory func(*yaml.Node) (ReaderFromFn, error)
 
@@ -35,15 +44,6 @@ var ReadersFromFn = map[string]ReaderOutOfFactory{
 	"csv":         func(n *yaml.Node) (ReaderFromFn, error) { return NewCsv(n) },
 	"dat":         func(n *yaml.Node) (ReaderFromFn, error) { return NewDat(n) },
 	"foam-series": func(n *yaml.Node) (ReaderFromFn, error) { return NewFoamSeries(n) },
-}
-
-type Reader interface {
-	Read() (*dataframe.DataFrame, error)
-}
-
-type ReaderFunc func(string) (io.ReadCloser, error)
-type ReaderFromFn interface {
-	ReadFromFn(ReaderFunc) (*dataframe.DataFrame, error)
 }
 
 // DecodeRuneOrDefault tries to decode a rune from a string and returns the
