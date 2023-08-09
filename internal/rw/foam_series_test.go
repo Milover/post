@@ -6,7 +6,6 @@ import (
 	"bytes"
 	stdcsv "encoding/csv"
 	"errors"
-	"fmt"
 	"io"
 	"math/rand"
 	"os"
@@ -14,6 +13,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"text/template"
 
 	"github.com/go-gota/gota/dataframe"
 	"github.com/go-gota/gota/series"
@@ -210,16 +210,16 @@ func TestFoamSeriesRead(t *testing.T) {
 	}
 }
 
-// TODO: refactor this to work with 'archive' input type
 // Benchmarks for reading a foam-series in various configurations.
-// The benchmark reads floats from CSV file into a foam-series,
+// The benchmark reads floats from CSV files into a foam-series,
 // since this is the most common use case.
 type foamSeriesBench struct {
 	Name      string
-	Config    string
-	FormatTyp int // foam-series input format type
-	NFiles    int // the total number of files (time directories)
-	FileSize  int // the approx. size in bytes of individual data files
+	Directory string // foam-series directory
+	Archive   string // input archive file name
+	FormatTyp int    // foam-series input format type
+	NFiles    int    // the total number of files (time directories)
+	FileSize  int    // the approx. size in bytes of individual data files
 }
 
 const (
@@ -227,12 +227,27 @@ const (
 	benchDir string = "foam-series-read-bench"
 	// benchCsv is the name of the CSV data file(s).
 	benchCsv string = "data.csv"
-	// benchConfig is the benchmark Config.
-	// The 'directory' and 'archive' fields are set during the benchmark.
-	benchConfig string = `
-file: data.csv
-format_spec:
-  type: csv
+	// benchRegConfigTmpl is the Config template used in benchmarks.
+	benchConfigTmpl string = `
+{{- if .Archive -}}
+type: archive
+type_spec:
+  file: '{{.Archive}}'
+  format_spec:
+    type: foam-series
+    type_spec:
+      directory: '{{.Directory}}'
+      file: data.csv
+      format_spec:
+        type: csv
+{{- else -}}
+type: foam-series
+type_spec:
+  directory: '{{.Directory}}'
+  file: data.csv
+  format_spec:
+    type: csv
+{{- end -}}
 `
 	// Constants for the various foam-series input types.
 	B_REG int = iota
@@ -244,22 +259,18 @@ format_spec:
 var benchTemplates = []foamSeriesBench{
 	{
 		Name:      "regular",
-		Config:    benchConfig,
 		FormatTyp: B_REG,
 	},
 	{
 		Name:      "tar",
-		Config:    benchConfig,
 		FormatTyp: B_TAR,
 	},
 	{
 		Name:      "tar.xz",
-		Config:    benchConfig,
 		FormatTyp: B_TXZ,
 	},
 	{
 		Name:      "zip",
-		Config:    benchConfig,
 		FormatTyp: B_ZIP,
 	},
 }
@@ -316,6 +327,8 @@ func BenchmarkFoamSeriesRead(b *testing.B) {
 			}
 		}
 	}
+	// set cleanup func
+	b.Cleanup(func() { Archive.Clear() })
 	for _, bb := range benches {
 		b.Run(bb.Name, func(b *testing.B) {
 			assert := assert.New(b)
@@ -339,14 +352,12 @@ func BenchmarkFoamSeriesRead(b *testing.B) {
 				files[i+2] = csvPath
 			}
 
-			// write the files and adjust the config
-			var configString string
+			// write the files and set the test struct fields
 			csvBody, err := csvBytes(bb.FileSize)
 			assert.Nil(err, "unexpected csvBytes() error")
 			switch bb.FormatTyp {
 			case B_REG:
-				root := filepath.Join(tempDir, rootDir)
-				configString = fmt.Sprintf("directory: %v", root) + bb.Config
+				bb.Directory = filepath.Join(tempDir, rootDir)
 
 				files[0] = rootDir + "/"
 				for _, file := range files {
@@ -360,19 +371,15 @@ func BenchmarkFoamSeriesRead(b *testing.B) {
 					}
 				}
 			case B_TAR, B_TXZ:
-				var archive string
+				bb.Directory = rootDir
 				if bb.FormatTyp == B_TXZ {
-					archive = filepath.Join(tempDir, rootDir+".tar.xz")
-					configString = fmt.Sprintf("directory: %v\narchive: %v",
-						rootDir, archive) + bb.Config
+					bb.Archive = filepath.Join(tempDir, rootDir+".tar.xz")
 				} else {
-					archive = filepath.Join(tempDir, rootDir+".tar")
-					configString = fmt.Sprintf("directory: %v\narchive: %v",
-						rootDir, archive) + bb.Config
+					bb.Archive = filepath.Join(tempDir, rootDir+".tar")
 				}
 
 				// create the writers
-				f, err := os.Create(archive)
+				f, err := os.Create(bb.Archive)
 				assert.Nil(err, "unexpected os.Create() error")
 				var xzw *xz.Writer
 				var w *tar.Writer
@@ -416,12 +423,11 @@ func BenchmarkFoamSeriesRead(b *testing.B) {
 				err = f.Close()
 				assert.Nil(err, "unexpected os.File.Close() error")
 			case B_ZIP:
-				archive := filepath.Join(tempDir, rootDir+".zip")
-				configString = fmt.Sprintf("directory: %v\narchive: %v",
-					rootDir, archive) + bb.Config
+				bb.Directory = rootDir
+				bb.Archive = filepath.Join(tempDir, rootDir+".zip")
 
 				// create the writers
-				f, err := os.Create(archive)
+				f, err := os.Create(bb.Archive)
 				assert.Nil(err, "unexpected os.Create() error")
 				w := zip.NewWriter(f)
 
@@ -445,25 +451,24 @@ func BenchmarkFoamSeriesRead(b *testing.B) {
 				err = f.Close()
 				assert.Nil(err, "unexpected os.File.Close() error")
 			default:
-				panic("bad foam-series input type")
+				assert.FailNow("bad format type")
 			}
 
 			// create the config
-			raw, err := io.ReadAll(strings.NewReader(configString))
-			assert.Nil(err, "unexpected io.ReadAll() error")
-			var config yaml.Node
-			err = yaml.Unmarshal(raw, &config)
+			tmpl, err := template.New("config").Parse(benchConfigTmpl)
+			assert.Nil(err, "unexpected template.Template.Parse() error")
+			var buf bytes.Buffer
+			err = tmpl.Execute(&buf, bb)
+			assert.Nil(err, "unexpected template.Template.Execute() error")
+			var config Config
+			err = yaml.Unmarshal(buf.Bytes(), &config)
 			assert.Nil(err, "unexpected yaml.Unmarshal() error")
-
-			// create the reader
-			rw, err := NewFoamSeries(&config)
-			assert.Nil(err, "unexpected NewFoamSeries() error")
 
 			// benchmark
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
-				if _, err := rw.Read(); err != nil {
-					b.Fail()
+				if _, err := Read(&config); err != nil {
+					assert.FailNow(err.Error())
 				}
 			}
 		})
