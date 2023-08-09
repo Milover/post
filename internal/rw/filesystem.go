@@ -76,7 +76,12 @@ func (f *fileEntry) Read(p []byte) (int, error) {
 	if f.r == nil {
 		f.r = bytes.NewReader(f.Body)
 	}
-	return f.r.Read(p)
+	// XXX: yolo
+	n, err := f.r.Read(p)
+	if err == io.EOF {
+		f.ResetReader()
+	}
+	return n, err
 }
 func (f *fileEntry) ResetReader() { f.r.Reset(f.Body) }
 
@@ -210,7 +215,7 @@ func NewArchiveFS(name string) (fs.FS, error) {
 		return nil, &fs.PathError{Op: "stat", Path: name, Err: os.ErrInvalid}
 	}
 	fe.Files.sort()
-	return fe, nil
+	return &fe, nil
 }
 
 // Find an entry within an ArchiveFS from a path.
