@@ -21,6 +21,7 @@ const (
 	DfltTexTemplateExt  string = ".tmpl"
 	DfltTexTemplateDir  string = "tmpl"
 	DfltTexTemplateMain string = "master.tmpl"
+	DfltTexCommand      string = "pdflatex"
 )
 
 var (
@@ -38,6 +39,7 @@ type TeXGrapher struct {
 	TemplateDir    string    `yaml:"template_directory"`
 	TemplateMain   string    `yaml:"template_main"`
 	TemplateDelims []string  `yaml:"template_delims"`
+	TeXCommand     string    `yaml:"tex_command"`
 
 	TemplatePattern string     `yaml:"-"`
 	Templates       fs.FS      `yaml:"-"`
@@ -51,6 +53,7 @@ func newTeXGrapher(spec *yaml.Node, config *Config) (Grapher, error) {
 		TemplateDelims:  DfltTeXTemplateDelims,
 		TemplatePattern: filepath.Join(DfltTexTemplateDir, "*"+DfltTexTemplateExt),
 		Templates:       DfltTeXTemplates,
+		TeXCommand:      DfltTexCommand,
 	}
 	if err := spec.Decode(g); err != nil {
 		return nil, err
@@ -121,7 +124,7 @@ func (g *TeXGrapher) Generate() error {
 	if common.Verbose {
 		log.Printf("tex: generating graph: %v", path)
 	}
-	return exec.Command("pdflatex",
+	return exec.Command(g.TeXCommand,
 		"-halt-on-error",
 		"-interaction=nonstopmode",
 		"-output-directory="+g.Directory,
