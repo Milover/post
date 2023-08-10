@@ -4,6 +4,7 @@ package process
 import (
 	"errors"
 	"fmt"
+	"log"
 	"math"
 
 	"github.com/Milover/post/internal/common"
@@ -13,7 +14,7 @@ import (
 )
 
 var (
-	ErrExpressionFieldSize = errors.New("expression: field size mismatch")
+	ErrExpressionFieldSize = errors.New("expression: operand size mismatch")
 )
 
 type opFunc func(_, _ interface{}) (interface{}, error)
@@ -125,13 +126,13 @@ func DefaultExpressionSpec() expressionSpec {
 func expressionProcessor(df *dataframe.DataFrame, config *Config) error {
 	spec := DefaultExpressionSpec()
 	if err := config.TypeSpec.Decode(&spec); err != nil {
-		return err
+		return fmt.Errorf("expression: %w", err)
 	}
-	if len(spec.Expression) == 0 {
-		return fmt.Errorf("expression: %w: %v", common.ErrUnsetField, "expression")
+	if spec.Expression == "" {
+		return fmt.Errorf("expression: %w: %q", common.ErrUnsetField, "expression")
 	}
-	if len(spec.Result) == 0 {
-		return fmt.Errorf("expression: %w: %v", common.ErrUnsetField, "result")
+	if spec.Result == "" {
+		return fmt.Errorf("expression: %w: %q", common.ErrUnsetField, "result")
 	}
 	// map field names to columns
 	names := df.Names()
@@ -147,10 +148,12 @@ func expressionProcessor(df *dataframe.DataFrame, config *Config) error {
 		gval.Arithmetic(),
 		SliceArithmetic(),
 	)
-
+	if common.Verbose {
+		log.Printf("expression: evaluating: %q", spec.Expression)
+	}
 	r, err := lang.Evaluate(spec.Expression, env)
 	if err != nil {
-		return err
+		return fmt.Errorf("expression: %w", err)
 	}
 	*df = df.Mutate(series.New(r, series.Float, spec.Result))
 	if df.Error() != nil {

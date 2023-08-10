@@ -14,8 +14,8 @@ import (
 )
 
 var (
-	ErrFilterAggregation = fmt.Errorf(
-		"filter: bad aggregation mode, available modes are: %q",
+	ErrBadFilterAggregation = fmt.Errorf(
+		"bad aggregation mode, available modes are: %q",
 		common.MapKeys(filterAggregations))
 )
 
@@ -46,7 +46,7 @@ func DefaultFilterSetSpec() filterSetSpec {
 // and a filter (comparison) value.
 func createFilter[T validType](spec *filterSpec, val T) dataframe.F {
 	if common.Verbose {
-		log.Printf("filter: creating: %q : %q : %v",
+		log.Printf("filter: creating: %q %v %v",
 			spec.Field, spec.Op, val)
 	}
 	return dataframe.F{
@@ -70,24 +70,24 @@ func createFilter[T validType](spec *filterSpec, val T) dataframe.F {
 func filterProcessor(df *dataframe.DataFrame, config *Config) error {
 	spec := DefaultFilterSetSpec()
 	if err := config.TypeSpec.Decode(&spec); err != nil {
-		return err
+		return fmt.Errorf("filter: %w", err)
 	}
 	if len(spec.Filters) == 0 {
 		return nil
 	}
 	aggr, found := filterAggregations[strings.ToLower(spec.Aggregation)]
 	if !found {
-		return ErrFilterAggregation
+		return fmt.Errorf("filter: %w, got: %q",
+			ErrBadFilterAggregation, spec.Aggregation)
 	}
-
 	filters := make([]dataframe.F, len(spec.Filters))
 	for i := range spec.Filters {
 		fs := &spec.Filters[i]
 		if !slices.Contains(df.Names(), fs.Field) {
-			return fmt.Errorf("filter: %w: %v", common.ErrBadField, fs.Field)
+			return fmt.Errorf("filter: %w: %q", common.ErrBadField, fs.Field)
 		}
-		if len(fs.Value) == 0 {
-			return fmt.Errorf("filter: %w: %v = %v",
+		if fs.Value == "" {
+			return fmt.Errorf("filter: %w: %q: %q",
 				common.ErrBadFieldValue, "value", fs.Value)
 		}
 		switch typ := df.Select(fs.Field).Types()[0]; typ {
@@ -115,7 +115,6 @@ func filterProcessor(df *dataframe.DataFrame, config *Config) error {
 			return fmt.Errorf("filter: %w: %v", common.ErrBadFieldType, typ)
 		}
 	}
-
 	if common.Verbose {
 		log.Printf("filter: applying with aggregation: %q", aggr)
 	}

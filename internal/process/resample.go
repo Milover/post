@@ -29,10 +29,10 @@ func DefaultResampleSpec() resampleSpec {
 func resampleProcessor(df *dataframe.DataFrame, config *Config) error {
 	spec := DefaultResampleSpec()
 	if err := config.TypeSpec.Decode(&spec); err != nil {
-		return err
+		return fmt.Errorf("resample: %w", err)
 	}
 	if spec.NPoints <= 0 {
-		return fmt.Errorf("resample: %w: %v = %v",
+		return fmt.Errorf("resample: %w: %q: %q",
 			common.ErrBadFieldValue, "n_points", spec.NPoints)
 	}
 	if err := selectNumFields(df); err != nil {
@@ -55,7 +55,7 @@ func resampleProcessor(df *dataframe.DataFrame, config *Config) error {
 	}
 	if spec.X != "" { // non-uniform resample
 		if found := slices.Index(df.Names(), spec.X); found == -1 {
-			return fmt.Errorf("resample: %w: %v", common.ErrBadField, spec.X)
+			return fmt.Errorf("resample: %w: %q", common.ErrBadField, spec.X)
 		}
 		xOld := df.Col(spec.X).Float()
 		x := distr(xOld[0], xOld[len(xOld)-1], spec.NPoints)

@@ -11,8 +11,8 @@ import (
 )
 
 var (
-	ErrInvalidType = fmt.Errorf(
-		"bad process type, available types are: %q",
+	ErrBadProcessor = fmt.Errorf(
+		"bad processor type, available types are: %q",
 		common.MapKeys(ProcessorTypes))
 )
 
@@ -58,7 +58,7 @@ func Process(df *dataframe.DataFrame, configs []Config) error {
 func process(df *dataframe.DataFrame, config *Config) error {
 	p, found := ProcessorTypes[strings.ToLower(config.Type)]
 	if !found {
-		return ErrInvalidType
+		return fmt.Errorf("process: %w, got: %q", ErrBadProcessor, config.Type)
 	}
 	if common.Verbose {
 		log.Printf("applying processor: %q", strings.ToLower(config.Type))

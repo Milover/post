@@ -37,7 +37,7 @@ func DefaultAverageCycleSpec() averageCycleSpec {
 func entriesPerTimeStep(df *dataframe.DataFrame, spec *averageCycleSpec) int {
 	// if the time field is not specified, there can only be
 	// one entry per time step
-	if len(spec.TimeField) == 0 {
+	if spec.TimeField == "" {
 		return 1
 	}
 	// XXX: we expect that a field named spec.TimeField exists, and that
@@ -53,19 +53,78 @@ func entriesPerTimeStep(df *dataframe.DataFrame, spec *averageCycleSpec) int {
 	return nEntries
 }
 
-// averageCycle computes the enesemble average of a cycle as specified in the
-// spec, and sets df to the result.
-// A time field, named 'time', is added to df if 'TimeField' is not set.
-// NOTE: the time field, even if 'TimeField' is set, will be the last
-// field in df if no error occurs. The order of other fields is preserved.
-func averageCycle(df *dataframe.DataFrame, spec *averageCycleSpec) error {
+// averageCycleProcessor computes the enesemble average of a cycle
+// for all numeric fields as specified in the config, and sets df to the result.
+// The ensemble average is computed as:
+//
+//	Φ(ωt) = 1/N Σ ϕ[ω(t+j)T], j = 0...N-1
+//
+// where ϕ is the slice of values to be averaged, ω the angular velocity,
+// t the time and T the period.
+//
+// The resulting dataframe.DataFrame will contain the cycle average of
+// all numeric fields and a time field (named 'time'),
+// containing times for each row of cycle average data, in the range (0, T].
+// The time field will be the last field in df if no error occurs, while
+// the order of the other fields is preserved.
+//
+// Time matching can be optionally specified, as well as the match precision,
+// by setting 'time_field' and 'time_precision' respectively in the config.
+// This checks whether the time (step) is uniform and weather there is a
+// mismatch between the expected time of the averaged value, as per the number
+// of cycles defined in the config and the supplied data, and the read time.
+// For example, if there are 2 cycles, with a period of 1, a time step of 0.25,
+// and the 'time_field' set to 'time', the expected input and output are:
+//
+//	      input                     output
+//	------------------        ------------------
+//	 time |  x  | ...          time |  x  | ...
+//	------|-----|-----        ------|-----|-----
+//	 0.25 | 0.5 | ...          0.25 | 1.0 | ...
+//	 0.5  | 0.5 | ...          0.5  | 1.0 | ...
+//	 0.75 | 0.5 | ...          0.75 | 1.0 | ...
+//	 1    | 0.5 | ...          1    | 1.0 | ...
+//	 1.25 | 1.5 | ...
+//	 1.5  | 1.5 | ...
+//	 1.75 | 1.5 | ...
+//	 2    | 1.5 | ...
+//
+// NOTE: In this case the output time field will be named after 'time_field',
+// i.e., the time field name will remain unchanged.
+//
+// If an error occurs, the state of df is unknown.
+func averageCycleProcessor(df *dataframe.DataFrame, config *Config) error {
+	spec := DefaultAverageCycleSpec()
+	if err := config.TypeSpec.Decode(&spec); err != nil {
+		return fmt.Errorf("average-cycle: %w", err)
+	}
+	if spec.NCycles <= 0 {
+		return fmt.Errorf("average-cycle: %w: %q: %v",
+			common.ErrBadFieldValue, "n_cycles", spec.NCycles)
+	}
+	if spec.TimeField != "" && !slices.Contains(df.Names(), spec.TimeField) {
+		return fmt.Errorf("average-cycle: %w: %q", common.ErrBadField, "time_field")
+	}
+	if spec.TimePrecision < 0 {
+		return fmt.Errorf("average-cycle: %w: %q: %v",
+			common.ErrBadFieldValue, "time_precision", spec.TimePrecision)
+	}
+	// prepare data for averaging
+	if err := selectNumFields(df); err != nil {
+		return fmt.Errorf("average-cycle: %w", err)
+	}
+	if err := intsToFloats(df); err != nil {
+		return fmt.Errorf("average-cycle: %w", err)
+	}
+
+	// compute average
 	nRows := df.Nrow()
 	if nRows%spec.NCycles != 0 {
-		return fmt.Errorf("average-cycle: %w: %v = %v",
+		return fmt.Errorf("average-cycle: %w: %q: %v",
 			common.ErrBadFieldValue, "n_cycles", spec.NCycles)
 	}
 	period := nRows / spec.NCycles
-	nPerTime := entriesPerTimeStep(df, spec)
+	nPerTime := entriesPerTimeStep(df, &spec)
 	if period%nPerTime != 0 {
 		return ErrAverageCycleNRowsPerTime
 	}
@@ -105,11 +164,11 @@ func averageCycle(df *dataframe.DataFrame, spec *averageCycleSpec) error {
 		vals[i] = tCurrent
 	}
 	// match times
-	if len(spec.TimeField) == 0 {
+	if spec.TimeField == "" {
 		spec.TimeField = "time"
 	} else {
 		if common.Verbose {
-			log.Printf("average-cycle: matching times: %q : %v",
+			log.Printf("average-cycle: matching times with %q to within %v",
 				spec.TimeField, spec.TimePrecision)
 		}
 		readT := df.Col(spec.TimeField).Float() // XXX: does this allocate?
@@ -136,66 +195,4 @@ func averageCycle(df *dataframe.DataFrame, spec *averageCycleSpec) error {
 		return fmt.Errorf("average-cycle: %w", df.Error())
 	}
 	return nil
-}
-
-// averageCycleProcessor computes the enesemble average of a cycle
-// for all numeric fields as specified in the config, and sets df to the result.
-// The ensemble average is computed as:
-//
-//	Φ(ωt) = 1/N Σ ϕ[ω(t+j)T], j = 0...N-1
-//
-// where ϕ is the slice of values to be averaged, ω the angular velocity,
-// t the time and T the period.
-//
-// The resulting dataframe.DataFrame will contain the cycle average of
-// all numeric fields and a time field (named 'time'),
-// containing times for each row of cycle average data, in the range (0, T].
-//
-// Time matching can be optionally specified, as well as the match precision,
-// by setting 'time_field' and 'time_precision' respectively in the config.
-// This checks whether the time (step) is uniform and weather there is a
-// mismatch between the expected time of the averaged value, as per the number
-// of cycles defined in the config and the supplied data, and the read time.
-// For example, if there are two cycles, with a period of 1, and a time step
-// of 0.25, the expected input is as follows:
-//
-//	 time |  x  | ...
-//	------|-----|-----
-//	 0.25 | ... |
-//	 0.5  | ... |
-//	 0.75 | ... |
-//	 1    | ... |
-//	 1.25 | ... |
-//	 1.5  | ... |
-//	 1.75 | ... |
-//	 2    | ... |
-//
-// NOTE: In this case the output time field will be named after 'time_field',
-// i.e., the time field name will remain unchanged.
-//
-// If an error occurs, the state of df is unknown.
-func averageCycleProcessor(df *dataframe.DataFrame, config *Config) error {
-	spec := DefaultAverageCycleSpec()
-	if err := config.TypeSpec.Decode(&spec); err != nil {
-		return err
-	}
-	if spec.NCycles <= 0 {
-		return fmt.Errorf("average-cycle: %w: %v = %v",
-			common.ErrBadFieldValue, "n_cycles", spec.NCycles)
-	}
-	if len(spec.TimeField) != 0 && !slices.Contains(df.Names(), spec.TimeField) {
-		return fmt.Errorf("average-cycle: %w: %v", common.ErrBadField, "time_field")
-	}
-	if spec.TimePrecision < 0 {
-		return fmt.Errorf("average-cycle: %w: %v = %v",
-			common.ErrBadFieldValue, "time_precision", spec.TimePrecision)
-	}
-	// prepare data for averaging
-	if err := selectNumFields(df); err != nil {
-		return fmt.Errorf("average-cycle: %w", err)
-	}
-	if err := intsToFloats(df); err != nil {
-		return fmt.Errorf("average-cycle: %w", err)
-	}
-	return averageCycle(df, &spec)
 }

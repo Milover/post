@@ -144,7 +144,7 @@ type_spec:
 			series.New([]int{0, 1}, series.Int, "x"),
 			series.New([]int{1, 2}, series.Int, "y"),
 		),
-		Error: ErrFilterAggregation,
+		Error: ErrBadFilterAggregation,
 	},
 	{
 		Name: "bad-value",

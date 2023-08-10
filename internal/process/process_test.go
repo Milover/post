@@ -39,7 +39,7 @@ var processorTests = []processorTest{
 		},
 		Input:  dataframe.DataFrame{},
 		Output: dataframe.DataFrame{},
-		Error:  ErrInvalidType,
+		Error:  ErrBadProcessor,
 	},
 }
 

@@ -24,7 +24,7 @@ func DefaultSelectSpec() selectSpec {
 func selectProcessor(df *dataframe.DataFrame, config *Config) error {
 	spec := DefaultSelectSpec()
 	if err := config.TypeSpec.Decode(&spec); err != nil {
-		return err
+		return fmt.Errorf("select: %w", err)
 	}
 	if len(spec.Fields) == 0 {
 		return nil
@@ -34,7 +34,7 @@ func selectProcessor(df *dataframe.DataFrame, config *Config) error {
 	for i := range spec.Fields {
 		id := slices.Index(names, spec.Fields[i])
 		if id == -1 {
-			return fmt.Errorf("select: %w: %v", common.ErrBadField, spec.Fields[i])
+			return fmt.Errorf("select: %w: %q", common.ErrBadField, spec.Fields[i])
 		}
 		ids[i] = id
 	}
