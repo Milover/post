@@ -39,9 +39,9 @@ func NewRam(n *yaml.Node) (*ram, error) {
 		RAM = defaultRam()
 	}
 	if err := n.Decode(RAM); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("ram: %w", err)
 	}
-	if len(RAM.Name) == 0 {
+	if RAM.Name == "" {
 		return nil, fmt.Errorf("ram: %w: %v", common.ErrUnsetField, "name")
 	}
 	return RAM, nil
@@ -58,10 +58,13 @@ func (rw *ram) Write(df *dataframe.DataFrame) error {
 func (rw *ram) Read() (*dataframe.DataFrame, error) {
 	v, ok := rw.s[rw.Name]
 	if !ok {
-		return nil, fmt.Errorf("no data under %q, available names are: %q",
+		return nil, fmt.Errorf("ram: no data under %q, available names are: %q",
 			rw.Name, common.MapKeys(rw.s))
 	}
 	temp := v.Copy()
+	if temp.Error() != nil {
+		return nil, fmt.Errorf("ram: %w", temp.Error())
+	}
 	return &temp, nil
 }
 

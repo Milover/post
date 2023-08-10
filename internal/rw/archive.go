@@ -46,7 +46,7 @@ func NewArchive(n *yaml.Node) (*archive, error) {
 		Archive = defaultArchive()
 	}
 	if err := n.Decode(Archive); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("archive: %w", err)
 	}
 	if Archive.File == "" {
 		return nil, fmt.Errorf("archive: %w: %v", common.ErrUnsetField, "file")
@@ -72,7 +72,11 @@ func (a *archive) Read() (*dataframe.DataFrame, error) {
 	fn := func(name string) (io.ReadCloser, error) {
 		return fsys.Open(name)
 	}
-	return ReadFromFn(fn, &a.FormatSpec)
+	df, err := ReadFromFn(fn, &a.FormatSpec)
+	if err != nil {
+		return nil, fmt.Errorf("archive: %w", err)
+	}
+	return df, nil
 }
 
 func (a *archive) Clear() {

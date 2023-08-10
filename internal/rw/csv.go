@@ -40,7 +40,7 @@ func defaultCsv() *csv {
 func NewCsv(n *yaml.Node) (*csv, error) {
 	rw := defaultCsv()
 	if err := n.Decode(rw); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("csv: %w", err)
 	}
 	return rw, nil
 }
@@ -89,7 +89,7 @@ func (rw *csv) Write(df *dataframe.DataFrame) error {
 		return fmt.Errorf("csv: %w: %v", common.ErrUnsetField, "file")
 	}
 	if err := OutDir(rw.File); err != nil {
-		return err
+		return fmt.Errorf("csv: %w", err)
 	}
 	// LaTeX needs a 'proper' extension to determine the format
 	path := rw.File
@@ -98,14 +98,13 @@ func (rw *csv) Write(df *dataframe.DataFrame) error {
 	}
 	f, err := os.Create(path)
 	if err != nil {
-		return err
+		return fmt.Errorf("csv: %w", err)
 	}
-	// TODO: apply options from the spec
 	if err := df.WriteCSV(f, dataframe.WriteHeader(rw.Header)); err != nil {
-		return err
+		return fmt.Errorf("csv: %w", err)
 	}
 	if err := f.Close(); err != nil {
-		return err
+		return fmt.Errorf("csv: %w", err)
 	}
 	return nil
 }

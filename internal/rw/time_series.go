@@ -56,11 +56,11 @@ func NewTimeSeries(n *yaml.Node) (*timeSeries, error) {
 	if err := n.Decode(rw); err != nil {
 		return nil, err
 	}
-	if len(rw.File) == 0 {
-		return nil, fmt.Errorf("time-series: %w: %v", common.ErrUnsetField, "file")
+	if rw.File == "" {
+		return nil, fmt.Errorf("time-series: %w: %q", common.ErrUnsetField, "file")
 	}
-	if len(rw.Directory) == 0 {
-		return nil, fmt.Errorf("time-series: %w: %v", common.ErrUnsetField, "directory")
+	if rw.Directory == "" {
+		return nil, fmt.Errorf("time-series: %w: %q", common.ErrUnsetField, "directory")
 	}
 	return rw, nil
 }

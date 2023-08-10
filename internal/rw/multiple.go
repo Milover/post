@@ -24,7 +24,7 @@ func defaultMultiple() *multiple {
 func NewMultiple(n *yaml.Node) (*multiple, error) {
 	rw := defaultMultiple()
 	if err := n.Decode(rw); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("multiple: %w", err)
 	}
 	if len(rw.FormatSpecs) == 0 {
 		return nil, ErrMultipleEmpty
@@ -37,7 +37,7 @@ func (rw *multiple) Read() (*dataframe.DataFrame, error) {
 	for i := range rw.FormatSpecs {
 		temp, err := Read(&rw.FormatSpecs[i])
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("multiple: %w", err)
 		}
 		// concatonate the new dataframe
 		if df == nil {

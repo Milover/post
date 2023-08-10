@@ -59,7 +59,7 @@ func DecodeRuneOrDefault(s string, dflt rune) rune {
 func Read(config *Config) (*dataframe.DataFrame, error) {
 	factory, found := Readers[strings.ToLower(config.Type)]
 	if !found {
-		return nil, ErrBadReader
+		return nil, fmt.Errorf("%w, got: %q", ErrBadReader, config.Type)
 	}
 	r, err := factory(&config.TypeSpec)
 	if err != nil {
@@ -75,7 +75,7 @@ func Read(config *Config) (*dataframe.DataFrame, error) {
 func ReadFromFn(fn ReaderFunc, config *Config) (*dataframe.DataFrame, error) {
 	factory, found := ReadersFromFn[strings.ToLower(config.Type)]
 	if !found {
-		return nil, ErrBadReaderOutOf
+		return nil, fmt.Errorf("%w, got: %q", ErrBadReaderOutOf, config.Type)
 	}
 	r, err := factory(&config.TypeSpec)
 	if err != nil {

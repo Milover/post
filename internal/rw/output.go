@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	ErrBadOutputType = fmt.Errorf(
+	ErrBadOutput = fmt.Errorf(
 		"bad output type, available types are: %q",
 		common.MapKeys(Writers))
 )
@@ -41,7 +41,7 @@ func Write(df *dataframe.DataFrame, configs []Config) error {
 func write(df *dataframe.DataFrame, config *Config) error {
 	factory, found := Writers[strings.ToLower(config.Type)]
 	if !found {
-		return ErrBadOutputType
+		return fmt.Errorf("%w, got: %q", ErrBadOutput, config.Type)
 	}
 	w, err := factory(&config.TypeSpec)
 	if err != nil {

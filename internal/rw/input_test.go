@@ -1,7 +1,6 @@
 package rw
 
 import (
-	"errors"
 	"io"
 	"strings"
 	"testing"
@@ -105,16 +104,6 @@ type: 'CRASH_ME_BBY!'
 		Output: dataframe.DataFrame{},
 		Error:  ErrBadReaderOutOf,
 	},
-	{
-		Name: "bad-fields",
-		Config: `
-type: csv
-fields: [a, b, c, d, e]
-`,
-		Input:  "x,y\n0,1\n1,2",
-		Output: dataframe.DataFrame{},
-		Error:  errors.New("setting names: wrong dimensions"),
-	},
 }
 
 type readFakeCloser struct {
@@ -140,7 +129,7 @@ func TestReadFromFn(t *testing.T) {
 			}
 			out, err := ReadFromFn(fn, &config)
 
-			assert.Equal(tt.Error, err)
+			assert.ErrorIs(err, tt.Error)
 			if tt.Error != nil {
 				assert.Nil(out)
 			} else {

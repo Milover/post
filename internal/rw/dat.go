@@ -28,7 +28,7 @@ func defaultDat() *dat {
 func NewDat(n *yaml.Node) (*dat, error) {
 	rw := defaultDat()
 	if err := n.Decode(rw); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("dat: %w", err)
 	}
 	return rw, nil
 }
@@ -59,7 +59,7 @@ func (rw *dat) read(in io.Reader) (*dataframe.DataFrame, error) {
 	r := datenc.NewReader(in)
 	records, err := r.ReadAll()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("dat: %w", err)
 	}
 	df := dataframe.LoadRecords(
 		records,
