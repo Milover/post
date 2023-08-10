@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -10,7 +11,7 @@ import (
 )
 
 var (
-	// output directory for the file templates
+	// outDir is the output directory name for the graph file stub(s).
 	outDir string
 )
 
@@ -55,5 +56,8 @@ func writeGraphTemplate(cmd *cobra.Command, args []string) error {
 		}
 		return os.WriteFile(name, body, 0666)
 	}
-	return fs.WalkDir(fsys, ".", walkFn)
+	if err := fs.WalkDir(fsys, ".", walkFn); err != nil {
+		return fmt.Errorf("error generating graph file stub(s): %w", err)
+	}
+	return nil
 }

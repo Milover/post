@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -35,7 +36,7 @@ func init() {
 
 const (
 	// FIXME: this should probably be automatically assembled
-	showcaseConfig string = `# run file template
+	configStub string = `# run file template
 - id:                           # optional; pipeline identifier
   input:
     fields: []                  # optional; list of field names
@@ -141,18 +142,18 @@ const (
 )
 
 func writeConfigTemplate(cmd *cobra.Command, args []string) error {
-	// validate showcase
+	// validate stub
 	var configs []Config
-	if err := yaml.Unmarshal([]byte(showcaseConfig), &configs); err != nil {
-		panic(err)
+	if err := yaml.Unmarshal([]byte(configStub), &configs); err != nil {
+		return fmt.Errorf("error creating runfile stub: %w", err)
 	}
 	conf, err := os.Create(outFile)
 	if err != nil {
-		return err
+		return fmt.Errorf("error creating runfile stub: %w", err)
 	}
-	_, err = conf.Write([]byte(showcaseConfig))
+	_, err = conf.Write([]byte(configStub))
 	if err != nil {
-		return err
+		return fmt.Errorf("error creating runfile stub: %w", err)
 	}
 	return conf.Close()
 }

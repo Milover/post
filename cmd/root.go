@@ -43,7 +43,7 @@ func init() {
 		&dryRun,
 		"dry-run",
 		false,
-		"read the config and exit",
+		"check runfile syntax and exit",
 	)
 	rootCmd.Flags().StringSliceVar(
 		&skipIDs,

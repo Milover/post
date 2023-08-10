@@ -88,12 +88,12 @@ func run(cmd *cobra.Command, args []string) error {
 		if !noGraph {
 			if !noGraphWrite {
 				if err := graph.Write(df, &c.Graph); err != nil {
-					return fmt.Errorf("error writing graphs: %w", err)
+					return fmt.Errorf("error writing graph: %w", err)
 				}
 			}
 			if !noGraphGenerate {
 				if err := graph.Generate(df, &c.Graph); err != nil {
-					return fmt.Errorf("error generating graphs: %w", err)
+					return fmt.Errorf("error generating graph: %w", err)
 				}
 			}
 		}
