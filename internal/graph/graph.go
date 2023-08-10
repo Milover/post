@@ -12,8 +12,8 @@ import (
 )
 
 var (
-	ErrInvalidGrapher = fmt.Errorf(
-		"bad input grapher, available graphers are: %q",
+	ErrBadGrapher = fmt.Errorf(
+		"bad grapher, available graphers are: %q",
 		common.MapKeys(GrapherFactories))
 )
 
@@ -36,7 +36,7 @@ func Write(_ *dataframe.DataFrame, config *Config) error {
 
 // GenerateGraphs generates the actual graphs, e.g., PDFs from TeX files.
 func Generate(_ *dataframe.DataFrame, config *Config) error {
-	return graphExecute(config, Grapher.Generate, "writing")
+	return graphExecute(config, Grapher.Generate, "generating")
 }
 
 func graphExecute(config *Config, exec func(Grapher) error, action string) error {
@@ -45,7 +45,7 @@ func graphExecute(config *Config, exec func(Grapher) error, action string) error
 	}
 	factory, found := GrapherFactories[strings.ToLower(config.GrapherType)]
 	if !found {
-		return ErrInvalidGrapher
+		return fmt.Errorf("graph: %w, got: %q", ErrBadGrapher, config.GrapherType)
 	}
 	if common.Verbose {
 		log.Printf("%v: %v graph", strings.ToLower(config.GrapherType), action)

@@ -56,14 +56,14 @@ func newTeXGrapher(spec *yaml.Node, config *Config) (Grapher, error) {
 		TeXCommand:      DfltTexCommand,
 	}
 	if err := spec.Decode(g); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("tex: %w", err)
 	}
 	if g.Name == "" {
-		return nil, fmt.Errorf("tex: %w: %v", common.ErrUnsetField, "name")
+		return nil, fmt.Errorf("tex: %w: %q", common.ErrUnsetField, "name")
 	}
 	if g.Directory != "" {
 		if err := os.MkdirAll(filepath.Clean(g.Directory), 0755); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("tex: %w", err)
 		}
 	}
 	return g, nil
@@ -100,7 +100,7 @@ func (g *TeXGrapher) Write() error {
 	}
 	w, err := os.Create(path)
 	if err != nil {
-		return err
+		return fmt.Errorf("tex: %w", err)
 	}
 	defer w.Close()
 
@@ -109,32 +109,40 @@ func (g *TeXGrapher) Write() error {
 	}
 	if g.TemplateDir != DfltTexTemplateDir {
 		if _, err := os.Stat(g.TemplateDir); err != nil {
-			return err
+			return fmt.Errorf("tex: %w", err)
 		}
 		g.Templates = os.DirFS(g.TemplateDir)
 		g.TemplatePattern = "*" + DfltTexTemplateExt
 	}
-	return template.Must(template.
+	err = template.Must(template.
 		New(g.TemplateMain).
 		Delims(g.TemplateDelims[0], g.TemplateDelims[1]).
 		ParseFS(g.Templates, g.TemplatePattern)).
 		Execute(w, g)
+	if err != nil {
+		return fmt.Errorf("tex: %w", err)
+	}
+	return nil
 }
 
 func (g *TeXGrapher) Generate() error {
 	path := filepath.Join(g.Directory, g.Name)
-	if _, err := os.Stat(path); err != nil {
-		return err
-	}
 	if common.Verbose {
 		log.Printf("tex: generating graph: %v", path)
 	}
-	return exec.Command(g.TeXCommand,
+	if _, err := os.Stat(path); err != nil {
+		return fmt.Errorf("tex: %w", err)
+	}
+	err := exec.Command(g.TeXCommand,
 		"-halt-on-error",
 		"-interaction=nonstopmode",
 		"-output-directory="+g.Directory,
 		path,
 	).Run()
+	if err != nil {
+		return fmt.Errorf("tex: %w", err)
+	}
+	return nil
 }
 
 // propagateTableFile is a function which propagates the graphs 'TableFile'
@@ -149,7 +157,7 @@ func (g *TeXGrapher) propagateTableFile() error {
 				a.Tables[tID].TableFile = g.TableFile
 			}
 			if a.Tables[tID].TableFile == "" {
-				return fmt.Errorf("%w: %v", common.ErrUnsetField, "table_file")
+				return fmt.Errorf("%w: %q", common.ErrUnsetField, "table_file")
 			}
 		}
 	}
