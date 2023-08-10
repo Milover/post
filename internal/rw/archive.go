@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"log"
 
+	"github.com/Milover/post/internal/archived"
 	"github.com/Milover/post/internal/common"
 	"github.com/go-gota/gota/dataframe"
 	"gopkg.in/yaml.v3"
@@ -63,7 +64,7 @@ func (a *archive) Read() (*dataframe.DataFrame, error) {
 			log.Printf("archive: loading: %v", a.File)
 		}
 		var err error
-		fsys, err = NewArchiveFS(a.File)
+		fsys, err = archived.NewFS(a.File)
 		if err != nil {
 			return nil, fmt.Errorf("archive: %w", err)
 		}

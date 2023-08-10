@@ -1,4 +1,4 @@
-package rw
+package archived
 
 import (
 	"archive/tar"
@@ -70,37 +70,7 @@ type fileEntry struct {
 	r *bytes.Reader
 }
 
-func (f *fileEntry) Stat() (fs.FileInfo, error) { return f.Info, nil }
-func (f *fileEntry) Close() error               { return nil }
-func (f *fileEntry) Read(p []byte) (int, error) {
-	if f.r == nil {
-		f.r = bytes.NewReader(f.Body)
-	}
-	// XXX: yolo
-	n, err := f.r.Read(p)
-	if err == io.EOF {
-		f.ResetReader()
-	}
-	return n, err
-}
-func (f *fileEntry) ResetReader() { f.r.Reset(f.Body) }
-
-type fileInfo struct {
-	name    string
-	size    int64
-	mode    fs.FileMode
-	modTime time.Time
-	isDir   bool
-}
-
-func (f fileInfo) Name() string       { return f.name }
-func (f fileInfo) Size() int64        { return f.size }
-func (f fileInfo) Mode() fs.FileMode  { return f.mode }
-func (f fileInfo) ModTime() time.Time { return f.modTime }
-func (f fileInfo) IsDir() bool        { return f.isDir }
-func (f fileInfo) Sys() any           { return nil }
-
-func NewArchiveFS(name string) (fs.FS, error) {
+func NewFS(name string) (fs.FS, error) {
 	var fe fileEntry
 	// FIXME: this is actually disgusting
 	info, err := os.Stat(name)
@@ -167,7 +137,7 @@ func NewArchiveFS(name string) (fs.FS, error) {
 				currentDir = &fe.Files
 			} else if dir != currentDirPath {
 				currentDirPath = dir
-				parent, err := fe.Find(dir)
+				parent, err := fe.find(dir)
 				if err != nil {
 					return nil, err
 				}
@@ -199,7 +169,7 @@ func NewArchiveFS(name string) (fs.FS, error) {
 				currentDir = &fe.Files
 			} else if dir != currentDirPath {
 				currentDirPath = dir
-				parent, err := fe.Find(dir)
+				parent, err := fe.find(dir)
 				if err != nil {
 					return nil, err
 				}
@@ -218,10 +188,30 @@ func NewArchiveFS(name string) (fs.FS, error) {
 	return &fe, nil
 }
 
-// Find an entry within an ArchiveFS from a path.
-func (fe fileEntry) Find(path string) (*fileEntry, error) {
+func (f *fileEntry) Stat() (fs.FileInfo, error) { return f.Info, nil }
+func (f *fileEntry) Close() error               { return nil }
+func (f *fileEntry) Read(p []byte) (int, error) {
+	if f.r == nil {
+		f.r = bytes.NewReader(f.Body)
+	}
+	// XXX: yolo
+	n, err := f.r.Read(p)
+	if err == io.EOF {
+		f.ResetReader()
+	}
+	return n, err
+}
+func (f *fileEntry) ResetReader() { f.r.Reset(f.Body) }
+
+// Find searches for an fs.File within an archive filesystem from a path.
+func (fe *fileEntry) Find(path string) (fs.File, error) {
+	return fe.find(path)
+}
+
+// find searches for an entry within an archive filesystem from a path.
+func (fe *fileEntry) find(path string) (*fileEntry, error) {
 	if path == "." { // FIXME: only directories should return themselves?
-		return &fe, nil
+		return fe, nil
 	}
 	components := make([]string, 0, 10) // guesstimate to reduce allocations
 	p := path
@@ -260,18 +250,18 @@ func (fe fileEntry) Find(path string) (*fileEntry, error) {
 	return s, nil
 }
 
-func (fe fileEntry) Open(name string) (fs.File, error) {
+func (fe *fileEntry) Open(name string) (fs.File, error) {
 	if !fs.ValidPath(name) {
 		return nil, &fs.PathError{Op: "stat", Path: name, Err: fs.ErrInvalid}
 	}
-	return fe.Find(name)
+	return fe.find(name)
 }
 
-func (fe fileEntry) ReadDir(name string) ([]fs.DirEntry, error) {
+func (fe *fileEntry) ReadDir(name string) ([]fs.DirEntry, error) {
 	if !fs.ValidPath(name) {
 		return nil, &fs.PathError{Op: "stat", Path: name, Err: fs.ErrInvalid}
 	}
-	dir, err := fe.Find(name)
+	dir, err := fe.find(name)
 	if err != nil {
 		return nil, err
 	}
@@ -281,3 +271,18 @@ func (fe fileEntry) ReadDir(name string) ([]fs.DirEntry, error) {
 	}
 	return entries, nil
 }
+
+type fileInfo struct {
+	name    string
+	size    int64
+	mode    fs.FileMode
+	modTime time.Time
+	isDir   bool
+}
+
+func (f fileInfo) Name() string       { return f.name }
+func (f fileInfo) Size() int64        { return f.size }
+func (f fileInfo) Mode() fs.FileMode  { return f.mode }
+func (f fileInfo) ModTime() time.Time { return f.modTime }
+func (f fileInfo) IsDir() bool        { return f.isDir }
+func (f fileInfo) Sys() any           { return nil }
