@@ -61,7 +61,7 @@ func newTeXGrapher(spec *yaml.Node, config *Config) (Grapher, error) {
 	if g.Name == "" {
 		return nil, fmt.Errorf("tex: %w: %v", common.ErrUnsetField, "name")
 	}
-	if g.Directory == "" {
+	if g.Directory != "" {
 		if err := os.MkdirAll(filepath.Clean(g.Directory), 0755); err != nil {
 			return nil, err
 		}
