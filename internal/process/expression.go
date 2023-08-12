@@ -32,6 +32,8 @@ func resizeBuffer(a []float64, buff *[]float64) {
 	}
 }
 
+// makeVectorOp creates a new binary operator working on vectors (slices) and
+// scalars, based on the binary operator op.
 func makeVectorOp(op func(float64, float64) float64) opFunc {
 	r := buffer
 	return func(a, b interface{}) (interface{}, error) {
@@ -114,15 +116,26 @@ func SliceArithmetic() gval.Language {
 
 // expressionSetSpec contains data needed for defining a expression-set Processor.
 type expressionSpec struct {
+	// Expression is an arithmetic expression string.
 	Expression string `yaml:"expression"`
-	Result     string `yaml:"result"`
+	// Result is the field name of the expression result.
+	Result string `yaml:"result"`
 }
 
-// DefaultExpressionSetSpec returns a expressionSetSpec with 'sensible' default values.
+// DefaultExpressionSetSpec returns a expressionSetSpec
+// with 'sensible' default values.
 func DefaultExpressionSpec() expressionSpec {
 	return expressionSpec{}
 }
 
+// expressionProcessor evaluates an arithmetic expression and appends the
+// resulting field to df.
+// The expression operands can be scalar values or fields present in df,
+// which are referenced by their names.
+// NOTE: at least one of the operands must be a field present in df.
+//
+// Each operation involving a field is applied elementwise. The following
+// arithmetic operations are supported: '+', '-', '*', '/', '**'.
 func expressionProcessor(df *dataframe.DataFrame, config *Config) error {
 	spec := DefaultExpressionSpec()
 	if err := config.TypeSpec.Decode(&spec); err != nil {

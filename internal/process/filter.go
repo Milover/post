@@ -26,15 +26,21 @@ var filterAggregations = map[string]dataframe.Aggregation{
 
 // filterSetSpec contains data needed for defining a filter-set Processor.
 type filterSetSpec struct {
-	Aggregation string       `yaml:"aggregation"`
-	Filters     []filterSpec `yaml:"filters"`
+	// Aggregation defines how filters in the set are combined,
+	// i.e., the aggregation mode.
+	Aggregation string `yaml:"aggregation"`
+	// Filters is a list of filter specifications.
+	Filters []filterSpec `yaml:"filters"`
 }
 
 // filterSpec contains data needed for defining a filter Processor.
 type filterSpec struct {
-	Field string            `yaml:"field"`
-	Op    series.Comparator `yaml:"op"`
-	Value string            `yaml:"value"`
+	// Field is the field name to which the filter is applied.
+	Field string `yaml:"field"`
+	// Op is the filtering (comparison) operation.
+	Op series.Comparator `yaml:"op"`
+	// Value is the comparison value.
+	Value string `yaml:"value"`
 }
 
 // DefaultFilterSetSpec returns a filterSetSpec with 'sensible' default values.
@@ -56,16 +62,16 @@ func createFilter[T validType](spec *filterSpec, val T) dataframe.F {
 	}
 }
 
-// filterProcessor mutates the dataframe.DataFrame by applying a set of row
-// filters as defined in the config.
-//
-// The filter behaviour is described by providing the field (name) on which
-// to apply a filter, the comparison operator and a comparison value.
-// Rows satisfying the comparison are kept, while others are discarded.
+// filterProcessor mutates df by applying a set of row filters
+// as defined in the config.
+// The filter behaviour is described by providing the field name ('field')
+// to which the filter is applied, the comparison operator ('op') and
+// a comparison value ('value'). Rows satisfying the comparison are kept,
+// while others are discarded.
 //
 // All defined filters are applied at the same time. The way in which they
 // are aggregated is controlled by setting the 'aggregation' field in the spec,
-// 'and' or 'or' aggregation modes are available.
+// 'and' and 'or' aggregation modes are available.
 // The 'or' mode is the default if the 'aggregation' field is unset.
 func filterProcessor(df *dataframe.DataFrame, config *Config) error {
 	spec := DefaultFilterSetSpec()

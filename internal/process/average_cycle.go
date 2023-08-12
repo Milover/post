@@ -17,10 +17,15 @@ var (
 	ErrAverageCycleTimeMismatch = errors.New("average-cycle: cycle time mismatch")
 )
 
-// averageCycleSpec contains data needed for defining an averaging Processor.
+// averageCycleSpec contains data needed for
+// defining a cycle averaging Processor.
 type averageCycleSpec struct {
-	NCycles       int     `yaml:"n_cycles"`
-	TimeField     string  `yaml:"time_field"`
+	// NCycles is the number of cycles in a periodic data set.
+	NCycles int `yaml:"n_cycles"`
+	// TimeField is the name of the time field.
+	// If defined time-matching is turned on.
+	TimeField string `yaml:"time_field"`
+	// TimePrecision is the time-matching precision.
 	TimePrecision float64 `yaml:"time_precision"`
 }
 
@@ -70,10 +75,11 @@ func entriesPerTimeStep(df *dataframe.DataFrame, spec *averageCycleSpec) int {
 //
 // Time matching can be optionally specified, as well as the match precision,
 // by setting 'time_field' and 'time_precision' respectively in the config.
-// This checks whether the time (step) is uniform and weather there is a
+// This checks whether the time (step) is uniform and whether there is a
 // mismatch between the expected time of the averaged value, as per the number
 // of cycles defined in the config and the supplied data, and the read time.
-// For example, if there are 2 cycles, with a period of 1, a time step of 0.25,
+// The read time is the one read from the field named 'time_field'.
+// For example, if there are 2 cycles with a period of 1, a time step of 0.25,
 // and the 'time_field' set to 'time', the expected input and output are:
 //
 //	      input                     output
@@ -183,7 +189,8 @@ func averageCycleProcessor(df *dataframe.DataFrame, config *Config) error {
 				computed := offsetT + cycleT*(vals[i]+float64(j))
 				read := readT[i+j*period]
 				if !numeric.EqualEps(computed, read, spec.TimePrecision) {
-					return ErrAverageCycleTimeMismatch
+					return fmt.Errorf("%w: computed %v, but read %v",
+						ErrAverageCycleTimeMismatch, computed, read)
 				}
 			}
 		}

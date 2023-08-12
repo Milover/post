@@ -12,8 +12,10 @@ import (
 
 // resampleSpec contains data needed for defining a resample Processor.
 type resampleSpec struct {
-	NPoints int    `yaml:"n_points"`
-	X       string `yaml:"x_field"`
+	// NPoints is the number of resampling points.
+	NPoints int `yaml:"n_points"`
+	// X is the name of the independent variable field.
+	X string `yaml:"x_field"`
 }
 
 // DefaultResampleSpec returns a selectSpec with 'sensible' default values.
@@ -21,17 +23,53 @@ func DefaultResampleSpec() resampleSpec {
 	return resampleSpec{}
 }
 
-// resampleProcessor mutates the dataframe.DataFrame by linearly interpolating
-// all fields, such that the resulting fields have 'n_points' values,
-// at uniformly distributed values 'x_field'.
+type interp struct {
+	i0, i1 int     // upper and lower bound indexes
+	delta  float64 // interpolation coefficient
+}
+
+// interpolate performs linear interpolation using
+// stored indices and coefficients.
+func (i interp) interpolate(y []float64) float64 {
+	return y[i.i0] + (y[i.i1]-y[i.i0])*i.delta
+}
+
+// newInterpolation creates interpolation coefficients
+// for the mapping f(xOld) -> f(x0).
+func newInterpolation(x, xOld []float64) []interp {
+	itp := make([]interp, 0, len(x))
+	for i := range x {
+		// indices of the range of old x values in which new x falls
+		high := slices.IndexFunc(xOld, func(a float64) bool { return x[i] < a })
+		if high == -1 {
+			high = len(xOld) - 1
+		} else if high == 0 {
+			high = 1
+		}
+		low := high - 1
+
+		itp = append(itp, interp{
+			i0:    low,
+			i1:    high,
+			delta: (x[i] - xOld[low]) / (xOld[high] - xOld[low]),
+		})
+	}
+	return itp
+}
+
+// resampleProcessor mutates df by linearly interpolating all numeric fields,
+// such that the resulting fields have 'n_points' values, at uniformly
+// distributed values of the field 'x_field'.
 // If 'x_field' is not set, a uniform resampling is performed, i.e., as if
-// the values of each field were given at a uniformly distributed x ∈ [0,1].
+// the values of each field were given at a uniformly distributed x,
+// where x ∈ [0,1].
+// The first and last values of a field are preserved in the resampled field.
 func resampleProcessor(df *dataframe.DataFrame, config *Config) error {
 	spec := DefaultResampleSpec()
 	if err := config.TypeSpec.Decode(&spec); err != nil {
 		return fmt.Errorf("resample: %w", err)
 	}
-	if spec.NPoints <= 0 {
+	if spec.NPoints <= 1 {
 		return fmt.Errorf("resample: %w: %q: %q",
 			common.ErrBadFieldValue, "n_points", spec.NPoints)
 	}
@@ -83,38 +121,4 @@ func resampleProcessor(df *dataframe.DataFrame, config *Config) error {
 		return fmt.Errorf("resample: %w", df.Error())
 	}
 	return nil
-}
-
-type interp struct {
-	i0, i1 int     // upper and lower bound indexes
-	delta  float64 // interpolation coefficient
-}
-
-// interpolate performs linear interpolation using
-// stored indices and coefficients.
-func (i interp) interpolate(y []float64) float64 {
-	return y[i.i0] + (y[i.i1]-y[i.i0])*i.delta
-}
-
-// newInterpolation creates interpolation coefficients
-// for the mapping f(xOld) -> f(x0).
-func newInterpolation(x, xOld []float64) []interp {
-	itp := make([]interp, 0, len(x))
-	for i := range x {
-		// indices of the range of old x values in which new x falls
-		high := slices.IndexFunc(xOld, func(a float64) bool { return x[i] < a })
-		if high == -1 {
-			high = len(xOld) - 1
-		} else if high == 0 {
-			high = 1
-		}
-		low := high - 1
-
-		itp = append(itp, interp{
-			i0:    low,
-			i1:    high,
-			delta: (x[i] - xOld[low]) / (xOld[high] - xOld[low]),
-		})
-	}
-	return itp
 }

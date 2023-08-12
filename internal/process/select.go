@@ -11,6 +11,7 @@ import (
 
 // selectSpec contains data needed for defining a select Processor.
 type selectSpec struct {
+	// Fields is a list of field names to be extracted.
 	Fields []string `yaml:"fields"`
 }
 
@@ -19,7 +20,7 @@ func DefaultSelectSpec() selectSpec {
 	return selectSpec{}
 }
 
-// selectProcessor mutates the dataframe.DataFrame by extracting columns
+// selectProcessor mutates df by selecting fields (extracting columns)
 // specified in the config.
 func selectProcessor(df *dataframe.DataFrame, config *Config) error {
 	spec := DefaultSelectSpec()

@@ -36,8 +36,7 @@ type validType interface {
 	string | int | float64 | bool
 }
 
-// Process applies all Processors as defined in the config
-// to the dataframe.DataFrame.
+// Process applies all Processors defined in the config to df.
 // Each Processor is applied sequentially, in the order they appear in
 // the config, and the result of one Processor is passed as the input to the
 // next one.
@@ -53,8 +52,7 @@ func Process(df *dataframe.DataFrame, configs []Config) error {
 	return nil
 }
 
-// process applies a single Processor as defined in the config
-// to the dataframe.DataFrame.
+// process applies a single Processor to df, as defined in the config.
 func process(df *dataframe.DataFrame, config *Config) error {
 	p, found := ProcessorTypes[strings.ToLower(config.Type)]
 	if !found {

@@ -5,6 +5,8 @@ import (
 )
 
 type Config struct {
-	Type     string    `yaml:"type"`
+	// Type is the name of the processor.
+	Type string `yaml:"type"`
+	// TypeSpec contains the specification for the processor.
 	TypeSpec yaml.Node `yaml:"type_spec"`
 }
