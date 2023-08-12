@@ -81,5 +81,5 @@ func (a *archive) Read() (*dataframe.DataFrame, error) {
 }
 
 func (a *archive) Clear() {
-	a = defaultArchive()
+	*a = *defaultArchive()
 }

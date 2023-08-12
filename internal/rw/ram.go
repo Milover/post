@@ -69,5 +69,5 @@ func (rw *ram) Read() (*dataframe.DataFrame, error) {
 }
 
 func (rw *ram) Clear() {
-	rw = defaultRam()
+	*rw = *defaultRam()
 }
