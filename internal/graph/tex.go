@@ -17,6 +17,7 @@ import (
 //go:embed tmpl
 var DfltTeXTemplates embed.FS
 
+// Default TeXGraph parameter values.
 const (
 	DfltTexTemplateExt  string = ".tmpl"
 	DfltTexTemplateDir  string = "tmpl"
@@ -29,17 +30,28 @@ var (
 )
 
 type TeXGrapher struct {
+	// Name is the graph handle.
 	Name string `yaml:"name"`
 	// Directory is an output directory for all files. If it is an empty string,
 	// the current working directory is used. The path is created recursively
 	// if it does not exist.
-	Directory      string    `yaml:"directory"`
-	Axes           []TexAxis `yaml:"axes"`
-	TableFile      string    `yaml:"table_file"`
-	TemplateDir    string    `yaml:"template_directory"`
-	TemplateMain   string    `yaml:"template_main"`
-	TemplateDelims []string  `yaml:"template_delims"`
-	TeXCommand     string    `yaml:"tex_command"`
+	Directory string    `yaml:"directory"`
+	Axes      []TexAxis `yaml:"axes"`
+	// TableFile is the path to the data file, usually a CSV file,
+	// used for creating the graph.
+	// It is propagated to all child TeXTables, if they do not
+	// have a TableFile defined locally.
+	TableFile string `yaml:"table_file"`
+	// TemplateDir is the path to the directory which contains
+	// the graph file templates.
+	TemplateDir string `yaml:"template_directory"`
+	// TemplateMain is the file name of the main (root) template.
+	TemplateMain string `yaml:"template_main"`
+	// TemplateDelims are the Go template control structure delimiters.
+	TemplateDelims []string `yaml:"template_delims"`
+	// TeXCommand is the name of the binary which is used to generate
+	// the graph from graph files.
+	TeXCommand string `yaml:"tex_command"`
 
 	TemplatePattern string     `yaml:"-"`
 	Templates       fs.FS      `yaml:"-"`
@@ -93,6 +105,7 @@ type TeXTable struct {
 	TableFile   string `yaml:"table_file"`
 }
 
+// Write writes the graph files from templates.
 func (g *TeXGrapher) Write() error {
 	path := filepath.Join(g.Directory, g.Name)
 	if common.Verbose {
@@ -125,6 +138,7 @@ func (g *TeXGrapher) Write() error {
 	return nil
 }
 
+// Generate generates graphs from graph files.
 func (g *TeXGrapher) Generate() error {
 	path := filepath.Join(g.Directory, g.Name)
 	if common.Verbose {

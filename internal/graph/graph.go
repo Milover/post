@@ -29,12 +29,13 @@ var GrapherFactories = map[string]GrapherFactory{
 	"tex": newTeXGrapher,
 }
 
-// WriteGraphFiles writes graph files, using options from the config.
+// WriteGraphFiles writes graph files, e.g., TeX files,
+// using options from the config.
 func Write(_ *dataframe.DataFrame, config *Config) error {
 	return graphExecute(config, Grapher.Write, "writing")
 }
 
-// GenerateGraphs generates the actual graphs, e.g., PDFs from TeX files.
+// GenerateGraphs generates the graphs, e.g., PDFs from TeX files.
 func Generate(_ *dataframe.DataFrame, config *Config) error {
 	return graphExecute(config, Grapher.Generate, "generating")
 }

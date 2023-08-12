@@ -5,7 +5,7 @@ import (
 )
 
 type Config struct {
-	// Graphing is the graphing program name.
+	// GrapherType is the graphing program name.
 	GrapherType string `yaml:"type"`
 	// Graphs is list of graph specifications.
 	Graphs []yaml.Node `yaml:"graphs"`
