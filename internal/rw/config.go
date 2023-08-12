@@ -11,8 +11,13 @@ import (
 )
 
 type Config struct {
-	Type     string    `yaml:"type"`
-	Fields   []string  `yaml:"fields"`
+	// Type is the input type name.
+	Type string `yaml:"type"`
+	// Fields is a list of field names.
+	// If defined, these names are used for the field names
+	// of read dataframe.DataFrame.
+	Fields []string `yaml:"fields"`
+	// TypeSpec is the input type specification.
 	TypeSpec yaml.Node `yaml:"type_spec"`
 }
 

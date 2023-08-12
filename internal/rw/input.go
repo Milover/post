@@ -56,6 +56,7 @@ func DecodeRuneOrDefault(s string, dflt rune) rune {
 	return r
 }
 
+// Read reads a dataframe.DataFrame using the specification from the config.
 func Read(config *Config) (*dataframe.DataFrame, error) {
 	factory, found := Readers[strings.ToLower(config.Type)]
 	if !found {
@@ -72,6 +73,8 @@ func Read(config *Config) (*dataframe.DataFrame, error) {
 	return SetNames(df, config.Fields)
 }
 
+// ReadFromFn reads a dataframe.DataFrame from a ReaderFromFn supplied with fn
+// using the specification from the config.
 func ReadFromFn(fn ReaderFunc, config *Config) (*dataframe.DataFrame, error) {
 	factory, found := ReadersFromFn[strings.ToLower(config.Type)]
 	if !found {

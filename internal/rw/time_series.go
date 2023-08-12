@@ -13,7 +13,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// timeSeries contains data needed for parsing an OpenFOAM table series,
+// timeSeries contains data needed for parsing a table time series,
 // which is of the following format:
 //
 //	.

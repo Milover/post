@@ -17,7 +17,7 @@ const (
 )
 
 type dat struct {
-	// File is the name of the file from which data is read or written to.
+	// File is the file path from which data is read or written to.
 	File string `yaml:"file"`
 }
 

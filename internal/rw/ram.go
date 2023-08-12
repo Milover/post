@@ -11,13 +11,15 @@ import (
 
 var (
 	// RAM is the global in-memory store for dataframe.DataFrames.
-	// It is a singleton, hence, any change persists throughout the program
-	// run time.
+	// It is (intended to be used as) a singleton, hence, any change
+	// persists throughout the program run time.
+	// WARNING: technically not a singleton because it's not in a separate
+	// package, so anyone in 'rw' can instantiate a raw ram.
 	RAM *ram
 )
 
 type ram struct {
-	// Name is the key under which the *dataframe.DataFrame will be stored.
+	// Name is the key under which a *dataframe.DataFrame will be stored.
 	Name string `yaml:"name"`
 
 	s map[string]*dataframe.DataFrame

@@ -18,15 +18,17 @@ const (
 )
 
 type csv struct {
-	// File is the name of the file from which data is read or written to.
+	// File is the file path from which data is read or written to.
 	File string `yaml:"file"`
 	// EnforceExtension determines whether a file name extension will be
 	// enforced on the output file name.
 	EnforceExtension bool `yaml:"enforce_extension"`
-
-	Header    bool   `yaml:"header"`
+	// Header determines whether the CSV has a header line.
+	Header bool `yaml:"header"`
+	// Delimiter is the CSV delimiter.
 	Delimiter string `yaml:"delimiter"`
-	Comment   string `yaml:"comment"`
+	// Comment is the character used for denoting CSV comments.
+	Comment string `yaml:"comment"`
 }
 
 func defaultCsv() *csv {

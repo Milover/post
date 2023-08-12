@@ -14,8 +14,10 @@ import (
 
 var (
 	// Archive is the global in-memory store for archives.
-	// It is a singleton, hence, any change persists throughout the program
-	// run time.
+	// It is (intended to be used as) a singleton, hence, any change
+	// persists throughout the program run time.
+	// WARNING: technically not a singleton because it's not in a separate
+	// package, so anyone in 'rw' can instantiate a raw archive.
 	Archive *archive
 )
 
