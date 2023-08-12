@@ -20,6 +20,7 @@ import (
 
 type ArchiveFormat int
 
+// Supported archive formats.
 const (
 	A_UNKNOWN ArchiveFormat = iota
 	A_TAR
@@ -29,6 +30,8 @@ const (
 	A_ZIP
 )
 
+// MatchFormat returns the archive format from a file name or path based on
+// it's extension.
 func MatchFormat(name string) ArchiveFormat {
 	ext := filepath.Ext(name)
 	// tar archives can have two extensions
@@ -62,6 +65,9 @@ func (l fileList) sort() {
 	}
 }
 
+// fileEntry is an in memory representation of a file.
+// If the file is a directory, the fileEntry also holds a list of all
+// fileEntries contained within the directory.
 type fileEntry struct {
 	Info  fs.FileInfo
 	Body  []byte
@@ -70,6 +76,8 @@ type fileEntry struct {
 	r *bytes.Reader
 }
 
+// NewFS reads an archive into memory and constructs an in memory file system.
+// The returned fs.FS points to the root of the file system.
 func NewFS(name string) (fs.FS, error) {
 	var fe fileEntry
 	// FIXME: this is actually disgusting
@@ -190,6 +198,10 @@ func NewFS(name string) (fs.FS, error) {
 
 func (f *fileEntry) Stat() (fs.FileInfo, error) { return f.Info, nil }
 func (f *fileEntry) Close() error               { return nil }
+func (f *fileEntry) ResetReader()               { f.r.Reset(f.Body) }
+
+// Read reads the body of a fileEntry into p.
+// If EOF is reached, the reader is reset.
 func (f *fileEntry) Read(p []byte) (int, error) {
 	if f.r == nil {
 		f.r = bytes.NewReader(f.Body)
@@ -201,7 +213,6 @@ func (f *fileEntry) Read(p []byte) (int, error) {
 	}
 	return n, err
 }
-func (f *fileEntry) ResetReader() { f.r.Reset(f.Body) }
 
 // Find searches for an fs.File within an archive filesystem from a path.
 func (fe *fileEntry) Find(path string) (fs.File, error) {
