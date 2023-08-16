@@ -11,8 +11,8 @@ var (
 	// rootCmd represents the base command when called without any subcommands
 	rootCmd = &cobra.Command{
 		Use:           "post [run file]",
-		Short:         "A program for processing structured data files in bulk",
-		Long:          `A program for processing structured data files in bulk`,
+		Short:         "post is a program for processing structured data files in bulk",
+		Long:          `post is a program for processing structured data files in bulk`,
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		Args: cobra.MatchAll(
