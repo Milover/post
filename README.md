@@ -144,7 +144,7 @@ The example run file instructs `post` to do the following:
 4. generate a graph using TeX in the `output` directory, using `output/data.csv`
    as the table (data) file, with `x` as the abscissa and `result` as the ordinate
 
-For more examples see the `test` directory.
+For more examples see the [examples/](examples) directory.
 
 ## Input
 
