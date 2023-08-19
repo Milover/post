@@ -167,6 +167,13 @@ The example run file instructs `post` to do the following:
 
 For more examples see the [examples/](examples) directory.
 
+A generic run file stub, which can be a useful starting point, can be created
+by running:
+
+```shell
+$ post runfile
+```
+
 ## Input
 
 The following is a list of available input types and their descriptions
