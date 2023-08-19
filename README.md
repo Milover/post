@@ -12,6 +12,27 @@ and/or archives. The main benefit being that the entire process is defined
 through one or more YAML formatted run files, hence, automating data processing
 pipelines is fairly simple, while no programming is necessary.
 
+## Installation
+
+If [Go][golang] is installed locally, the following command will compile and
+install the latest version of `post`:
+
+```shell
+$ go install github.com/Milover/post@latest
+```
+
+Precompiled binaries for Linux, Windows and Mac OS (Apple silicon) are also
+available under [releases][post-release].
+
+Finally, `post` can also be built from source, assuming [Go][golang] is
+available locally, by running the following commands:
+
+```shell
+$ git clone https://github.com/Milover/post
+$ cd post
+$ go install
+```
+
 ## CLI usage
 
 Usage:
@@ -388,10 +409,10 @@ $ post graphfile --outdir=templates
 
 The templates can be user supplied by setting `template_directory` and
 `template_main` (if necessary) in the run file configuration. The templates
-use `go` template syntax, see the [package documentation][godoc-text-template]
+use [Go][golang] template syntax, see the [package documentation][godoc-text-template]
 for more information.
 
-A `tex` graph configuration stub is given below, note several fields expect
+A `tex` graph configuration stub is given below, note that several fields expect
 raw TeX as input.
 
 ```yaml
@@ -427,5 +448,7 @@ graphs:
 
 
 [godoc-text-template]: https://pkg.go.dev/text/template
+[golang]: https://go.dev
 [latex]: https://www.latex-project.org/
 [openfoam]: https://www.openfoam.com
+[post-release]: https://github.com/Milover/post/releases
