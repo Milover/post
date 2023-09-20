@@ -389,6 +389,21 @@ along with their run file configuration stubs.
       fields:         # a list of field names
   ```
 
+- `sort` sorts the data by `field` in ascending or descending,
+  if `descending == true`, order. The processor takes a list of fields and
+  orderings and applies them in sequence. The order in which the fields
+  are listed defines the sorting precedence, hence it is possible for some
+  constraints to not be satisfied.
+
+  ```yaml
+    type: sort
+    type_spec:
+      - field:        # field by which to sort
+        descending:   # sort in descending order; 'false' by default
+      - field:
+        descending:
+  ```
+
 ## Output
 
 The following is a list of available output types and their descriptions

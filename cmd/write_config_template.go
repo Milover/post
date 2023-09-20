@@ -91,7 +91,7 @@ const (
         result:                 # name of the resulting field
     - type: filter
       type_spec:
-        aggregation:            # one of 'and', 'or'; by default 'or'
+        aggregation:            # one of 'and', 'or'; 'or' by default
         filters:
           - field:
             op:                 # one of '==', '!=', '>', '>=', '<', '<='
@@ -103,6 +103,12 @@ const (
     - type: select
       type_spec:
         fields:                 # list of field (column) names to extract
+    - type: sort
+      type_spec:
+        - field:                # field by which to sort
+          descending:           # sort in descending order; 'false' by default
+        - field:
+          descending:
   output:
    # some example specs
     - type: ram

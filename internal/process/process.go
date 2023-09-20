@@ -28,6 +28,7 @@ var ProcessorTypes = map[string]Processor{
 	"expression":    expressionProcessor,
 	"filter":        filterProcessor,
 	"select":        selectProcessor,
+	"sort":          sortProcessor,
 	"resample":      resampleProcessor,
 }
 
