@@ -20,11 +20,13 @@ func DefaultBinSpec() binSpec {
 }
 
 // binProcessor mutates df by dividing all numeric fields into 'n_bins'
-// and setting the field value to the mean of all field values within the bin.
+// and setting the field values to bin-mean-values.
 //
-// WARNING: currently each bin MUST contain the same number of field values,
-// i.e., len(field) % 'n_fields' == 0.
-// We should fix this by interpolating 'missing' field values at some point.
+// WARNING: each bin MUST contain the same number of field values, i.e.,
+// len(field) % 'n_fields' == 0.
+// This might change in the future.
+// FIXME: should fix at some point by interpolating 'missing' field values or
+// something to that effect.
 func binProcessor(df *dataframe.DataFrame, config *Config) error {
 	spec := DefaultBinSpec()
 	if err := config.TypeSpec.Decode(&spec); err != nil {

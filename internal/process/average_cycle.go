@@ -98,6 +98,9 @@ func entriesPerTimeStep(df *dataframe.DataFrame, spec *averageCycleSpec) int {
 // NOTE: In this case the output time field will be named after 'time_field',
 // i.e., the time field name will remain unchanged.
 //
+// WARNING: It is assumed that data is sorted chronologically, i.e.,
+// by ascending time, even if 'time_field' is not specified or does not exist.
+//
 // If an error occurs, the state of df is unknown.
 func averageCycleProcessor(df *dataframe.DataFrame, config *Config) error {
 	spec := DefaultAverageCycleSpec()

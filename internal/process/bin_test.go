@@ -96,7 +96,7 @@ type_spec:
 	},
 }
 
-// TestBinProcessor tests whether column selection is applied correctly,
+// TestBinProcessor tests whether binning is applied correctly,
 // as defined in the config, to a dataframe.DataFrame.
 func TestBinProcessor(t *testing.T) {
 	for _, tt := range binTests {
