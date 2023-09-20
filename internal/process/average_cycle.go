@@ -138,25 +138,21 @@ func averageCycleProcessor(df *dataframe.DataFrame, config *Config) error {
 	ss := make([]series.Series, 0, df.Ncol()+1)
 
 	// compute the cycle average for each field using Khan sumation
-	for col, name := range df.Names() {
+	for _, name := range df.Names() {
 		// don't average the time field
 		if name == spec.TimeField {
 			continue
 		}
-		if col != 0 { // reset the sum
-			for i := range vals {
-				vals[i] = 0
-			}
-		}
+		x := df.Col(name).Float()
 		for i := range vals {
-			var c, t, y float64
+			var sum, c, t, y float64
 			for j := 0; j < spec.NCycles; j++ {
-				y = df.Elem(i+j*period, col).Float() - c
-				t = vals[i] + y
-				c = (t - vals[i]) - y
-				vals[i] = t
+				y = x[i+j*period] - c
+				t = sum + y
+				c = (t - sum) - y
+				sum = t
 			}
-			vals[i] /= float64(spec.NCycles)
+			vals[i] = sum / float64(spec.NCycles)
 		}
 		ss = append(ss, series.New(vals, series.Float, name))
 	}
