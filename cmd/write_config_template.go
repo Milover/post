@@ -82,24 +82,33 @@ const (
         n_cycles:
         time_field:             # if defined, turns on 'time-matching'
         time_precision:         # optional; machine precision by default
-    - type: filter
+    - type: bin
       type_spec:
-        aggregation:            # one of 'and', 'or'; by default 'or'
-        filters:
-          - field:
-            op:                 # one of '==', '!=', '>', '>=', '<', '<='
-            value:
+        n_bins:                 # number of bins into which the data is divided
     - type: expression
       type_spec:
         expression:             # an arithmetic expression using constants and field names
         result:                 # name of the resulting field
-    - type: select
+    - type: filter
       type_spec:
-        fields:                 # list of field (column) names to extract
+        aggregation:            # one of 'and', 'or'; 'or' by default
+        filters:
+          - field:
+            op:                 # one of '==', '!=', '>', '>=', '<', '<='
+            value:
     - type: resample
       type_spec:
         n_points:               # number of resampling data points
         x_field:                # optional; indepentent variable field name
+    - type: select
+      type_spec:
+        fields:                 # list of field (column) names to extract
+    - type: sort
+      type_spec:
+        - field:                # field by which to sort
+          descending:           # sort in descending order; 'false' by default
+        - field:
+          descending:
   output:
    # some example specs
     - type: ram

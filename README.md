@@ -304,12 +304,28 @@ along with their run file configuration stubs.
   Note that in this case the output time field will be named after `time_field`,
   i.e., the time field name will remain unchanged.
 
+  **Warning**: It is assumed that data is sorted chronologically, i.e.,
+  by ascending time, even if `time_field` is not specified or does not exist.
+
   ```yaml
     type: average-cycle
     type_spec:
       n_cycles:       # number of cycles to average over
       time_field:     # time field name; optional
       time_precision: # time-matching precision; optional
+  ```
+
+- `bin` mutates the data by dividing all numeric fields into `n_bins`
+  and setting the field values to bin-mean-values.
+
+  **Warning**: Each bin _must_ contain the same number of field values,
+  i.e., `len(field) % n_fields == 0`.
+  This might change in the future.
+
+  ```yaml
+    type: bin
+    type_spec:
+      n_bins:         # number of bins into which the data is divided
   ```
 
 - `expression` evaluates an arithmetic expression and appends the resulting
@@ -371,6 +387,21 @@ along with their run file configuration stubs.
     type: select
     type_spec:
       fields:         # a list of field names
+  ```
+
+- `sort` sorts the data by `field` in ascending or descending,
+  if `descending == true`, order. The processor takes a list of fields and
+  orderings and applies them in sequence. The order in which the fields
+  are listed defines the sorting precedence, hence it is possible for some
+  constraints to not be satisfied.
+
+  ```yaml
+    type: sort
+    type_spec:
+      - field:        # field by which to sort
+        descending:   # sort in descending order; 'false' by default
+      - field:
+        descending:
   ```
 
 ## Output
