@@ -23,6 +23,7 @@ type Processor func(*dataframe.DataFrame, *Config) error
 // ProcessorTypes maps Processor type tags to Processors.
 var ProcessorTypes = map[string]Processor{
 	"average-cycle": averageCycleProcessor,
+	"bin":           binProcessor,
 	"dummy":         dummyProcessor,
 	"expression":    expressionProcessor,
 	"filter":        filterProcessor,
