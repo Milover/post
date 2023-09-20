@@ -33,7 +33,7 @@ func binProcessor(df *dataframe.DataFrame, config *Config) error {
 		return fmt.Errorf("bin: %w", err)
 	}
 	if spec.NBins <= 0 || df.Nrow()%spec.NBins != 0 {
-		return fmt.Errorf("bin: %w: %q: %q",
+		return fmt.Errorf("bin: %w: %q: %v",
 			common.ErrBadFieldValue, "n_bins", spec.NBins)
 	}
 	if err := selectNumFields(df); err != nil {
