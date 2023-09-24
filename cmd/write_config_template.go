@@ -107,6 +107,7 @@ const (
     - type: select
       type_spec:
         fields:                 # list of field (column) names to extract
+        remove:                 # remove/keep selected fields; 'false' by default
     - type: sort
       type_spec:
         - field:                # field by which to sort
