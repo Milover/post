@@ -50,7 +50,7 @@ func DefaultFilterSetSpec() filterSetSpec {
 
 // createFilter creates a dataframe.F from an input filterSpec
 // and a filter (comparison) value.
-func createFilter[T validType](spec *filterSpec, val T) dataframe.F {
+func createFilter[T ValidType](spec *filterSpec, val T) dataframe.F {
 	if common.Verbose {
 		log.Printf("filter: creating: %q %v %v",
 			spec.Field, spec.Op, val)
