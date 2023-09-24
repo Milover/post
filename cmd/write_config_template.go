@@ -100,6 +100,9 @@ const (
           - field:
             op:                 # one of '==', '!=', '>', '>=', '<', '<='
             value:
+    - type: rename
+      type_spec:
+        fields:                 # map of old-to-new name key-value pairs
     - type: resample
       type_spec:
         n_points:               # number of resampling data points
