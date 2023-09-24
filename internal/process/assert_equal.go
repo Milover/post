@@ -34,10 +34,10 @@ func DefaultAssertEqualSpec() assertEqualSpec {
 	}
 }
 
-// assertEqualProcessor asserts that all 'fields' are equal elementwise,
-// up to 'precision'.
+// assertEqualProcessor asserts that all 'fields' are equal element-wise,
+// up to 'precision'. All field types must be the same.
 // If the assertion is true then no error is returned, otherwise
-// a non-nil error is returned. df remains unchainged in either case.
+// a non-nil error is returned. df remains unchanged in either case.
 func assertEqualProcessor(df *dataframe.DataFrame, config *Config) error {
 	spec := DefaultAssertEqualSpec()
 	if err := config.TypeSpec.Decode(&spec); err != nil {
