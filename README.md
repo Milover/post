@@ -378,6 +378,14 @@ along with their run file configuration stubs.
           value:      # comparison value
   ```
 
+- `rename` mutates the data by renaming fields (columns).
+
+  ```yaml
+    type: rename
+    type_spec:
+      fields:         # map of old-to-new name key-value pairs
+  ```
+
 - `resample` mutates the data by linearly interpolating all numeric fields,
   such that the resulting fields have `n_points` values, at uniformly
   distributed values of the field `x_field`.
