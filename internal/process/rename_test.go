@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/Milover/post/internal/common"
 	"github.com/go-gota/gota/dataframe"
 	"github.com/go-gota/gota/series"
 	"github.com/stretchr/testify/assert"
@@ -62,6 +63,24 @@ type_spec:
 			series.New([]int{0, 2}, series.Int, "x"),
 		),
 		Error: nil,
+	},
+	{
+		Name: "bad-field",
+		Config: Config{
+			Type: "rename",
+		},
+		TypeSpec: `
+type_spec:
+  fields:
+    y: x
+`,
+		Input: dataframe.New(
+			series.New([]int{0, 1}, series.Int, "x"),
+		),
+		Output: dataframe.New(
+			series.New([]int{0, 1}, series.Int, "x"),
+		),
+		Error: common.ErrBadField,
 	},
 }
 

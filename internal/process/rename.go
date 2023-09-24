@@ -2,7 +2,9 @@ package process
 
 import (
 	"fmt"
+	"slices"
 
+	"github.com/Milover/post/internal/common"
 	"github.com/go-gota/gota/dataframe"
 )
 
@@ -27,8 +29,13 @@ func renameProcessor(df *dataframe.DataFrame, config *Config) error {
 	if len(spec.Fields) == 0 {
 		return nil
 	}
-
 	names := df.Names()
+	for _, field := range common.MapKeys(spec.Fields) {
+		if !slices.Contains(names, field) {
+			return fmt.Errorf("rename: %w: %q", common.ErrBadField, field)
+		}
+	}
+
 	newNames := make([]string, len(names))
 	for i, name := range names {
 		if v, found := spec.Fields[name]; found {
