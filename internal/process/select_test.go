@@ -79,6 +79,28 @@ type_spec:
 		Error: nil,
 	},
 	{
+		Name: "good-remove",
+		Config: Config{
+			Type: "select",
+		},
+		TypeSpec: `
+type_spec:
+  fields: [o, q]
+  remove: true
+`,
+		Input: dataframe.New(
+			series.New([]int{0, 1}, series.Int, "o"),
+			series.New([]int{0, 1}, series.Int, "p"),
+			series.New([]int{0, 1}, series.Int, "q"),
+			series.New([]int{0, 1}, series.Int, "r"),
+		),
+		Output: dataframe.New(
+			series.New([]int{0, 1}, series.Int, "p"),
+			series.New([]int{0, 1}, series.Int, "r"),
+		),
+		Error: nil,
+	},
+	{
 		Name: "bad-field",
 		Config: Config{
 			Type: "select",

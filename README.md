@@ -393,13 +393,15 @@ along with their run file configuration stubs.
       x_field:        # field name of the independent variable; optional
   ```
 
-- `select` mutates the data by selecting fields (extracting columns)
-  specified by `fields` which is a list of field names.
+- 'select mutates the data by keeping or removing 'fields' (columns).
+  If 'remove' is true, the fields are removed, otherwise only the selected
+  fields are kept in the order specified.
 
   ```yaml
     type: select
     type_spec:
       fields:         # a list of field names
+      remove:         # remove/keep selected fields; 'false' by default
   ```
 
 - `sort` sorts the data by `field` in ascending or descending,

@@ -13,6 +13,8 @@ import (
 type selectSpec struct {
 	// Fields is a list of field names to be extracted.
 	Fields []string `yaml:"fields"`
+	// Remove toggles whether to keep or remove the selected fields.
+	Remove bool `yaml:"remove"`
 }
 
 // DefaultSelectSpec returns a selectSpec with 'sensible' default values.
@@ -20,8 +22,9 @@ func DefaultSelectSpec() selectSpec {
 	return selectSpec{}
 }
 
-// selectProcessor mutates df by selecting fields (extracting columns)
-// specified in the config.
+// selectProcessor mutates df by keeping or removing 'fields'.
+// If 'remove' is true, the fields are removed, otherwise only the selected
+// fields are kept in the order specified.
 func selectProcessor(df *dataframe.DataFrame, config *Config) error {
 	spec := DefaultSelectSpec()
 	if err := config.TypeSpec.Decode(&spec); err != nil {
@@ -38,6 +41,16 @@ func selectProcessor(df *dataframe.DataFrame, config *Config) error {
 			return fmt.Errorf("select: %w: %q", common.ErrBadField, spec.Fields[i])
 		}
 		ids[i] = id
+	}
+	if spec.Remove {
+		// invert index selection
+		t := make([]int, 0, len(names)-len(ids))
+		for i := range names {
+			if !slices.Contains(ids, i) {
+				t = append(t, i)
+			}
+		}
+		ids = t
 	}
 	temp := df.Select(ids)
 	err := errors.Join(df.Error(), temp.Error()) // which one errors?
