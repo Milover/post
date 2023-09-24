@@ -76,11 +76,8 @@ operations which are applied to the data; the `output` section defines how
 the processed data will be output/stored; and the `graph` section defines
 how the data will be graphed.
 
-Even though all sections are technically optional, certain sections depend on
-others, specifically, the `process` and `output` sections require an `input`
-section to be defined in order to work, since 'some data' is necessary for
-processing/output. The `graph` section is entirely optional and can both be
-omitted, defined by itself, or as part of a pipeline.
+All sections are optional and can be omitted, defined by themselves, or
+as part of a pipeline.
 
 A single pipeline has the following fields:
 
@@ -280,7 +277,7 @@ along with their run file configuration stubs.
 The following is a list of available processor types and their descriptions
 along with their run file configuration stubs.
 
-- 'assert-equal' asserts that all 'fields' are equal element-wise,
+- `assert-equal` asserts that all 'fields' are equal element-wise,
   up to 'precision'. All field types must be the same.
   If all fields are equal then no error is returned, otherwise
   a non-nil error is returned, i.e., the program will stop execution.
@@ -401,7 +398,7 @@ along with their run file configuration stubs.
       x_field:        # field name of the independent variable; optional
   ```
 
-- 'select mutates the data by keeping or removing 'fields' (columns).
+- `select` mutates the data by keeping or removing 'fields' (columns).
   If 'remove' is true, the fields are removed, otherwise only the selected
   fields are kept in the order specified.
 

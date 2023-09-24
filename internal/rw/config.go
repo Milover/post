@@ -21,6 +21,12 @@ type Config struct {
 	TypeSpec yaml.Node `yaml:"type_spec"`
 }
 
+func (c *Config) IsEmpty() bool {
+	return c.Type == "" &&
+		c.Fields == nil &&
+		c.TypeSpec.IsZero()
+}
+
 // SetExt sets the file name extension of path to ext and
 // returns the new path.
 func SetExt(path, ext string) string {
