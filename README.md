@@ -76,6 +76,9 @@ operations which are applied to the data; the `output` section defines how
 the processed data will be output/stored; and the `graph` section defines
 how the data will be graphed.
 
+**Note:** All file paths within the run file are evaluated using
+the run file's parent directory as the current working directory.
+
 All sections are optional and can be omitted, defined by themselves, or
 as part of a pipeline.
 

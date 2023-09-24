@@ -5,6 +5,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"path"
 	"slices"
 
 	"github.com/Milover/post/internal/common"
@@ -45,6 +46,9 @@ func run(cmd *cobra.Command, args []string) error {
 			return err
 		}
 		defer f.Close()
+		if err := os.Chdir(path.Dir(f.Name())); err != nil {
+			return fmt.Errorf("could not change directory: %w", err)
+		}
 		readers[i] = f
 	}
 	raw, err := io.ReadAll(io.MultiReader(readers...))
