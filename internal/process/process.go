@@ -22,6 +22,7 @@ type Processor func(*dataframe.DataFrame, *Config) error
 
 // ProcessorTypes maps Processor type tags to Processors.
 var ProcessorTypes = map[string]Processor{
+	"assert-equal":  assertEqualProcessor,
 	"average-cycle": averageCycleProcessor,
 	"bin":           binProcessor,
 	"dummy":         dummyProcessor,
@@ -32,9 +33,9 @@ var ProcessorTypes = map[string]Processor{
 	"resample":      resampleProcessor,
 }
 
-// validType represents the supported series.Series types (a dataframe.DataFrame
+// ValidType represents the supported series.Series types (a dataframe.DataFrame
 // is composed of []series.Series).
-type validType interface {
+type ValidType interface {
 	string | int | float64 | bool
 }
 

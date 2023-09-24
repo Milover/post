@@ -280,6 +280,19 @@ along with their run file configuration stubs.
 The following is a list of available processor types and their descriptions
 along with their run file configuration stubs.
 
+- 'assert-equal' asserts that all 'fields' are equal element-wise,
+  up to 'precision'. All field types must be the same.
+  If all fields are equal then no error is returned, otherwise
+  a non-nil error is returned, i.e., the program will stop execution.
+  The data remains unchanged in either case.
+
+  ```yaml
+    type: assert-equal
+    type_spec:
+      fields:                 # field names for which to assert equality
+      precision:              # optional; machine precision by default
+  ```
+
 - `average-cycle` mutates the data by computing the enesemble average of a cycle
   for all numeric fields. The ensemble average is computed as:
 

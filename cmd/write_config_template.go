@@ -77,6 +77,10 @@ const (
           header:
   process:
    # some example processor specs, executed in order listed
+    - type: assert-equal
+      type_spec:
+        fields:                 # field names for which to assert equality
+        precision:              # optional; machine precision by default
     - type: average-cycle
       type_spec:
         n_cycles:
