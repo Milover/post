@@ -87,6 +87,12 @@ func init() {
 		false,
 		"don't generate graphs",
 	)
+	rootCmd.Flags().BoolVar(
+		&logMem,
+		"log-mem",
+		false,
+		"log memory usage at the end of each pipeline",
+	)
 
 	rootCmd.AddCommand(writeConfigTemplateCmd)
 	rootCmd.AddCommand(writeGraphTemplateCmd)

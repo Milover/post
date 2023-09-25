@@ -6,9 +6,11 @@ import (
 	"log"
 	"os"
 	"path"
+	"runtime"
 	"slices"
 
 	"github.com/Milover/post/internal/common"
+	"github.com/Milover/post/internal/format"
 	"github.com/Milover/post/internal/graph"
 	"github.com/Milover/post/internal/process"
 	"github.com/Milover/post/internal/rw"
@@ -19,6 +21,7 @@ import (
 
 var (
 	dryRun          bool
+	logMem          bool
 	onlyGraphs      bool
 	noProcess       bool
 	noOutput        bool
@@ -63,6 +66,7 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 
 	// work
+	var mem runtime.MemStats
 	for i := range configs {
 		c := &configs[i]
 		if slices.Contains(skipIDs, c.ID) {
@@ -101,7 +105,14 @@ func run(cmd *cobra.Command, args []string) error {
 				}
 			}
 		}
-	}
 
+		if logMem {
+			runtime.ReadMemStats(&mem)
+			log.Printf("memory usage: alloc = %v\tsys = %v\tid = %q\n",
+				format.Byte(mem.Alloc),
+				format.Byte(mem.Sys),
+				c.ID)
+		}
+	}
 	return nil
 }
