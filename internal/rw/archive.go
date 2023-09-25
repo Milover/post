@@ -29,6 +29,8 @@ type archive struct {
 	// e.g., if a CSV file is to be read from the archive, FromatSpec would
 	// define a config for a CSV input type.
 	FormatSpec Config `yaml:"format_spec"`
+	// ClearAfterRead toggles whether Archive is cleared after reading.
+	ClearAfterRead bool `yaml:"clear_after_read"`
 
 	s map[string]fs.FS
 }
@@ -78,6 +80,12 @@ func (a *archive) Read() (*dataframe.DataFrame, error) {
 	df, err := ReadFromFn(fn, &a.FormatSpec)
 	if err != nil {
 		return nil, fmt.Errorf("archive: %w", err)
+	}
+	if a.ClearAfterRead {
+		if common.Verbose {
+			log.Printf("archive: clearing: %q", common.MapKeys(a.s))
+		}
+		a.Clear()
 	}
 	return df, nil
 }

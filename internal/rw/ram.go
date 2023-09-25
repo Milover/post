@@ -21,6 +21,8 @@ var (
 type ram struct {
 	// Name is the key under which a *dataframe.DataFrame will be stored.
 	Name string `yaml:"name"`
+	// ClearAfterRead toggles whether RAM is cleared after reading.
+	ClearAfterRead bool `yaml:"clear_after_read"`
 
 	s map[string]*dataframe.DataFrame
 }
@@ -66,6 +68,12 @@ func (rw *ram) Read() (*dataframe.DataFrame, error) {
 	temp := v.Copy()
 	if temp.Error() != nil {
 		return nil, fmt.Errorf("ram: %w", temp.Error())
+	}
+	if rw.ClearAfterRead {
+		if common.Verbose {
+			log.Printf("archive: clearing: %q", common.MapKeys(rw.s))
+		}
+		rw.Clear()
 	}
 	return &temp, nil
 }
