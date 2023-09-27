@@ -25,12 +25,12 @@ type archive struct {
 	// File is the file name of the archive from which the input will be
 	// read. The archive will be read into memory if it is not yet available.
 	File string `yaml:"file"`
+	// ClearAfterRead toggles whether Archive is cleared after reading.
+	ClearAfterRead bool `yaml:"clear_after_read"`
 	// FormatSpec is the config for the input,
 	// e.g., if a CSV file is to be read from the archive, FromatSpec would
 	// define a config for a CSV input type.
 	FormatSpec Config `yaml:"format_spec"`
-	// ClearAfterRead toggles whether Archive is cleared after reading.
-	ClearAfterRead bool `yaml:"clear_after_read"`
 
 	s map[string]fs.FS
 }

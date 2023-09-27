@@ -12,6 +12,17 @@ and/or archives. The main benefit being that the entire process is defined
 through one or more YAML formatted run files, hence, automating data processing
 pipelines is fairly simple, while no programming is necessary.
 
+## Contents
+
+- [Installation](#installation)
+- [CLI usage](#cli-usage)
+- [Run file structure](#run-file-structure)
+- [Input](#input)
+- [Processing](#processing)
+- [Output](#output)
+- [Graphing](#graphing)
+
+
 ## Installation
 
 If [Go][golang] is installed locally, the following command will compile and
@@ -56,6 +67,7 @@ Flags:
 ```
     --dry-run             check runfile syntax and exit
 -h, --help                help for post
+    --log-mem             log memory usage at the end of each pipeline
     --no-graph            don't write or generate graphs
     --no-graph-generate   don't generate graphs
     --no-graph-write      don't write graph files
@@ -179,281 +191,351 @@ $ post runfile
 The following is a list of available input types and their descriptions
 along with their run file configuration stubs.
 
-- `archive` reads input from an archive. The archive format is inferred from
-  the file name extension. The following archive formats are supported:
-  `TAR`, `TAR-GZ`, `TAR-BZIP2`, `TAR-XZ`, `ZIP`. Note that `archive` input wraps
-  one or more input types, i.e., the `archive` configuration only specifies
-  how to read 'some data' from an archive, the wrapped input type reads the
-  actual data. Another important note is that the contents of the archive are
-  stored into memory the first time it is read, so if the same archive is
-  used multiple times as an input source, it will be read from disk only once,
-  each subsequent read will read directly from RAM. Hence it is beneficial to
-  use the `archive` input type when the data consists of a large amount of
-  input files, e.g., a large `time-series`.
+#### `archive`
 
-  ```yaml
-    type: archive
-    type_spec:
-      file:           # file path of the archive
-      format_spec:    # input type configuration, e.g., a CSV input type
-  ```
+`archive` reads input from an archive. The archive format is inferred from
+the file name extension. The following archive formats are supported:
+`TAR`, `TAR-GZ`, `TAR-BZIP2`, `TAR-XZ`, `ZIP`. Note that `archive` input wraps
+one or more input types, i.e., the `archive` configuration only specifies
+how to read 'some data' from an archive, the wrapped input type reads the
+actual data.
 
-- `csv` reads from a `CSV` formatted file. If the file contains a header line
-  the `header` field should be set to `true` and the header column names will
-  be used as the field names for the data. If no header line is present the
-  `header` field must be set to `false`.
+Another important note is that the contents of the archive are stored into
+memory the first time it is read, so if the same archive is used multiple
+times as an input source, it will be read from disk only once, each subsequent
+read will read directly from RAM. Hence it is beneficial to use the `archive`
+input type when the data consists of a large amount of input files,
+e.g., a large `time-series`.
 
-  ```yaml
-    type: csv
-    type_spec:
-      file:           # file path of the CSV file
-      header:         # determines if the CSV file has a header; default 'true'
-      comment:        # character to denote comments; default '#'
-      delimiter:      # character to use as the field delimiter; default ','
-  ```
+The `clear_after_read` flag can be used to clear **all** `archive` memory
+after reading the data.
 
-- `dat` reads from a white-space-separated-value file. The type and amount of
-  white space between columns is irrelevant, as are leading and trailing white
-  spaces, as long as the number of columns (non-white space fields) is
-  consistent in each row.
+```yaml
+  type: archive
+  type_spec:
+    file:                 # file path of the archive
+    clear_after_read:     # clear memory after reading; 'false' by default
+    format_spec:          # input type configuration, e.g., a CSV input type
+```
 
-  ```yaml
-    type: dat
-    type_spec:
-      file:           # file path of the DAT file
-  ```
+#### `csv`
 
-- `multiple` is a wrapper for multiple input types. Data is read from
-  each input type specified and once all inputs have been read, the data from
-  each input is merged into a single data instance containing all fields
-  (columns) from all inputs. The number and type of input types specified is
-  arbitrary, but each input must yield data with the same number of rows.
+`csv` reads from a `CSV` formatted file. If the file contains a header line
+the `header` field should be set to `true` and the header column names will
+be used as the field names for the data. If no header line is present the
+`header` field must be set to `false`.
 
-  ```yaml
-    type: multiple
-    type_spec:
-      format_specs:   # a list of input type configurations
-  ```
+```yaml
+  type: csv
+  type_spec:
+    file:                 # file path of the CSV file
+    header:               # determines if the CSV file has a header; default 'true'
+    comment:              # character to denote comments; default '#'
+    delimiter:            # character to use as the field delimiter; default ','
+```
 
-- `ram` reads data from an in-memory store. For the data to be read it must
-  have been stored previously, e.g., a previous `output` section defines a `ram`
-  output.
+#### `dat`
 
-  ```yaml
-    type: ram
-    type_spec:
-      name:           # key under which the data is stored
-  ```
+`dat` reads from a white-space-separated-value file. The type and amount of
+white space between columns is irrelevant, as are leading and trailing white
+spaces, as long as the number of columns (non-white space fields) is
+consistent in each row.
 
-- `time-series` reads data from a time-series of structured data files in
-  the following format:
+```yaml
+  type: dat
+  type_spec:
+    file:                 # file path of the DAT file
+```
 
-   ```
-   .
-   ├── 0.0
-   │   ├── data_0.csv
-   │   ├── data_1.dat
-   │   └── ...
-   ├── 0.1
-   │   ├── data_0.csv
-   │   ├── data_1.dat
-   │   └── ...
-   └── ...
-   ```
+#### `multiple`
 
-  where each `data_*.*` file contains the data in some format at the moment in
-  time specified by the directory name.
-  Each series dataset must be output into a different file, i.e., the
-  `data_0.csv` files contain one dataset, `data_1.dat` another one, and so on.
+`multiple` is a wrapper for multiple input types. Data is read from
+each input type specified and once all inputs have been read, the data from
+each input is merged into a single data instance containing all fields
+(columns) from all inputs. The number and type of input types specified is
+arbitrary, but each input must yield data with the same number of rows.
 
-  ```yaml
-    type: time-series
-    type_spec:
-      file:           # file name (base only) of the time-series data files
-      directory:      # path to the root directory of the time-series
-      time_name:      # the time field name; default is 'time'
-      format_spec:    # input type configuration, e.g., a CSV input type
-  ```
+```yaml
+  type: multiple
+  type_spec:
+    format_specs:         # a list of input type configurations
+```
+
+#### `ram`
+
+`ram` reads data from an in-memory store. For the data to be read it must
+have been stored previously, e.g., a previous `output` section defines a `ram`
+output.
+
+The `clear_after_read` flag can be used to clear **all** `ram` memory
+after reading the data.
+
+```yaml
+  type: ram
+  type_spec:
+    name:                 # key under which the data is stored
+    clear_after_read:     # clear memory after reading; 'false' by default
+```
+
+#### `time-series`
+
+`time-series` reads data from a time-series of structured data files in
+the following format:
+
+ ```
+ .
+ ├── 0.0
+ │   ├── data_0.csv
+ │   ├── data_1.dat
+ │   └── ...
+ ├── 0.1
+ │   ├── data_0.csv
+ │   ├── data_1.dat
+ │   └── ...
+ └── ...
+ ```
+
+where each `data_*.*` file contains the data in some format at the moment in
+time specified by the directory name.
+Each series dataset must be output into a different file, i.e., the
+`data_0.csv` files contain one dataset, `data_1.dat` another one, and so on.
+
+```yaml
+  type: time-series
+  type_spec:
+    file:                 # file name (base only) of the time-series data files
+    directory:            # path to the root directory of the time-series
+    time_name:            # the time field name; default is 'time'
+    format_spec:          # input type configuration, e.g., a CSV input type
+```
 
 ## Processing
 
 The following is a list of available processor types and their descriptions
-along with their run file configuration stubs.
+along with their run file configuration stubs:
 
-- `assert-equal` asserts that all 'fields' are equal element-wise,
-  up to 'precision'. All field types must be the same.
-  If all fields are equal then no error is returned, otherwise
-  a non-nil error is returned, i.e., the program will stop execution.
-  The data remains unchanged in either case.
+- [`assert-equal`](#assert-equal)
+- [`average-cycle`](#average-cycle)
+- [`bin`](#bin)
+- [`expression`](#expression)
+- [`filter`](#filter)
+- [`regexp-rename`](#regexp-rename)
+- [`rename`](#rename)
+- [`resample`](#resample)
+- [`select`](#select)
+- [`sort`](#sort)
 
-  ```yaml
-    type: assert-equal
-    type_spec:
-      fields:                 # field names for which to assert equality
-      precision:              # optional; machine precision by default
-  ```
+---
 
-- `average-cycle` mutates the data by computing the enesemble average of a cycle
-  for all numeric fields. The ensemble average is computed as:
+#### `assert-equal`
 
-  ```
-  Φ(ωt) = 1/N Σ ϕ[ω(t+j)T], j = 0...N-1
-  ```
+`assert-equal` asserts that all `fields` are equal element-wise,
+up to `precision`. All field types must be the same.
+If all fields are equal then no error is returned, otherwise
+a non-nil error is returned, i.e., the program will stop execution.
+The data remains unchanged in either case.
 
-  where `ϕ` is the slice of values to be averaged, `ω` the angular velocity,
-  `t` the time and `T` the period.
+```yaml
+  type: assert-equal
+  type_spec:
+    fields:               # field names for which to assert equality
+    precision:            # optional; machine precision by default
+```
 
-  The resulting data will contain the cycle average of all numeric fields and a
-  time field (named `time`), containing times for each row of cycle average
-  data, in the range (0, T]. The time field will be the last field (column),
-  while the order of the other fields is preserved.
+#### `average-cycle`
 
-  Time matching can be optionally specified, as well as the match precision,
-  by setting `time_field` and `time_precision` respectively in the configuration.
-  This checks whether the time (step) is uniform and whether there is a
-  mismatch between the expected time of the averaged value, as per the number
-  of cycles defined in the configuration and the supplied data, and the read time.
-  The read time is the one read from the field named `time_field`.
-  Note that in this case the output time field will be named after `time_field`,
-  i.e., the time field name will remain unchanged.
+`average-cycle` mutates the data by computing the enesemble average of a cycle
+for all numeric fields. The ensemble average is computed as:
 
-  **Warning**: It is assumed that data is sorted chronologically, i.e.,
-  by ascending time, even if `time_field` is not specified or does not exist.
+```
+Φ(ωt) = 1/N Σ ϕ[ω(t+j)T], j = 0...N-1
+```
 
-  ```yaml
-    type: average-cycle
-    type_spec:
-      n_cycles:       # number of cycles to average over
-      time_field:     # time field name; optional
-      time_precision: # time-matching precision; optional
-  ```
+where `ϕ` is the slice of values to be averaged, `ω` the angular velocity,
+`t` the time and `T` the period.
 
-- `bin` mutates the data by dividing all numeric fields into `n_bins`
-  and setting the field values to bin-mean-values.
+The resulting data will contain the cycle average of all numeric fields and a
+time field (named `time`), containing times for each row of cycle average
+data, in the range (0, T]. The time field will be the last field (column),
+while the order of the other fields is preserved.
 
-  **Warning**: Each bin _must_ contain the same number of field values,
-  i.e., `len(field) % n_fields == 0`.
-  This might change in the future.
+Time matching can be optionally specified, as well as the match precision,
+by setting `time_field` and `time_precision` respectively in the configuration.
+This checks whether the time (step) is uniform and whether there is a
+mismatch between the expected time of the averaged value, as per the number
+of cycles defined in the configuration and the supplied data, and the read time.
+The read time is the one read from the field named `time_field`.
+Note that in this case the output time field will be named after `time_field`,
+i.e., the time field name will remain unchanged.
 
-  ```yaml
-    type: bin
-    type_spec:
-      n_bins:         # number of bins into which the data is divided
-  ```
+**Warning**: It is assumed that data is sorted chronologically, i.e.,
+by ascending time, even if `time_field` is not specified or does not exist.
 
-- `expression` evaluates an arithmetic expression and appends the resulting
-  field (column) to the data. The expression operands can be scalar values or
-  fields (columns) present in the data, which are referenced by their names.
-  Note that at least one of the operands must be a field present in the data.
+```yaml
+  type: average-cycle
+  type_spec:
+    n_cycles:             # number of cycles to average over
+    time_field:           # time field name; optional
+    time_precision:       # time-matching precision; optional
+```
 
-  Each operation involving a field is applied element-wise. The following
-  arithmetic operations are supported: `+` `-` `*` `/` `**`
+#### `bin`
 
-  ```yaml
-    type: expression
-    type_spec:
-      expression:     # an arithmetic expression
-      result:         # field name of the resulting field
-  ```
+`bin` mutates the data by dividing all numeric fields into `n_bins`
+and setting the field values to bin-mean-values.
 
-- `filter` mutates the data by applying a set of row filters as defined
-  in the configuration. The filter behaviour is described by providing
-  the field name `field` to which the filter is applied, the comparison
-  operator `op` and a comparison value `value`. Rows satisfying the comparison
-  are kept, while others are discarded. The following comparison operators
-  are supported: `==` `!=` `>` `>=` `<` `<=`
+**Warning**: Each bin _must_ contain the same number of field values,
+i.e., `len(field) % n_fields == 0`.
+This might change in the future.
 
-  All defined filters are applied at the same time. The way in which they
-  are aggregated is controlled by setting the `aggregation` field in
-  the configuration, `and` and `or` aggregation modes are available.
-  The `or` mode is the default if the `aggregation` field is unset.
+```yaml
+  type: bin
+  type_spec:
+    n_bins:               # number of bins into which the data is divided
+```
 
-  ```yaml
-    type: filter
-    type_spec:
-      aggregation:    # aggregration mode; defaults to 'or'
-      filters:
-        - field:      # field name to which the filter is applied
-          op:         # filtering operation
-          value:      # comparison value
-  ```
+#### `expression`
+`expression` evaluates an arithmetic expression and appends the resulting
+field (column) to the data. The expression operands can be scalar values or
+fields (columns) present in the data, which are referenced by their names.
+Note that at least one of the operands must be a field present in the data.
 
-- `rename` mutates the data by renaming fields (columns).
+Each operation involving a field is applied element-wise. The following
+arithmetic operations are supported: `+` `-` `*` `/` `**`
 
-  ```yaml
-    type: rename
-    type_spec:
-      fields:         # map of old-to-new name key-value pairs
-  ```
+```yaml
+  type: expression
+  type_spec:
+    expression:           # an arithmetic expression
+    result:               # field name of the resulting field
+```
 
-- `resample` mutates the data by linearly interpolating all numeric fields,
-  such that the resulting fields have `n_points` values, at uniformly
-  distributed values of the field `x_field`.
-  If `x_field` is not set, a uniform resampling is performed, i.e., as if
-  the values of each field were given at a uniformly distributed x,
-  where x ∈ [0,1].
-  The first and last values of a field are preserved in the resampled field.
+#### `filter`
 
-  ```yaml
-    type: resample
-    type_spec:
-      n_points:       # number of resampling points
-      x_field:        # field name of the independent variable; optional
-  ```
+`filter` mutates the data by applying a set of row filters as defined
+in the configuration. The filter behaviour is described by providing
+the field name `field` to which the filter is applied, the comparison
+operator `op` and a comparison value `value`. Rows satisfying the comparison
+are kept, while others are discarded. The following comparison operators
+are supported: `==` `!=` `>` `>=` `<` `<=`
 
-- `select` mutates the data by keeping or removing 'fields' (columns).
-  If 'remove' is true, the fields are removed, otherwise only the selected
-  fields are kept in the order specified.
+All defined filters are applied at the same time. The way in which they
+are aggregated is controlled by setting the `aggregation` field in
+the configuration, `and` and `or` aggregation modes are available.
+The `or` mode is the default if the `aggregation` field is unset.
 
-  ```yaml
-    type: select
-    type_spec:
-      fields:         # a list of field names
-      remove:         # remove/keep selected fields; 'false' by default
-  ```
+```yaml
+  type: filter
+  type_spec:
+    aggregation:          # aggregration mode; defaults to 'or'
+    filters:
+      - field:            # field name to which the filter is applied
+        op:               # filtering operation
+        value:            # comparison value
+```
 
-- `sort` sorts the data by `field` in ascending or descending,
-  if `descending == true`, order. The processor takes a list of fields and
-  orderings and applies them in sequence. The order in which the fields
-  are listed defines the sorting precedence, hence it is possible for some
-  constraints to not be satisfied.
+#### `regexp-rename`
 
-  ```yaml
-    type: sort
-    type_spec:
-      - field:        # field by which to sort
-        descending:   # sort in descending order; 'false' by default
-      - field:
-        descending:
-  ```
+`regexp-rename` mutates the data by replacing field names which
+match the regular expression src with repl.
+See [https://golang.org/s/re2syntax](https://golang.org/s/re2syntax) for the
+regexp syntax description.
+
+```yaml
+  type: regexp-rename
+  type_spec:
+    src:                  # regular expression to use in matching
+    repl:                 # replacement string
+```
+
+#### `rename`
+
+`rename` mutates the data by renaming fields (columns).
+
+```yaml
+  type: rename
+  type_spec:
+    fields:               # map of old-to-new name key-value pairs
+```
+
+#### `resample`
+
+`resample` mutates the data by linearly interpolating all numeric fields,
+such that the resulting fields have `n_points` values, at uniformly
+distributed values of the field `x_field`.
+If `x_field` is not set, a uniform resampling is performed, i.e., as if
+the values of each field were given at a uniformly distributed x,
+where x ∈ [0,1].
+The first and last values of a field are preserved in the resampled field.
+
+```yaml
+  type: resample
+  type_spec:
+    n_points:             # number of resampling points
+    x_field:              # field name of the independent variable; optional
+```
+
+#### `select`
+
+`select` mutates the data by keeping or removing 'fields' (columns).
+If 'remove' is true, the fields are removed, otherwise only the selected
+fields are kept in the order specified.
+
+```yaml
+  type: select
+  type_spec:
+    fields:               # a list of field names
+    remove:               # remove/keep selected fields; 'false' by default
+```
+
+#### `sort`
+
+`sort` sorts the data by `field` in ascending or descending,
+if `descending == true`, order. The processor takes a list of fields and
+orderings and applies them in sequence. The order in which the fields
+are listed defines the sorting precedence, hence it is possible for some
+constraints to not be satisfied.
+
+```yaml
+  type: sort
+  type_spec:
+    - field:              # field by which to sort
+      descending:         # sort in descending order; 'false' by default
+    - field:
+      descending:
+```
 
 ## Output
 
 The following is a list of available output types and their descriptions
 along with their run file configuration stubs.
 
-- `csv` writes `CSV` formatted data to a file. If `header` is set to `true`
-  the file will contain a header line with the field names as the column names.
-  Note that, if necessary, directories will be created so as to ensure that
-  `file` specifies a valid path.
+#### `csv`
 
-  ```yaml
-    type: csv
-    type_spec:
-      file:           # file path of the CSV file
-      header:         # determines if the CSV file has a header; default 'true'
-      comment:        # character to denote comments; default '#'
-      delimiter:      # character to use as the field delimiter; default ','
-  ```
+`csv` writes `CSV` formatted data to a file. If `header` is set to `true`
+the file will contain a header line with the field names as the column names.
+Note that, if necessary, directories will be created so as to ensure that
+`file` specifies a valid path.
 
-- `ram` stores data in an in-memory store. Once data is stored, any subsequent
-  `ram` input type can access the data.
+```yaml
+  type: csv
+  type_spec:
+    file:                 # file path of the CSV file
+    header:               # determines if the CSV file has a header; default 'true'
+    comment:              # character to denote comments; default '#'
+    delimiter:            # character to use as the field delimiter; default ','
+```
 
-  ```yaml
-    type: ram
-    type_spec:
-      name:           # key under which the data is stored
-  ```
+#### `ram`
+
+`ram` stores data in an in-memory store. Once data is stored, any subsequent
+`ram` input type can access the data.
+
+```yaml
+  type: ram
+  type_spec:
+    name:                 # key under which the data is stored
+```
 
 ## Graphing
 

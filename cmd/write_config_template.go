@@ -45,6 +45,7 @@ const (
     type_spec:
      # 'archive' example
       file:                     # input archive file name; supports .tar, .tgz, .txz, .tbz, .zip
+      clear_after_read:         # clear memory after reading; 'false' by default
       format_spec:              # config for an input reader, e.g., a 'csv'
         type: csv
         type_spec:
@@ -67,6 +68,7 @@ const (
             file:
      # 'ram' example
       name:                     # name of the data which will be accessed
+      clear_after_read:         # clear memory after reading; 'false' by default
      # 'time-series' example
       directory:                # series root directory
       file:                     # series data file name
@@ -100,6 +102,10 @@ const (
           - field:
             op:                 # one of '==', '!=', '>', '>=', '<', '<='
             value:
+    - type: regexp-rename
+      type_spec:
+        src:                    # regular expression to use in matching
+        repl:                   # replacement string
     - type: rename
       type_spec:
         fields:                 # map of old-to-new name key-value pairs
@@ -122,6 +128,7 @@ const (
     - type: ram
       type_spec:
         name:                   # key name under which data will be stored
+        clear_after_read:       # clear memory after reading; 'false' by default
     - type: csv
       type_spec:
         file:                   # output file name
