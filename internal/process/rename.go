@@ -8,7 +8,7 @@ import (
 	"github.com/go-gota/gota/dataframe"
 )
 
-// renameSpec contains data needed for defining a select Processor.
+// renameSpec contains data needed for defining a rename Processor.
 type renameSpec struct {
 	// Fields are key-value pairs which are used to rename
 	// field(s) 'key(s)' to 'value(s)'.
