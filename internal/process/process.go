@@ -28,10 +28,11 @@ var ProcessorTypes = map[string]Processor{
 	"dummy":         dummyProcessor,
 	"expression":    expressionProcessor,
 	"filter":        filterProcessor,
-	"select":        selectProcessor,
-	"sort":          sortProcessor,
+	"regexp-rename": regexpRenameProcessor,
 	"rename":        renameProcessor,
 	"resample":      resampleProcessor,
+	"select":        selectProcessor,
+	"sort":          sortProcessor,
 }
 
 // ValidType represents the supported series.Series types (a dataframe.DataFrame
