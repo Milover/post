@@ -58,6 +58,13 @@ func run(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+
+	// unmarshal into []yaml.Node
+	// find templates
+	// check and execute templates
+	// replace template yaml.Nodes with generated text
+	// unmarshal into []Config
+
 	if err = yaml.Unmarshal(raw, &configs); err != nil {
 		return err
 	}
