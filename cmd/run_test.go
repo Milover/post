@@ -102,7 +102,11 @@ var runTests = []runTest{
 
 - template:
     params:
-      t: [0.25, 0.5, 0.75, 1]
+      t:
+        - tag: 0_25
+          val: 0.25
+        - tag: 0_75
+          val: 0.75
     src: |
       - input:
           type: ram
@@ -114,17 +118,17 @@ var runTests = []runTest{
               filters:
                 - field: time
                   op: '=='
-                  value: {{ .t }}
+                  value: {{ .t.val }}
         output:
           - type: csv
             type_spec:
-              file: 'cycle_series/cycle_series@{{ .t }}.csv'
+              file: &tab_file_{{ .t.tag }} 'cycle_series/cycle_series_{{ .t.tag }}.csv'
         graph:
           type: tex
           graphs:
-            - name: 'graph-cycle-series@{{ .t }}.tex'
+            - name: 'graph-cycle-series-{{ .t.tag }}.tex'
               directory: 'cycle_series'
-              table_file: 'cycle_series/cycle_series@{{ .t }}.csv'
+              table_file: *tab_file_{{ .t.tag }}
               axes:
                 - x:
                     min: 0.0
@@ -137,10 +141,10 @@ var runTests = []runTest{
                   tables:
                     - x_field: x
                       y_field: y10
-                      legend_entry: '$\left.10y\right\vert_{t={{ .t }}}$'
+                      legend_entry: '$\left.10y\right\vert_{t={{ .t.val }}}$'
                     - x_field: x
                       y_field: yy
-                      legend_entry: '$\left.100y^2\right\vert_{t={{ .t }}}$'
+                      legend_entry: '$\left.100y^2\right\vert_{t={{ .t.val }}}$'
 `,
 	},
 }

@@ -189,7 +189,7 @@ var convertNodesTests = []convertNodeTest{
     src: 'c: 1'`,
 		Output: []Template{
 			{
-				Params: map[string][]string{"z": {"a", "b", "c"}},
+				Params: map[string][]any{"z": {"a", "b", "c"}},
 				Src:    `c: 1`,
 			},
 		},
@@ -213,11 +213,11 @@ var convertNodesTests = []convertNodeTest{
 - something_after: 12`,
 		Output: []Template{
 			{
-				Params: map[string][]string{"z": {"a", "b", "c"}},
+				Params: map[string][]any{"z": {"a", "b", "c"}},
 				Src:    `c: 1`,
 			},
 			{
-				Params: map[string][]string{"z": {"a", "b", "c"}, "x": {"0", "1", "2"}},
+				Params: map[string][]any{"z": {"a", "b", "c"}, "x": {0, 1, 2}},
 				Src:    `d: 2`,
 			},
 		},
@@ -263,7 +263,7 @@ var executeTemplateTests = []executeTemplateTest{
 		Input: `
 - template:
     params:
-      x: ['0']
+      x: [0]
     src: |
       input: 
         type: ram
@@ -274,6 +274,43 @@ var executeTemplateTests = []executeTemplateTest{
   type: ram
   type_spec:
     name: '0'
+`,
+	},
+	{
+		Name:  "good-mapping-params",
+		Error: nil,
+		Input: `
+- template:
+    params:
+      x:
+        - name: a
+          val: 0
+        - name: b
+          val: 1
+        - name: c
+          val: 2
+    src: |
+      input:
+        type: ram
+        type_spec:
+          name: {{.x.name}}
+          val: {{.x.val}}
+`,
+		Output: `input:
+  type: ram
+  type_spec:
+    name: a
+    val: 0
+input:
+  type: ram
+  type_spec:
+    name: b
+    val: 1
+input:
+  type: ram
+  type_spec:
+    name: c
+    val: 2
 `,
 	},
 	{
@@ -390,6 +427,27 @@ var processTests = []processTest{
       - value_{{.v}}: {{.v}}
 `,
 		Output: `- value_0: 0
+`,
+	},
+	{
+		Name:  "good-mapping",
+		Error: nil,
+		Input: `
+- template:
+    params:
+      x:
+        - tag: 'a'
+          val: 0
+        - tag: 'b'
+          val: 1
+    src: |
+      - name: {{.x.tag}}
+        value: {{.x.val}}
+`,
+		Output: `- name: a
+  value: 0
+- name: b
+  value: 1
 `,
 	},
 	{

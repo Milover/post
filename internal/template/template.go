@@ -16,8 +16,8 @@ var (
 )
 
 type Template struct {
-	Params map[string][]string `yaml:"params"`
-	Src    string              `yaml:"src"`
+	Params map[string][]any `yaml:"params"`
+	Src    string           `yaml:"src"`
 }
 
 // Execute executes the template using all combinations of parameter values
@@ -29,7 +29,7 @@ func (t Template) Execute() ([]byte, error) {
 	}
 	// execute for all combinations of parameters
 	var b bytes.Buffer
-	par := make(map[string]string)
+	par := make(map[string]any)
 	combs := 1
 	for i := range t.Params {
 		combs *= len(t.Params[i])
