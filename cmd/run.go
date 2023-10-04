@@ -14,6 +14,7 @@ import (
 	"github.com/Milover/post/internal/graph"
 	"github.com/Milover/post/internal/process"
 	"github.com/Milover/post/internal/rw"
+	"github.com/Milover/post/internal/template"
 	"github.com/go-gota/gota/dataframe"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
@@ -41,7 +42,6 @@ type Config struct {
 }
 
 func run(cmd *cobra.Command, args []string) error {
-	var configs []Config
 	readers := make([]io.Reader, len(args))
 	for i, arg := range args {
 		f, err := os.Open(arg)
@@ -65,7 +65,15 @@ func run(cmd *cobra.Command, args []string) error {
 	// replace template yaml.Nodes with generated text
 	// unmarshal into []Config
 
-	if err = yaml.Unmarshal(raw, &configs); err != nil {
+	var n yaml.Node
+	if err = yaml.Unmarshal(raw, &n); err != nil {
+		return err
+	}
+	if err := template.Process(&n); err != nil {
+		return err
+	}
+	var configs []Config
+	if err := n.Decode(&configs); err != nil {
 		return err
 	}
 	if dryRun {

@@ -20,10 +20,10 @@ var findNodesTests = []findNodesTest{
 	{
 		Name:  "good-simple",
 		Error: nil,
-		Input: `template:
-  params:
-    z: [a, b, c]
-  src: 'c: 1'`,
+		Input: `- template:
+    params:
+      z: [a, b, c]
+    src: 'c: 1'`,
 		Output: []string{
 			`template:
     params:
@@ -33,74 +33,120 @@ var findNodesTests = []findNodesTest{
 		},
 	},
 	{
-		Name:  "good-mixed-mapping",
+		Name:  "good-mixed",
 		Error: nil,
-		Input: `something_before: 12
-template:
-  params:
-    z: [a, b, c]
-  src: 'c: 1'
-something_after: 12`,
+		Input: `- something_before: 12
+- template:
+    params:
+      z: [a, b, c]
+    src: 'c: 1'
+- something_after: 12`,
 		Output: []string{
-			`something_before: 12
-template:
+			`template:
     params:
         z: [a, b, c]
     src: 'c: 1'
-something_after: 12
 `,
 		},
 	},
 	{
-		Name:  "good-mixed-placement",
+		Name:  "good-multiple",
 		Error: nil,
-		Input: `- id: "one"
-  something:
-    something_before: 12
-    template:
-      params:
-        z: [a, b, c]
-      src: 'c: 1'
-    something_after: 12
-    template:
-      params:
-        r: [x, y]
-      src: 'bla: bla'
-- id: "two"
+		Input: `
 - template:
     params:
-      x: [1, 2, 3]
-      y: [1, 2, 3]
-    src: 'a: 1'
+      z: [a, b, c]
+    src: 'c: 1'
 - template:
     params:
-      x: [0, 0, 0]
-    src: 'b: 2'
-- id: "three"`,
+      x: [0, 1]
+    src: 'b: 1'`,
 		Output: []string{
-			`something_before: 12
-template:
+			`template:
     params:
         z: [a, b, c]
     src: 'c: 1'
-something_after: 12
-template:
-    params:
-        r: [x, y]
-    src: 'bla: bla'
 `,
 			`template:
     params:
-        x: [1, 2, 3]
-        y: [1, 2, 3]
-    src: 'a: 1'
-`,
-			`template:
-    params:
-        x: [0, 0, 0]
-    src: 'b: 2'
+        x: [0, 1]
+    src: 'b: 1'
 `,
 		},
+	},
+	{
+		Name:  "good-multiple-mixed",
+		Error: nil,
+		Input: `
+- one: bla
+- two:
+    x: y
+- template:
+    params:
+      z: [a, b, c]
+    src: 'c: 1'
+- three: blabla
+- template:
+    params:
+      x: [0, 1]
+    src: 'b: 1'
+- four:
+    z: u`,
+		Output: []string{
+			`template:
+    params:
+        z: [a, b, c]
+    src: 'c: 1'
+`,
+			`template:
+    params:
+        x: [0, 1]
+    src: 'b: 1'
+`,
+		},
+	},
+	{
+		Name:   "bad-empty",
+		Error:  ErrBadTemplateNode,
+		Input:  `- template:`,
+		Output: []string{},
+	},
+	{
+		Name:   "bad-definition-single",
+		Error:  ErrBadTemplateNode,
+		Input:  `- template: some_value`,
+		Output: []string{},
+	},
+	{
+		Name:  "bad-definition-additional-beggining",
+		Error: ErrBadTemplateNode,
+		Input: `- some_value: bla
+  template:
+    params:
+      z: [a, b, c]
+    src: 'c: 1'`,
+		Output: []string{},
+	},
+	{
+		Name:  "bad-definition-additional-end",
+		Error: ErrBadTemplateNode,
+		Input: `- template:
+    params:
+      z: [a, b, c]
+    src: 'c: 1'
+  some_value: bla`,
+		Output: []string{},
+	},
+	{
+		Name:  "bad-definition-additional-mixed",
+		Error: ErrBadTemplateNode,
+		Input: `- some_value: bla
+  template:
+    params:
+      z: [a, b, c]
+    src: 'c: 1'
+  some_other_value: bla`,
+		Output: []string{},
 	},
 }
 
@@ -113,7 +159,8 @@ func TestFindNodes(t *testing.T) {
 			err := yaml.Unmarshal([]byte(tt.Input), &n)
 			assert.Nil(err, "unexpected yaml.Unmarshal() error")
 
-			found := FindNodes(&n)
+			found, err := findNodes(&n)
+			assert.ErrorIs(err, tt.Error)
 			for i := range tt.Output {
 				out, err := yaml.Marshal(found[i])
 				assert.Nil(err, "unexpected yaml.Unmarshal() error")
@@ -135,10 +182,10 @@ var convertNodesTests = []convertNodeTest{
 	{
 		Name:  "good-simple",
 		Error: nil,
-		Input: `template:
-  params:
-    z: [a, b, c]
-  src: 'c: 1'`,
+		Input: `- template:
+    params:
+      z: [a, b, c]
+    src: 'c: 1'`,
 		Output: []Template{
 			{
 				Params: map[string][]string{"z": {"a", "b", "c"}},
@@ -147,66 +194,30 @@ var convertNodesTests = []convertNodeTest{
 		},
 	},
 	{
-		Name:  "good-mixed-mapping",
+		Name:  "good-multiple-mixed",
 		Error: nil,
-		Input: `something_before: 12
-template:
-  params:
-    z: [a, b, c]
-  src: 'c: 1'
-something_after: 12`,
-		Output: []Template{
-			{
-				Params: map[string][]string{"z": {"a", "b", "c"}},
-				Src:    `c: 1`,
-			},
-		},
-	},
-	{
-		Name:  "good-mixed-placement",
-		Error: nil,
-		Input: `- id: "one"
-  something:
-    something_before: 12
-    template:
-      params:
-        z: [a, b, c]
-      src: 'c: 1'
-    something_after: 12
-    template:
-      params:
-        r: [x, y]
-      src: 'bla: bla'
-- id: "two"
+		Input: `- something_before: 12
 - template:
     params:
-      x: [1, 2, 3]
-      y: [1, 2, 3]
-    src: 'a: 1'
+      z: [a, b, c]
+    src: 'c: 1'
+- something_between:
+    something_else:
+      rand: bla
 - template:
     params:
-      x: [0, 0, 0]
-    src: 'b: 2'
-- id: "three"`,
+      z: [a, b, c]
+      x: [0, 1, 2]
+    src: 'd: 2'
+- something_after: 12`,
 		Output: []Template{
 			{
 				Params: map[string][]string{"z": {"a", "b", "c"}},
 				Src:    `c: 1`,
 			},
 			{
-				Params: map[string][]string{"r": {"x", "y"}},
-				Src:    `bla: bla`,
-			},
-			{
-				Params: map[string][]string{
-					"x": {"1", "2", "3"},
-					"y": {"1", "2", "3"},
-				},
-				Src: `a: 1`,
-			},
-			{
-				Params: map[string][]string{"x": {"0", "0", "0"}},
-				Src:    `b: 2`,
+				Params: map[string][]string{"z": {"a", "b", "c"}, "x": {"0", "1", "2"}},
+				Src:    `d: 2`,
 			},
 		},
 	},
@@ -221,14 +232,16 @@ func TestNodeToTemplate(t *testing.T) {
 			err := yaml.Unmarshal([]byte(tt.Input), &n)
 			assert.Nil(err, "unexpected yaml.Unmarshal() error")
 
-			found := FindNodes(&n)
-			var tmpl []Template
+			found, err := findNodes(&n)
+			assert.Nil(err, "unexpected findNodes() error")
+
+			var tmpls []Template
 			for _, f := range found {
-				temp, errf := NodeToTemplates(f)
+				tmpl, errf := nodeToTemplate(f)
 				errors.Join(err, errf)
-				tmpl = append(tmpl, temp...)
+				tmpls = append(tmpls, tmpl)
 			}
-			assert.Equal(tt.Output, tmpl)
+			assert.Equal(tt.Output, tmpls)
 			assert.ErrorIs(err, tt.Error)
 		})
 	}
@@ -344,6 +357,112 @@ func TestExecuteTemplate(t *testing.T) {
 
 			assert.Equal(tt.Output, string(out))
 			assert.ErrorIs(err, tt.Error)
+		})
+	}
+}
+
+// End-to-end test processing and updating YAML files containing templates.
+type processTest struct {
+	Name   string
+	Input  string
+	Output string
+	Error  error
+}
+
+var processTests = []processTest{
+	{
+		Name:  "good-simple",
+		Error: nil,
+		Input: `
+- template:
+    params:
+      v: [0]
+    src: |
+      - value_{{.v}}: {{.v}}
+`,
+		Output: `- value_0: 0
+`,
+	},
+	{
+		Name:  "good-realistic",
+		Error: nil,
+		Input: `
+- template:
+    params:
+      name: [a]
+      value: ['0', '1']
+    src: |
+      - input:
+          type: ram
+          type_spec:
+            name: '{{.name}}'
+        process:
+        - type: expression
+          type_spec:
+            expression: 'phase-{{.value}}'
+            result: phase
+        - type: regexp-rename
+          type_spec:
+            src: '(.*)'
+            result: '${1}_{{.value}}'
+        output:
+        - type: ram
+          type_spec:
+            name: 'rans_{{.name}}'
+`,
+		Output: `- input:
+    type: ram
+    type_spec:
+        name: 'a'
+  process:
+    - type: expression
+      type_spec:
+        expression: 'phase-0'
+        result: phase
+    - type: regexp-rename
+      type_spec:
+        src: '(.*)'
+        result: '${1}_0'
+  output:
+    - type: ram
+      type_spec:
+        name: 'rans_a'
+- input:
+    type: ram
+    type_spec:
+        name: 'a'
+  process:
+    - type: expression
+      type_spec:
+        expression: 'phase-1'
+        result: phase
+    - type: regexp-rename
+      type_spec:
+        src: '(.*)'
+        result: '${1}_1'
+  output:
+    - type: ram
+      type_spec:
+        name: 'rans_a'
+`,
+	},
+}
+
+func TestProcess(t *testing.T) {
+	for _, tt := range processTests {
+		t.Run(tt.Name, func(t *testing.T) {
+			assert := assert.New(t)
+
+			var n yaml.Node
+			err := yaml.Unmarshal([]byte(tt.Input), &n)
+			assert.Nil(err, "unexpected yaml.Unmarshal() error")
+
+			err = Process(&n)
+			assert.ErrorIs(err, tt.Error)
+
+			b, err := yaml.Marshal(&n)
+			assert.Nil(err, "unexpected yaml.Marshal() error")
+			assert.Equal(tt.Output, string(b))
 		})
 	}
 }
