@@ -171,11 +171,11 @@ A simple run file example is shown below.
 
 The example run file instructs `post` to do the following:
 
-1. read data from a `DAT` formatted file `xy.dat` and rename the fields (columns)
+1. read data from a DAT formatted file `xy.dat` and rename the fields (columns)
    to `x` and `y`
 2. evaluate the expression `100*y` and store the result to a field named `result`
 3. output the data, now containing the fields `x`, `y` and `result` to a
-   `CSV` formatted file `output/data.csv`, if the directory `output` does not
+   CSV formatted file `output/data.csv`, if the directory `output` does not
    exist, it will be created
 4. generate a graph using TeX in the `output` directory, using `output/data.csv`
    as the table (data) file, with `x` as the abscissa and `result` as the ordinate
@@ -192,7 +192,16 @@ $ post runfile
 ## Input
 
 The following is a list of available input types and their descriptions
-along with their run file configuration stubs.
+along with their run file configuration stubs:
+
+- [`archive`](#archive)
+- [`csv`](#csv)
+- [`dat`](#dat)
+- [`multiple`](#multiple)
+- [`ram`](#ram)
+- [`time-series`](#time-series)
+
+---
 
 #### `archive`
 
@@ -223,7 +232,7 @@ after reading the data.
 
 #### `csv`
 
-`csv` reads from a `CSV` formatted file. If the file contains a header line
+`csv` reads from a CSV formatted file. If the file contains a header line
 the `header` field should be set to `true` and the header column names will
 be used as the field names for the data. If no header line is present the
 `header` field must be set to `false`.
@@ -515,7 +524,7 @@ along with their run file configuration stubs.
 
 #### `csv`
 
-`csv` writes `CSV` formatted data to a file. If `header` is set to `true`
+`csv` writes CSV formatted data to a file. If `header` is set to `true`
 the file will contain a header line with the field names as the column names.
 Note that, if necessary, directories will be created so as to ensure that
 `file` specifies a valid path.
