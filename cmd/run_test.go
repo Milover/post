@@ -50,13 +50,13 @@ var runTests = []runTest{
   output:
     - type: csv
       type_spec:
-        file: 'cycle/wale_tau_w_bar_avg.csv'
+        file: 'cycle/cycle.csv'
   graph:
     type: tex
     graphs:
-      - name: 'graph-cycle-patch_1.tex'
+      - name: 'graph-cycle.tex'
         directory: 'cycle'
-        table_file: 'cycle/wale_tau_w_bar_avg.csv'
+        table_file: 'cycle/cycle.csv'
         axes:
           - x:
               min: 0.0
@@ -73,6 +73,7 @@ var runTests = []runTest{
               - x_field: t
                 y_field: max
                 legend_entry: '$y_\text{max}$'
+
 - input:
     type: time-series
     type_spec:
@@ -80,59 +81,66 @@ var runTests = []runTest{
       file: data.csv
       format_spec:
         type: csv
-        type_spec:
-          header: true
   process:
     - type: dummy
     - type: average-cycle
       type_spec:
         n_cycles: 4
         time_field: 'time'
-        time_precision: # machine precision by default
     - type: expression
       type_spec:
         expression: '100*y*y'
-        result: y2
+        result: yy
     - type: expression
       type_spec:
         expression: 'y*10'
-        result: y
-    - type: filter
-      type_spec:
-        aggregation: and
-        filters:
-          - field: time
-            op: '>'
-            value: 0.4
-          - field: time
-            op: '<'
-            value: 0.6
+        result: y10
   output:
-    - type: csv
+    - type: ram
       type_spec:
-        file: 'cycle_series/cycle_series.csv'
-  graph:
-    type: tex
-    graphs:
-      - name: 'graph-cycle-series-avg@1.5.tex'
-        directory: 'cycle_series'
-        table_file: 'cycle_series/cycle_series.csv'
-        axes:
-          - x:
-              min: 0.0
-              max: 1.0
-              label: '$x$-axis'
-            y:
-              min: 0
-              max: 25
-              label: '$y$-axis'
-            tables:
-              - x_field: x
-                y_field: y
-                legend_entry: '$10y$'
-              - x_field: x
-                y_field: y2
-                legend_entry: '$100y^2$'
+        name: 'cycle_series'
+
+- template:
+    params:
+      t: [0.25, 0.5, 0.75, 1]
+    src: |
+      - input:
+          type: ram
+          format_spec:
+            name: 'cycle_series'
+        process:
+          - type: filter
+            type_spec:
+              filters:
+                - field: time
+                  op: '=='
+                  value: {{ .t }}
+        output:
+          - type: csv
+            type_spec:
+              file: 'cycle_series/cycle_series@{{ .t }}.csv'
+        graph:
+          type: tex
+          graphs:
+            - name: 'graph-cycle-series@{{ .t }}.tex'
+              directory: 'cycle_series'
+              table_file: 'cycle_series/cycle_series@{{ .t }}.csv'
+              axes:
+                - x:
+                    min: 0.0
+                    max: 1.0
+                    label: '$x$-axis'
+                  y:
+                    min: 0
+                    max: 25
+                    label: '$y$-axis'
+                  tables:
+                    - x_field: x
+                      y_field: y10
+                      legend_entry: '$\left.10y\right\vert_{t={{ .t }}}$'
+                    - x_field: x
+                      y_field: yy
+                      legend_entry: '$\left.100y^2\right\vert_{t={{ .t }}}$'
 `,
 	},
 }
