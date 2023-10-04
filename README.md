@@ -89,12 +89,12 @@ operations which are applied to the data; the `output` section defines how
 the processed data will be output/stored; and the `graph` section defines
 how the data will be graphed.
 
-**Note:** All file paths within the run file are evaluated using
-the run file's parent directory as the current working directory.
+> Note: All file paths within the run file are evaluated using
+> the run file's parent directory as the current working directory.
 
 All sections are optional and can be omitted, defined by themselves, or
 as part of a pipeline. A special case is the `template` section,
-which **cannot** be defined as part of a pipeline.
+which *cannot* be defined as part of a pipeline.
 See [Templates](#templates) for a breakdown of their use.
 
 A single pipeline has the following fields:
@@ -219,7 +219,7 @@ read will read directly from RAM. Hence it is beneficial to use the `archive`
 input type when the data consists of a large amount of input files,
 e.g., a large `time-series`.
 
-The `clear_after_read` flag can be used to clear **all** `archive` memory
+The `clear_after_read` flag can be used to clear *all* `archive` memory
 after reading the data.
 
 ```yaml
@@ -279,7 +279,7 @@ arbitrary, but each input must yield data with the same number of rows.
 have been stored previously, e.g., a previous `output` section defines a `ram`
 output.
 
-The `clear_after_read` flag can be used to clear **all** `ram` memory
+The `clear_after_read` flag can be used to clear *all* `ram` memory
 after reading the data.
 
 ```yaml
@@ -380,8 +380,8 @@ The read time is the one read from the field named `time_field`.
 Note that in this case the output time field will be named after `time_field`,
 i.e., the time field name will remain unchanged.
 
-**Warning**: It is assumed that data is sorted chronologically, i.e.,
-by ascending time, even if `time_field` is not specified or does not exist.
+> Warning: It is assumed that data is sorted chronologically, i.e.,
+> by ascending time, even if `time_field` is not specified or does not exist.
 
 ```yaml
   type: average-cycle
@@ -396,9 +396,9 @@ by ascending time, even if `time_field` is not specified or does not exist.
 `bin` mutates the data by dividing all numeric fields into `n_bins`
 and setting the field values to bin-mean-values.
 
-**Warning**: Each bin _must_ contain the same number of field values,
-i.e., `len(field) % n_fields == 0`.
-This might change in the future.
+> Warning: Each bin _must_ contain the same number of field values,
+> i.e., `len(field) % n_fields == 0`.
+> This might change in the future.
 
 ```yaml
   type: bin
