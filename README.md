@@ -21,6 +21,7 @@ pipelines is fairly simple, while no programming is necessary.
 - [Processing](#processing)
 - [Output](#output)
 - [Graphing](#graphing)
+- [Templates](#templates)
 
 
 ## Installation
@@ -81,7 +82,7 @@ Flags:
 ## Run file structure
 
 `post` is controlled by a run file in YAML format file supplied as a CLI parameter. 
-The run file consists of a list of pipelines, each defining 4 sections:
+The run file usually consists of a list of pipelines, each defining 4 sections:
 `input`, `process`, `output` and `graph`. The `input` section defines input
 files and formats from which data is read; the `process` section defines
 operations which are applied to the data; the `output` section defines how
@@ -92,7 +93,9 @@ how the data will be graphed.
 the run file's parent directory as the current working directory.
 
 All sections are optional and can be omitted, defined by themselves, or
-as part of a pipeline.
+as part of a pipeline. A special case is the `template` section,
+which **cannot** be defined as part of a pipeline.
+See [Templates](#templates) for a breakdown of their use.
 
 A single pipeline has the following fields:
 
@@ -197,7 +200,7 @@ along with their run file configuration stubs.
 the file name extension. The following archive formats are supported:
 `TAR`, `TAR-GZ`, `TAR-BZIP2`, `TAR-XZ`, `ZIP`. Note that `archive` input wraps
 one or more input types, i.e., the `archive` configuration only specifies
-how to read 'some data' from an archive, the wrapped input type reads the
+how to read _some data_ from an archive, the wrapped input type reads the
 actual data.
 
 Another important note is that the contents of the archive are stored into
@@ -589,6 +592,130 @@ graphs:
             table_file:     # optional; needed if 'graphs.table_file' is undefined
 ```
 
+## Templates
+
+Templates reduce boilerplate when it is necessary to process different sources
+of data but use the same processing pipeline.
+
+For example, consider the case when we would like to extract data at specific
+times from some time series. The run file would look something like this:
+
+```yaml
+- input: # extract data at t = 0.1
+    type: dat
+    fields: [time, value]
+    type_spec:
+      file: 'data.dat'
+  process:
+    - type: filter
+      type_spec:
+        filters:
+          - field: 'time'
+            op: '=='
+            value: 0.1
+  output:
+    - type: csv
+      type_spec:
+        file: 'output/data_0.1.csv'
+
+- input: # extract data at t = 0.2
+    ...
+
+- input: # extract data at t = 0.3
+    ...
+```
+
+A new pipeline has to be defined for each time we would like to extract since
+the `filter` uses a different time value and the extracted data is written
+to a different file each time. This is both cumbersome and error prone.
+So we use a `template` to simplify this:
+
+```yaml
+- template:
+    params:
+      t: [0.1, 0.2, 0.3]
+    src: |
+      - input:
+          type: dat
+          fields: [time, value]
+          type_spec:
+            file: 'data.dat'
+        process:
+          - type: filter
+            type_spec:
+              filters:
+                - field: 'time'
+                  op: '=='
+                  value: {{ .t }}
+        output:
+          - type: csv
+            type_spec:
+              file: 'output/data_{{ .t }}.csv'
+```
+
+Now we only have to define the pipeline once and, in this case,
+parametrize it by time.
+
+A `template` consists of the following fields:
+
+```yaml
+- template:
+    params:               # a map of parameters used in the template
+    src:                  # YAML formatted string for the pipeline to template
+```
+
+For a `template` definition to be the following must be true:
+
+- the `template` must be defined as part of a sequence (`!!seq`)
+- the definition can contain only one mapping,
+  which must have the tag `template`, i.e., it cannot be defined as part
+  of a pipeline
+
+The `params` field is a map of parameters and their values. The values can
+be of any type, including a mapping, but must be given as a list, even if
+only one value is given. Here are some examples:
+
+```yaml
+- template:
+    params:
+      o: [0]              # a single integer, but must be a list
+      p: [0, 1, 2]        # a list of integers
+      q: ['ab', 'cd']     # a list of strings
+      r:                  # a list of maps
+        - tag: a
+          val: 0
+        - tag: b
+          val: 1
+```
+
+The `src` field is a string containing the pipeline template, using
+[Go template syntax][godoc-text-template], i.e., the string within `src` is
+expanded directly into the run file using parameter values defined in `params`.
+
+If multiple parameters are defined, the `template` is executed for all
+combinations of parameters. For example, the following `template`:
+
+```yaml
+- template:
+    params:
+      typ: [dat, csv]
+      ind: [0, 1]
+    src: |
+      input:
+        type: ram
+        type_spec:
+          name: 'data_{{ .ind }}_{{ .typ }}'
+      output:
+        - type: {{ .typ }}
+          type_spec:
+            file: 'data_{{ .ind }}.{{ .typ }}'
+```
+
+will generate 4 files: `data_0.dat`, `data_1.dat`, `data_0.csv` and `data_1.csv`,
+although not necessarily in that order since the execution order of
+multi-parameter templates is undefined, and so shouldn't be relied upon.
+
+See the [examples/](examples) directory for more usage examples.
 
 [godoc-text-template]: https://pkg.go.dev/text/template
 [golang]: https://go.dev
