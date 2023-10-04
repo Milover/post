@@ -15,6 +15,24 @@ var (
 	ErrBadTemplateNode = errors.New("template: bad template node")
 )
 
+// Template is a struct which is used for generating yaml.Nodes by executing
+// the template string Src using Params as the template parameters.
+//
+// It is exepected that a Template will be read from a YAML formatted input,
+// and have the following structure:
+//
+//	---
+//	- template:
+//	    params:
+//	      x: [a, b]
+//	    src: |
+//	      example: {{ .x }}
+//
+// For the template node to be valid it must:
+//   - be defined in a document (document node) containing
+//     exactly one child node of type !!seq
+//   - be defined as a child node (element) of the document-level sequence
+//   - consist of a single !!map with the tag 'template'
 type Template struct {
 	Params map[string][]any `yaml:"params"`
 	Src    string           `yaml:"src"`
@@ -64,6 +82,7 @@ func (t Template) GenerateNodes() ([]*yaml.Node, error) {
 }
 
 // isValidTemplateNode checks if n is a valid template node.
+// FIXME: this is horrible
 func isValidTemplateNode(n *yaml.Node) bool { // yolo
 	return n.Kind == yaml.MappingNode &&
 		len(n.Content) == 2 &&
@@ -125,6 +144,9 @@ func nodeToTemplate(n *yaml.Node) (Template, error) {
 	return t, nil
 }
 
+// Process finds and extracts template nodes from n, which must be a valid
+// input node, and then generates new nodes by executing the found templates
+// and adds them to n, replacing the original template nodes.
 func Process(n *yaml.Node) error {
 	found, err := findNodes(n)
 	if err != nil {
