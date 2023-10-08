@@ -59,12 +59,6 @@ func run(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// unmarshal into []yaml.Node
-	// find templates
-	// check and execute templates
-	// replace template yaml.Nodes with generated text
-	// unmarshal into []Config
-
 	var n yaml.Node
 	if err = yaml.Unmarshal(raw, &n); err != nil {
 		return err
@@ -123,9 +117,10 @@ func run(cmd *cobra.Command, args []string) error {
 
 		if logMem {
 			runtime.ReadMemStats(&mem)
-			log.Printf("memory usage: alloc = %v\tsys = %v\tid = %q\n",
+			log.Printf("memory usage: alloc = %v\tsys = %v\tn_allocs = %v\tid = %q\n",
 				format.Byte(mem.Alloc),
 				format.Byte(mem.Sys),
+				mem.Mallocs,
 				c.ID)
 		}
 	}
