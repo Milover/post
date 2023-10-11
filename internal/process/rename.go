@@ -35,13 +35,10 @@ func renameProcessor(df *dataframe.DataFrame, config *Config) error {
 			return fmt.Errorf("rename: %w: %q", common.ErrBadField, field)
 		}
 	}
-
-	newNames := make([]string, len(names))
-	for i, name := range names {
-		if v, found := spec.Fields[name]; found {
+	newNames := names
+	for i, n := range names {
+		if v, found := spec.Fields[n]; found {
 			newNames[i] = v
-		} else {
-			newNames[i] = name
 		}
 	}
 	if err := df.SetNames(newNames...); err != nil {
