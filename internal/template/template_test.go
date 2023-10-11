@@ -277,6 +277,50 @@ var executeTemplateTests = []executeTemplateTest{
 `,
 	},
 	{
+		Name:  "good-multiple",
+		Error: nil,
+		Input: `
+- template:
+    params:
+      x: ['zero', 'one', 'two']
+      y: [0, 1, 2, 3, 4]
+    src: |
+      x: {{ .x }}
+      y: {{ .y }}
+`,
+		Output: `x: zero
+y: 0
+x: one
+y: 0
+x: two
+y: 0
+x: zero
+y: 1
+x: one
+y: 1
+x: two
+y: 1
+x: zero
+y: 2
+x: one
+y: 2
+x: two
+y: 2
+x: zero
+y: 3
+x: one
+y: 3
+x: two
+y: 3
+x: zero
+y: 4
+x: one
+y: 4
+x: two
+y: 4
+`,
+	},
+	{
 		Name:  "good-mapping-params",
 		Error: nil,
 		Input: `
