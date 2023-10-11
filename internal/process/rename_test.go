@@ -65,6 +65,28 @@ type_spec:
 		Error: nil,
 	},
 	{
+		Name: "good-some",
+		Config: Config{
+			Type: "rename",
+		},
+		TypeSpec: `
+type_spec:
+  fields:
+    def_0: xyz
+`,
+		Input: dataframe.New(
+			series.New([]int{0, 0}, series.Int, "abc_0"),
+			series.New([]int{0, 1}, series.Int, "def_0"),
+			series.New([]int{0, 2}, series.Int, "ghi_0"),
+		),
+		Output: dataframe.New(
+			series.New([]int{0, 0}, series.Int, "abc_0"),
+			series.New([]int{0, 1}, series.Int, "xyz"),
+			series.New([]int{0, 2}, series.Int, "ghi_0"),
+		),
+		Error: nil,
+	},
+	{
 		Name: "bad-field",
 		Config: Config{
 			Type: "rename",

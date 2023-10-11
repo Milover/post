@@ -27,7 +27,7 @@ func renameProcessor(df *dataframe.DataFrame, config *Config) error {
 		return fmt.Errorf("rename: %w", err)
 	}
 	if len(spec.Fields) == 0 {
-		return nil
+		return fmt.Errorf("rename: %w: %q", common.ErrUnsetField, "fields")
 	}
 	names := df.Names()
 	for _, field := range common.MapKeys(spec.Fields) {
