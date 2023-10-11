@@ -46,9 +46,9 @@ func regexpRenameProcessor(df *dataframe.DataFrame, config *Config) error {
 	}
 
 	names := df.Names()
-	newNames := make([]string, len(names))
-	for i, name := range names {
-		newNames[i] = re.ReplaceAllString(name, spec.Repl)
+	newNames := make([]string, 0, len(names))
+	for _, n := range names {
+		newNames = append(newNames, re.ReplaceAllString(n, spec.Repl))
 	}
 	if err := df.SetNames(newNames...); err != nil {
 		return fmt.Errorf("rename: %w", err)
