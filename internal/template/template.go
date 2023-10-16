@@ -4,9 +4,11 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"log"
 	"slices"
 	"text/template"
 
+	"github.com/Milover/post/internal/common"
 	"gopkg.in/yaml.v3"
 )
 
@@ -159,6 +161,9 @@ func nodeToTemplate(n *yaml.Node) (Template, error) {
 // input node, and then generates new nodes by executing the found templates
 // and adds them to n, replacing the original template nodes.
 func Process(n *yaml.Node) error {
+	if common.Verbose {
+		log.Printf("template: processing templates")
+	}
 	found, err := findNodes(n)
 	if err != nil {
 		return err

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"log"
 	"os"
 	"strconv"
 
@@ -157,6 +158,9 @@ func (rw *timeSeries) read(fsys fs.FS) (*dataframe.DataFrame, error) {
 		return nil, fmt.Errorf("time-series: %w", err)
 	}
 	if df != nil {
+		if common.Verbose {
+			log.Printf("time-series: sorting by time")
+		}
 		*df = df.Arrange(dataframe.Sort(rw.TimeName))
 		if df.Error() != nil {
 			return nil, fmt.Errorf("time-series: %w", df.Error())

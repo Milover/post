@@ -64,14 +64,14 @@ func process(df *dataframe.DataFrame, config *Config) error {
 		return fmt.Errorf("process: %w, got: %q", ErrBadProcessor, config.Type)
 	}
 	if common.Verbose {
-		log.Printf("applying processor: %q", strings.ToLower(config.Type))
-		log.Printf("fields before: %v", df.Names())
+		log.Printf("process: applying: %q", strings.ToLower(config.Type))
+		log.Printf("process: fields before: %v", df.Names())
 	}
 	if err := p(df, config); err != nil {
 		return err
 	}
 	if common.Verbose {
-		log.Printf("fields after: %v", df.Names())
+		log.Printf("process: fields after: %v", df.Names())
 	}
 	return nil
 }

@@ -3,6 +3,7 @@ package rw
 import (
 	"fmt"
 	"io"
+	"log"
 	"strings"
 	"unicode/utf8"
 
@@ -58,12 +59,15 @@ func DecodeRuneOrDefault(s string, dflt rune) rune {
 
 // Read reads a dataframe.DataFrame using the specification from the config.
 func Read(config *Config) (*dataframe.DataFrame, error) {
-	if config.IsEmpty() {
+	if config.IsEmpty() { // why not check in ReadFromFn also?
 		return nil, nil
 	}
 	factory, found := Readers[strings.ToLower(config.Type)]
 	if !found {
 		return nil, fmt.Errorf("%w, got: %q", ErrBadReader, config.Type)
+	}
+	if common.Verbose {
+		log.Printf("input: reading: %q", strings.ToLower(config.Type))
 	}
 	r, err := factory(&config.TypeSpec)
 	if err != nil {

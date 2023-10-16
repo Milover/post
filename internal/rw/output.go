@@ -3,6 +3,7 @@ package rw
 import (
 	"errors"
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/Milover/post/internal/common"
@@ -42,6 +43,9 @@ func write(df *dataframe.DataFrame, config *Config) error {
 	factory, found := Writers[strings.ToLower(config.Type)]
 	if !found {
 		return fmt.Errorf("%w, got: %q", ErrBadOutput, config.Type)
+	}
+	if common.Verbose {
+		log.Printf("output: writing: %q", strings.ToLower(config.Type))
 	}
 	w, err := factory(&config.TypeSpec)
 	if err != nil {
