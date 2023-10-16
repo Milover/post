@@ -172,14 +172,14 @@ func TestFindNodes(t *testing.T) {
 }
 
 // Test finding and converting nodes to templates
-type convertNodeTest struct {
+type fromNodeTest struct {
 	Name   string
 	Input  string
 	Output []Template
 	Error  error
 }
 
-var convertNodesTests = []convertNodeTest{
+var fromNodeTests = []fromNodeTest{
 	{
 		Name:  "good-simple",
 		Error: nil,
@@ -224,8 +224,8 @@ var convertNodesTests = []convertNodeTest{
 	},
 }
 
-func TestNodeToTemplate(t *testing.T) {
-	for _, tt := range convertNodesTests {
+func TestFromNode(t *testing.T) {
+	for _, tt := range fromNodeTests {
 		t.Run(tt.Name, func(t *testing.T) {
 			assert := assert.New(t)
 
@@ -238,7 +238,7 @@ func TestNodeToTemplate(t *testing.T) {
 
 			var tmpls []Template
 			for _, f := range found {
-				tmpl, errf := nodeToTemplate(f)
+				tmpl, errf := fromNode(f)
 				errors.Join(err, errf)
 				tmpls = append(tmpls, tmpl)
 			}
@@ -438,12 +438,12 @@ func TestExecuteTemplate(t *testing.T) {
 			assert.Nil(err, "unexpected findNodes() error")
 			var b bytes.Buffer
 			for _, f := range found {
-				tmpl, err := nodeToTemplate(f)
-				assert.Nil(err, "unexpected nodeToTemplate() error")
+				tmpl, err := fromNode(f)
+				assert.Nil(err, "unexpected fromNode() error")
 				out, errf := tmpl.Execute()
 				errors.Join(err, errf)
 				_, errb := b.Write(out)
-				assert.Nil(errb, "unexpected nodeToTemplate() error")
+				assert.Nil(errb, "unexpected fromNode() error")
 			}
 			assert.Equal(tt.Output, b.String())
 			assert.ErrorIs(err, tt.Error)

@@ -144,9 +144,9 @@ func findNodes(n *yaml.Node) ([]*yaml.Node, error) {
 	return slices.Clip(nodes), nil
 }
 
-// nodeToTemplate correctly unmarshalls n into a Template.
+// fromNode correctly unmarshalls n into a Template.
 // If n is not a valid template node, an error is returned.
-func nodeToTemplate(n *yaml.Node) (Template, error) {
+func fromNode(n *yaml.Node) (Template, error) {
 	var t Template
 	if !isValidTemplateNode(n) {
 		return t, ErrBadTemplateNode
@@ -172,7 +172,7 @@ func Process(n *yaml.Node) error {
 	var t Template
 	for _, f := range found {
 		// create template
-		t, err = nodeToTemplate(f)
+		t, err = fromNode(f)
 		if err != nil {
 			return err
 		}
