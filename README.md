@@ -219,6 +219,10 @@ read will read directly from RAM. Hence it is beneficial to use the `archive`
 input type when the data consists of a large amount of input files,
 e.g., a large `time-series`.
 
+> Warning: it is currently faster to read regularly from the filesystem than
+> using the `archive` on most machines due to a poorly optimized implementation
+> of `archive`, so use with caution.
+
 The `clear_after_read` flag can be used to clear *all* `archive` memory
 after reading the data.
 
