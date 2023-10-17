@@ -728,6 +728,9 @@ will generate 4 files: `data_0.dat`, `data_1.dat`, `data_0.csv` and `data_1.csv`
 although not necessarily in that order since the execution order of
 multi-parameter templates is undefined, and so shouldn't be relied upon.
 
+> Warning: YAML aliases currently *cannot* be used within the `src` field.
+> This might change in the future.
+
 See the [examples/](examples) directory for more usage examples.
 
 [godoc-text-template]: https://pkg.go.dev/text/template
